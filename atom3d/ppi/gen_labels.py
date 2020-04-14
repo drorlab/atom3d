@@ -28,7 +28,6 @@ index_columns = ['structure', 'model', 'chain', 'residue']
 def gen_labels_main(input_pdbs, output_labels, bound_pdbs, cutoff, cutoff_type):
     input_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in input_pdbs]
     bound_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in bound_pdbs]
-    logging.info('WOW')
 
     neighbors = get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type)
     # Write label file.
@@ -51,7 +50,13 @@ def get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
                 curr = _get_heavy_neighbors(
                     bound_subunits[i], bound_subunits[j], cutoff)
             neighbors.append(curr)
-    neighbors = pd.concat(neighbors)
+
+    if len(neighbors) > 0:
+        neighbors = pd.concat(neighbors)
+    else:
+        neighbor_columns = [x + '0' for x in index_columns] + \
+            [x + '1' for x in index_columns]
+        neighbors = pd.DataFrame([], columns=neighbor_columns)
     neighbors['label'] = 1
 
     # Remove entries that are not present in input structures.
