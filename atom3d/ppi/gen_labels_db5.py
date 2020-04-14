@@ -46,7 +46,6 @@ def gen_labels_db5(path_to_db5, cutoff, cutoff_type):
         receptor_unbound = dt.bp_to_df(dt.read_pdb(receptor_unbound[0]))
         ligand_bound = dt.bp_to_df(dt.read_pdb(ligand_bound[0]))
         ligand_unbound = dt.bp_to_df(dt.read_pdb(ligand_unbound[0]))
-        logging.info('loaded')
         neighbors = gl.get_all_neighbors(
             [ligand_unbound, receptor_unbound],
             [ligand_bound, receptor_bound],
