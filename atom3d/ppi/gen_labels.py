@@ -12,26 +12,40 @@ import atom3d.util.datatypes as dt
 index_columns = ['structure', 'model', 'chain', 'residue']
 
 
-@click.command()
+@click.command(help='Find neighbors for provided PDB files and output.')
 @click.argument('input_pdbs', nargs=-1, type=click.Path(exists=True))
 @click.argument('output_labels', type=click.Path())
-@click.option('-b', '--bound_pdbs', multiple=True,
-              type=click.Path(exists=True))
-@click.option('-c', '--cutoff', type=int, default=8)
+@click.option('-b', '--bound_pdbs', multiple=True, type=click.Path(exists=True),
+              help='If provided, use these PDB files to define the neighbors.')
+@click.option('-c', '--cutoff', type=int, default=8,
+              help='Maximum distance (in angstroms), for two residues to be '
+              'considered neighbors.')
 @click.option('--cutoff-type', default='CA',
-              type=click.Choice(['heavy', 'CA'], case_sensitive=False))
+              type=click.Choice(['heavy', 'CA'], case_sensitive=False),
+              help='How to compute distance between residues: CA is based on '
+              'alpha-carbons, heavy is based on any heavy atom.')
 def gen_labels_main(*args, **kwargs):
     gen_labels(*args, **kwargs)
 
 
 def gen_labels(input_pdbs, output_labels, bound_pdbs, cutoff, cutoff_type):
     """Given input pdbs, and optionally bound pdbs, generate label file."""
+
+    # Read input pdbs.
     dfs = []
     for input_pdb in input_pdbs:
         bp = dt.read_pdb(input_pdb)
         dfs.append(dt.bp_to_df(bp))
 
+    # Extract subunits to define protein interfaces for.
     if len(bound_pdbs) > 0:
+        # If bound pdbs are provided, we use their atoms to define which
+        # residues are neighboring in the input files.
+        # If we provide bound pdbs, we assume they are in a one-to-one
+        # correspondence to the input pdbs, and that they define each
+        # individual subunit we are trying to predict interfaces for.  We also
+        # assume that model/chain/residue correspondence is exact between the
+        # bound and input files.
         if len(bound_pdbs) != len(input_pdbs):
             raise RuntimeError('If providing bound pdbs, provide same number '
                                'and in same order as input pdbs.')
@@ -42,9 +56,15 @@ def gen_labels(input_pdbs, output_labels, bound_pdbs, cutoff, cutoff_type):
 
         subunits = bound_dfs
     else:
+        # If bound pdbs are not provided, we directly use the input files to
+        # define which residues are neighboring.  In this case, we also assume
+        # that each individual chain is its own subunit we are trying to
+        # predict interfaces for.
         df = pd.concat(dfs)
         subunits = [x for _, x in df.groupby(['structure', 'model', 'chain'])]
 
+    # Extract neighboring pairs of residues.  These are defined as pairs of
+    # residues that are close to one another while spanning different subunits.
     neighbors = []
     for i in range(len(subunits)):
         for j in range(i + 1, len(subunits)):
@@ -53,11 +73,12 @@ def gen_labels(input_pdbs, output_labels, bound_pdbs, cutoff, cutoff_type):
             else:
                 curr = _get_heavy_neighbors(subunits[i], subunits[j], cutoff)
             neighbors.append(curr)
-
     neighbors = pd.concat(neighbors)
     neighbors['label'] = 1
 
     if len(bound_pdbs) > 0:
+        # If we provided bound pdbs, we now map the found neighbors back to the
+        # input pdbs.
         correspondence = {}
         for b, i in zip(bound_pdbs, input_pdbs):
             correspondence[os.path.basename(b)] = os.path.basename(i)
@@ -67,10 +88,12 @@ def gen_labels(input_pdbs, output_labels, bound_pdbs, cutoff, cutoff_type):
         neighbors['structure1'] = \
             neighbors['structure1'].apply(lambda x: correspondence[x])
 
+    # Write label file.
     neighbors.to_csv(output_labels, index=False)
 
 
 def get_all_res(df):
+    """Get all residues."""
     return df[index_columns].drop_duplicates()
 
 
