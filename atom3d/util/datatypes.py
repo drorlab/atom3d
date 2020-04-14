@@ -1,5 +1,6 @@
 """Methods to convert between different file formats."""
 import collections as col
+import gzip
 import os
 
 import Bio.PDB
@@ -9,7 +10,16 @@ import pandas as pd
 def read_pdb(pdb_file):
     """Load pdb file in to biopython representation."""
     parser = Bio.PDB.PDBParser(QUIET=True)
-    return parser.get_structure(os.path.basename(pdb_file), pdb_file)
+    _, ext = os.path.splitext(pdb_file)
+    name = os.path.basename(pdb_file)
+    if ext == ".gz":
+        bp = parser.get_structure(
+            name, gzip.open(pdb_file, mode='rt', encoding='latin1'))
+    elif ".pdb" in ext:
+        bp = parser.get_structure(name, pdb_file)
+    else:
+        raise ValueError("Unrecognized filetype " + pdb_file)
+    return bp
 
 
 def read_mmcif(mmcif_file):
