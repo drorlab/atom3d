@@ -13,7 +13,10 @@ On sherlock, first create a conda environment:
 
 To install required packages:
 
-`make requirements`
+```
+conda activate atom3d
+make requirements
+```
 
 ## Sample usage
 
