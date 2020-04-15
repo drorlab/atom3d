@@ -1,4 +1,5 @@
 biopython
 click
+easy-parallel
 pandas
 scipy

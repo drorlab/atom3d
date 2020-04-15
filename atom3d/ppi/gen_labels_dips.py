@@ -1,8 +1,10 @@
 """Generate protein interfaces labels for DIPS dataset."""
 import logging
 import os
+import timeit
 
 import click
+import parallel as par
 
 import atom3d.ppi.gen_labels as gl
 import atom3d.util.datatypes as dt
@@ -18,17 +20,64 @@ import atom3d.util.file as fi
               type=click.Choice(['heavy', 'CA'], case_sensitive=False),
               help='How to compute distance between residues: CA is based on '
               'alpha-carbons, heavy is based on any heavy atom.')
-def gen_labels_dips(path_to_dips, cutoff, cutoff_type):
+@click.option('-n', '--num_threads', default=8,
+              help='Number of threads to use for parallel processing.')
+def gen_labels_dips(path_to_dips, cutoff, cutoff_type, num_threads):
     logging.basicConfig(format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
                         level=logging.INFO)
-    pdb_files = fi.find_files(path_to_dips, 'pdb*.gz')
-    print(len(pdb_files))
-    for f in pdb_files:
-        logging.info(f'{os.path.basename(f):}')
-        df = dt.bp_to_df(dt.read_pdb(f))
-        neighbors = gl.get_all_neighbors(
-            [df], [], cutoff, cutoff_type)
+    requested_files = fi.find_files(path_to_dips, 'pdb*.gz', relative=True)
+    requested_keys = set()
+    for f in requested_files:
+        requested_keys.add(f)
+
+    produced_files = fi.find_files(
+        path_to_dips, 'pdb*.gz.labels', relative=True)
+    produced_keys = set()
+    for f in produced_files:
+        produced_keys.add(os.path.splitext(f)[0])
+
+    work_keys = requested_keys.difference(produced_keys)
+    work_files = [os.path.join(path_to_dips, key) for key in work_keys]
+
+    logging.info(f'{len(requested_keys):} requested, '
+                 f'{len(produced_keys):} already produced, '
+                 f'{len(work_keys):} left to do.')
+
+    inputs = [(f, cutoff, cutoff_type) for f in work_files]
+
+    par.submit_jobs(_gen_labels_dips_single, inputs, num_threads)
+
+
+def _gen_labels_dips_single(f, cutoff, cutoff_type):
+    pdb_name = os.path.basename(f)
+    logging.info(f'Processing {f:}')
+
+    start_time = timeit.default_timer()
+    start_time_reading = timeit.default_timer()
+    df = dt.bp_to_df(dt.read_pdb(f))
+    elapsed_reading = timeit.default_timer() - start_time_reading
+
+    start_time_processing = timeit.default_timer()
+    # Keep only first model.
+    df = df[df['model'] == '1']
+    neighbors = gl.get_all_neighbors(
+        [df], [], cutoff, cutoff_type)
+    elapsed_processing = timeit.default_timer() - start_time_processing
+
+    start_time_writing = timeit.default_timer()
+    output_name = pdb_name + '.labels'
+    output_file = os.path.join(os.path.dirname(f), output_name)
+    neighbors.to_csv(output_file, index=False)
+    elapsed_writing = timeit.default_timer() - start_time_writing
+    elapsed = timeit.default_timer() - start_time
+
+    logging.info(
+        (f'For {len(neighbors):} neighbors extracted from {pdb_name:} '
+            f'spent {elapsed_reading:05.2f} reading, '
+            f'{elapsed_processing:05.2f} processing, '
+            f'{elapsed_writing:05.2f} writing, '
+            f'and {elapsed:05.2f} overall.'))
 
 
 if __name__ == "__main__":
