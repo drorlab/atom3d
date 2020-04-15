@@ -38,7 +38,8 @@ def gen_labels_main(input_pdbs, output_labels, bound_pdbs, cutoff,
 def get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
     """Given input dfs, and optionally bound dfs, generate neighbors."""
 
-    unbound_subunits, bound_subunits = _get_subunits(input_dfs, bound_dfs)
+    names, unbound_subunits, bound_subunits = \
+        _get_subunits(input_dfs, bound_dfs)
     # Extract neighboring pairs of residues.  These are defined as pairs of
     # residues that are close to one another while spanning different subunits.
     neighbors = []
@@ -76,7 +77,8 @@ def get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
 
 
 def get_all_negatives(input_dfs, bound_dfs, neighbors):
-    unbound_subunits, bound_subunits = _get_subunits(input_dfs, bound_dfs)
+    names, unbound_subunits, bound_subunits = \
+        _get_subunits(input_dfs, bound_dfs)
     for i in range(len(bound_subunits)):
         for j in range(i + 1, len(bound_subunits)):
             negatives = _get_negatives(neighbors,
@@ -92,6 +94,7 @@ def get_all_res(df):
 
 def _get_subunits(input_dfs, bound_dfs):
     """Extract subunits to define protein interfaces for."""
+    names = []
 
     if len(bound_dfs) > 0:
         # If bound pdbs are provided, we use their atoms to define which
@@ -115,6 +118,7 @@ def _get_subunits(input_dfs, bound_dfs):
             i_name = i_name[0]
             tmp = b.copy()
             tmp['structure'] = i_name
+            names.append(i_name)
             bound_subunits.append(tmp)
 
         unbound_subunits = input_dfs
@@ -124,10 +128,12 @@ def _get_subunits(input_dfs, bound_dfs):
         # that each individual chain is its own subunit we are trying to
         # predict interfaces for.
         df = pd.concat(input_dfs)
-        bound_subunits = \
-            [x for _, x in df.groupby(['structure', 'model', 'chain'])]
+        bound_subunits = []
+        for name, x in df.groupby(['structure', 'model', 'chain']):
+            names.append(name)
+            bound_subunits.append(x)
         unbound_subunits = bound_subunits
-    return unbound_subunits, bound_subunits
+    return names, unbound_subunits, bound_subunits
 
 
 def _get_negatives(neighbors, df0, df1):
