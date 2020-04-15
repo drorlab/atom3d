@@ -15,7 +15,8 @@ index_columns = ['structure', 'model', 'chain', 'residue']
 @click.command(help='Find neighbors for provided PDB files and output.')
 @click.argument('input_pdbs', nargs=-1, type=click.Path(exists=True))
 @click.argument('output_labels', type=click.Path())
-@click.option('-b', '--bound_pdbs', multiple=True, type=click.Path(exists=True),
+@click.option('-b', '--bound_pdbs', multiple=True,
+              type=click.Path(exists=True),
               help='If provided, use these PDB files to define the neighbors.')
 @click.option('-c', '--cutoff', type=int, default=8,
               help='Maximum distance (in angstroms), for two residues to be '
@@ -24,7 +25,8 @@ index_columns = ['structure', 'model', 'chain', 'residue']
               type=click.Choice(['heavy', 'CA'], case_sensitive=False),
               help='How to compute distance between residues: CA is based on '
               'alpha-carbons, heavy is based on any heavy atom.')
-def gen_labels_main(input_pdbs, output_labels, bound_pdbs, cutoff, cutoff_type):
+def gen_labels_main(input_pdbs, output_labels, bound_pdbs, cutoff,
+                    cutoff_type):
     input_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in input_pdbs]
     bound_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in bound_pdbs]
 
@@ -62,10 +64,10 @@ def get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
     _, res_to_idx = _get_idx_to_res_mapping(pd.concat(unbound_subunits))
     to_drop = []
     for i, neighbor in neighbors.iterrows():
-        res0 =  tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
-        res1 =  tuple(neighbor[['structure1', 'model1', 'chain1', 'residue1']])
+        res0 = tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
+        res1 = tuple(neighbor[['structure1', 'model1', 'chain1', 'residue1']])
         if res0 not in res_to_idx or res1 not in res_to_idx:
-           to_drop.append(i)
+            to_drop.append(i)
     logging.info(
         f'Removing {len(to_drop):} / {len(neighbors):} due to no matching '
         f'residue in unbound.')
@@ -86,7 +88,6 @@ def get_all_negatives(input_dfs, bound_dfs, neighbors):
 def get_all_res(df):
     """Get all residues."""
     return df[index_columns].drop_duplicates()
-
 
 
 def _get_subunits(input_dfs, bound_dfs):
@@ -135,8 +136,8 @@ def _get_negatives(neighbors, df0, df1):
     idx_to_res1, res_to_idx1 = _get_idx_to_res_mapping(df1)
     all_pairs = np.zeros((len(idx_to_res0.index), len(idx_to_res1.index)))
     for i, neighbor in neighbors.iterrows():
-        res0 =  tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
-        res1 =  tuple(neighbor[['structure1', 'model1', 'chain1', 'residue1']])
+        res0 = tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
+        res1 = tuple(neighbor[['structure1', 'model1', 'chain1', 'residue1']])
         idx0 = res_to_idx0[res0]
         idx1 = res_to_idx1[res1]
         all_pairs[idx0, idx1] = 1
