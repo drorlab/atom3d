@@ -36,17 +36,23 @@ def bp_to_df(bp):
         chain = residue.get_parent()
         model = chain.get_parent()
         df['structure'].append(bp._id)
-        df['model'].append(str(model.serial_num))
-        df['chain'].append(residue.get_full_id()[2])
-        df['residue'].append(str(atom.get_parent().get_id()[1]) +
-                             atom.get_parent().get_id()[2])
-        df['resname'].append(residue.get_resname())
-        df['x'].append(atom.get_coord()[0])
-        df['y'].append(atom.get_coord()[1])
-        df['z'].append(atom.get_coord()[2])
-        df['element'].append(atom.get_id()[0])
-        df['atom_name'].append(atom.get_name())
-        df['serial_number'].append(str(atom.serial_number))
+        df['model'].append(model.serial_num)
+        df['chain'].append(chain.id)
+        df['hetero'].append(residue.id[0])
+        df['insertion_code'].append(residue.id[2])
+        df['residue'].append(residue.id[1])
+        df['segid'].append(residue.segid)
+        df['resname'].append(residue.resname)
+        df['altloc'].append(atom.altloc)
+        df['occupancy'].append(atom.occupancy)
+        df['bfactor'].append(atom.bfactor)
+        df['x'].append(atom.coord[0])
+        df['y'].append(atom.coord[1])
+        df['z'].append(atom.coord[2])
+        df['element'].append(atom.element)
+        df['name'].append(atom.name)
+        df['fullname'].append(atom.fullname)
+        df['serial_number'].append(atom.serial_number)
     df = pd.DataFrame(df)
     return df
 
@@ -70,21 +76,18 @@ def df_to_bps(df_in):
             for (chain, c_atoms) in m_atoms.groupby(['chain']):
                 new_chain = Bio.PDB.Chain.Chain(chain)
                 for (residue, r_atoms) in c_atoms.groupby(['residue']):
-                    resname = r_atoms['resname'].unique()
-                    if len(resname) == 1:
-                        raise RuntimeError(
-                            'More than one resname in provided residue')
-                    resname = resname[0]
+                    # Take first atom as representative for residue values.
+                    rep = r_atoms.iloc[0]
                     new_residue = Bio.PDB.Residue.Residue(
-                        (' ', int(residue[:-1]), residue[-1]), resname, '')
+                        (rep['hetero'], rep['residue'], rep['altloc']), rep['resname'], rep['segid'])
                     for row, atom in r_atoms.iterrows():
                         new_atom = Bio.PDB.Atom.Atom(
-                            atom['atom_name'],
+                            atom['name'],
                             [atom['x'], atom['y'], atom['z']],
-                            1,
-                            1,
-                            ' ',
-                            atom['atom_name'],
+                            atom['bfactor'],
+                            atom['occupancy'],
+                            atom['altloc'],
+                            atom['fullname'],
                             atom['serial_number'],
                             atom['element'])
                         new_residue.add(new_atom)

@@ -1,6 +1,5 @@
 """Methods to extract protein interface labels from pdb file[s]."""
 import logging
-import os
 
 import click
 import numpy as np
@@ -159,8 +158,8 @@ def _get_idx_to_res_mapping(df):
 
 def _get_ca_neighbors(df0, df1, cutoff):
     """Get neighbors for alpha-carbon based distance."""
-    ca0 = df0[df0['atom_name'] == 'CA']
-    ca1 = df1[df1['atom_name'] == 'CA']
+    ca0 = df0[df0['name'] == 'CA']
+    ca1 = df1[df1['name'] == 'CA']
 
     dist = spa.distance.cdist(ca0[['x', 'y', 'z']], ca1[['x', 'y', 'z']])
     pairs = np.array(np.where(dist < cutoff)).T
