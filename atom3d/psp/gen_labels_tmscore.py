@@ -3,12 +3,12 @@ import logging
 import os
 import subprocess
 
-import atom3d.util.file as fi
 import numpy as np
 import pandas as pd
 import parallel as par
 
-import atom3d.psp.util
+import atom3d.psp.util as util
+import atom3d.util.file as fi
 
 
 def read_labels_tmscore(labels_dir):
@@ -35,6 +35,7 @@ def run_tmscore_per_structure(tmscore_exe, decoy, native):
     try:
         output = subprocess.check_output(
             "{:} {:} {:}".format(tmscore_exe, decoy, native),
+            universal_newlines=True,
             shell=True).split("\n")
         rmsd = float(output[14][-8:])
         tm, __, gdt_ts, gdt_ha = output[16:20]
@@ -48,19 +49,19 @@ def run_tmscore_per_structure(tmscore_exe, decoy, native):
         return None
 
 
-def run_tmscore_per_target(tmscore_exe, output_filename,
-                           target_name, target_dir):
+def run_tmscore_per_target(tmscore_exe, output_filename, target_name,
+                           target_dir, struct_format):
     '''
     Run TM-score to compare all decoy structures of a target with its
     native structure. Write the result into a tab-delimited file with
     the following headers:
         <target>  <decoy>  <rmsd>  <tm_score>  <gdt_ts>  <gdt_ha>
     '''
-    native = os.path.join(target_dir, '{:}.mmcif'.format(target_name))
-    decoys = fi.find_files(target_dir, 'mmcif')
+    native = os.path.join(target_dir, '{:}.{:}'.format(
+        target_name, struct_format))
+    decoys = fi.find_files(target_dir, struct_format)
     logging.info("Running tm-scores for {:} with {:} decoys".format(
         target_name, len(decoys)))
-
     rows = []
     for decoy in decoys:
         result = run_tmscore_per_structure(tmscore_exe, decoy, native)
@@ -70,32 +71,33 @@ def run_tmscore_per_target(tmscore_exe, output_filename,
             continue
         rmsd, tm, gdt_ts, gdt_ha = result
         rows.append([util.get_target_name(decoy), util.get_decoy_name(decoy),
-                     rmsd, tm, gdt_ts, gdt_ha])
-
+                     rmsd, gdt_ts, gdt_ha, tm])
     df = pd.DataFrame(
         rows,
-        columns=['target', 'decoy', 'rmsd', 'tm_score', 'gdt_ts', 'gdt_ha'])
-
-    list_df = df.rename(index=str, columns={'decoy_path': 'decoy'})
-    list_df.decoy = list_df.decoy.map(util.get_decoy_name)
-
+        columns=['target', 'decoy', 'rmsd', 'gdt_ts', 'gdt_ha', 'tm'])
+    df = df.sort_values(
+            ['rmsd', 'gdt_ts', 'gdt_ha', 'tm', 'decoy'],
+            ascending=[True, False, False, False, False]).reset_index(drop=True)
     # Write to file
     df.to_csv(output_filename, sep='\t', index=False)
 
 
 @click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
+@click.option('--struct_format', '-ext', default='pdb')
+@click.option('--labels_dir', '-labels', default='labels/scores') # Relative to data_dir
+@click.option('--target_list', '-target', default='targets.dat')  # Relative to data_dir
 @click.option('--num_cpus', '-c', default=1)
-@click.option('--labels_dir', '-labels', default='labels') # Relative to data_dir
-@click.option('--target_list', '-target', default='targets.dat') # Relative to data_dir
 @click.option('--overwrite', '-ow', is_flag=True)
 @click.option('--tmscore_exe', '-tm',
               default='/oak/stanford/groups/rondror/users/bjing/bin/TMscore')
-def main(data_dir, num_cpus, labels_dir, target_list, overwrite, tmscore_exe):
+def main(data_dir, struct_format, labels_dir, target_list,
+         num_cpus, overwrite, tmscore_exe):
     """ Compute rmsd, tm-score, gdt-ts, gdt-ha of decoy structures
     """
     logger = logging.getLogger(__name__)
-    logger.info("Compute rmsd, tm-score, gdt-ts, gdt-ha of the decoy datasets")
+    logger.info("Compute rmsd, tm-score, gdt-ts, gdt-ha of decoys in {:}".format(
+        data_dir))
 
     labels_path = os.path.join(data_dir, labels_dir)
     with open(os.path.join(data_dir, target_list), 'r') as f:
@@ -115,7 +117,8 @@ def main(data_dir, num_cpus, labels_dir, target_list, overwrite, tmscore_exe):
             continue
         target_name = util.get_target_name(filename)
         target_dir = os.path.join(data_dir, target_name)
-        inputs.append((tmscore_exe, filename, target_name, target_dir))
+        inputs.append((tmscore_exe, filename, target_name,
+                       target_dir, struct_format))
 
     logger.info("{:} work keys".format(len(inputs)))
     par.submit_jobs(run_tmscore_per_target, inputs, num_cpus)

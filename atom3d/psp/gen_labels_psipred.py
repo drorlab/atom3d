@@ -12,7 +12,7 @@ import parallel as par
 
 def __subprocess_run(cmd):
     try:
-        return subprocess.check_output(
+        subprocess.check_output(
             "{:} {:} {:}".format(tmscore_exe, decoy, native),
             shell=True)
     except Exception e:
