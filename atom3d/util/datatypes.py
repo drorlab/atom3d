@@ -139,7 +139,7 @@ def df_to_bps(df_in):
     return all_structures
 
 
-def bp_from_xyz(data,struct_name='structure'):
+def bp_from_xyz_dict(data,struct_name='structure'):
     """Construct a biopython structure from xyz data (stored in a dict)."""
     # Read info from dictionary
     elements = data['elements']
