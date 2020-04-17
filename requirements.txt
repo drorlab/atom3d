@@ -1,5 +1,7 @@
 biopython
 click
 easy-parallel
+numpy
 pandas
 scipy
+tqdm
