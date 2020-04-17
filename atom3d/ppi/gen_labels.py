@@ -38,8 +38,7 @@ def gen_labels_main(input_pdbs, output_labels, bound_pdbs, cutoff,
 def get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
     """Given input dfs, and optionally bound dfs, generate neighbors."""
 
-    names, unbound_subunits, bound_subunits = \
-        _get_subunits(input_dfs, bound_dfs)
+    names, unbound_subunits, bound_subunits = subunits(input_dfs, bound_dfs)
     # Extract neighboring pairs of residues.  These are defined as pairs of
     # residues that are close to one another while spanning different subunits.
     neighbors = []
@@ -77,8 +76,7 @@ def get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
 
 
 def get_all_negatives(input_dfs, bound_dfs, neighbors):
-    names, unbound_subunits, bound_subunits = \
-        _get_subunits(input_dfs, bound_dfs)
+    names, unbound_subunits, bound_subunits = subunits(input_dfs, bound_dfs)
     for i in range(len(bound_subunits)):
         for j in range(i + 1, len(bound_subunits)):
             negatives = _get_negatives(neighbors,
@@ -92,7 +90,7 @@ def get_all_res(df):
     return df[index_columns].drop_duplicates()
 
 
-def _get_subunits(input_dfs, bound_dfs):
+def subunits(input_dfs, bound_dfs):
     """Extract subunits to define protein interfaces for."""
     names = []
 
