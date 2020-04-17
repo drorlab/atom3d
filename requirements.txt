@@ -3,3 +3,5 @@ click
 easy-parallel
 pandas
 scipy
+tqdm
+argparse
