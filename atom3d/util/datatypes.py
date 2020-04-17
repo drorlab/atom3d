@@ -36,6 +36,38 @@ def write_mmcif(out_file, structure):
     return
 
 
+def read_xyz(filename):
+    """Read GDB9-style xyz file."""
+    with open(filename) as xyzfile:
+        # Extract number of atoms
+        num_at = int(xyzfile.readline())
+        #print('Reading file', filename, 'with', num_at, 'atoms.')
+        # Read header
+        header = xyzfile.readline()
+        # Initialize lists, arrays
+        elements    = []
+        charges     = np.zeros(num_at)
+        coordinates = np.zeros([num_at,3])
+        # Iterate through all atoms and read info
+        for i in range(num_at):
+            line = xyzfile.readline()
+            el,x,y,z,q = line.split()
+            elements.append(el)
+            charges[i] = q
+            coordinates[i] = np.array([x,y,z],dtype=float)
+        # Read footer  
+        footer = xyzfile.readline()
+        # Read SMILES and InChi
+        smiles1, smiles2 = xyzfile.readline().split()
+        inchi1,  inchi2  = xyzfile.readline().split()
+    # Construct the dictionary
+    data = {'smiles':smiles1, 'inchi':inchi1, 
+            'header':header, 'footer':footer, 
+            'elements':elements, 'charges':charges, 
+            'coordinates':coordinates}
+    return data
+
+
 def bp_to_df(bp):
     """Convert biopython representation to pandas dataframe representation."""
     df = col.defaultdict(list)
