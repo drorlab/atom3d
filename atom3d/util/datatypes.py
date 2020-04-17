@@ -137,3 +137,45 @@ def df_to_bps(df_in):
             new_structure.add(new_model)
         all_structures.append(new_structure)
     return all_structures
+
+
+def bp_from_xyz(data,struct_name='structure'):
+    """Construct a biopython structure from xyz data (stored in a dict)."""
+    # Read info from dictionary
+    elements = data['elements']
+    charges = data['charges']
+    coordinates = data['coordinates']
+    # Create a residue
+    # (each small molecule is counted as just one residue)
+    r = Bio.PDB.Residue.Residue((' ',1,' '),'res',0)
+    # Iterate through all atoms and collect info
+    for i in range(len(charges)):
+        atom_name = elements[i]+str(i)
+        position  = coordinates[i]
+        full_name = elements[i]+str(i)
+        b_factor  = 0.0
+        occupancy = 1.0
+        alt_loc   = ' '
+        serial_n  = i
+        element   = elements[i]
+        # Create an atom with the provided information
+        a = Bio.PDB.Atom.Atom(atom_name, 
+                              position, 
+                              b_factor, 
+                              occupancy, 
+                              alt_loc, 
+                              full_name, 
+                              serial_n, 
+                              element=element)
+        # Add the atom to the residue
+        r.add(a)
+    # Create one chain and add the residue
+    c = Bio.PDB.Chain.Chain('A')
+    c.add(r)
+    # Create one model and add the chain
+    m = Bio.PDB.Model.Model(0)
+    m.add(c)
+    # Create one structure and add the model
+    s = Bio.PDB.Structure.Structure(struct_name)
+    s.add(m)
+    return s
