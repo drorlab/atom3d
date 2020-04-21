@@ -28,6 +28,14 @@ def read_mmcif(mmcif_file):
     return parser.get_structure(os.path.basename(mmcif_file), mmcif_file)
 
 
+def write_pdb(out_file, structure):
+    """Write a biopython structure to a pdb file."""
+    io = Bio.PDB.PDBIO()
+    io.set_structure(structure)
+    io.save(out_file)
+    return
+
+
 def write_mmcif(out_file, structure):
     """Write a biopython structure to an mmcif file."""
     io = Bio.PDB.MMCIFIO()
