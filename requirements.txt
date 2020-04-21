@@ -6,3 +6,4 @@ pandas
 scipy
 tqdm
 argparse
+sklearn
