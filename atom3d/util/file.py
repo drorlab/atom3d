@@ -10,9 +10,9 @@ def find_files(path, suffix, relative=None):
     Optionally can specify path we want to perform the find relative to.
     """
     if not relative:
-        find_cmd = "find {:} -name '*.{:}'".format(path, suffix)
+        find_cmd = "find {:} -regex '.*\.{:}'".format(path, suffix)
     else:
-        find_cmd = "cd {:}; find . -name '*.{:}' | cut -d '/' -f 2-" \
+        find_cmd = "cd {:}; find . -regex '.*\.{:}' | cut -d '/' -f 2-" \
             .format(path, suffix)
     out = subprocess.Popen(
         find_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,

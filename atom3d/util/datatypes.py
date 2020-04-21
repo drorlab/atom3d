@@ -5,6 +5,7 @@ import os
 
 import Bio.PDB
 import pandas as pd
+import numpy as np
 
 
 def read_pdb(pdb_file):
@@ -42,6 +43,38 @@ def write_mmcif(out_file, structure):
     io.set_structure(structure)
     io.save(out_file)
     return
+
+
+def read_xyz(filename):
+    """Read GDB9-style xyz file."""
+    with open(filename) as xyzfile:
+        # Extract number of atoms
+        num_at = int(xyzfile.readline())
+        #print('Reading file', filename, 'with', num_at, 'atoms.')
+        # Read header
+        header = xyzfile.readline()
+        # Initialize lists, arrays
+        elements    = []
+        charges     = np.zeros(num_at)
+        coordinates = np.zeros([num_at,3])
+        # Iterate through all atoms and read info
+        for i in range(num_at):
+            line = xyzfile.readline()
+            el,x,y,z,q = line.split()
+            elements.append(el)
+            charges[i] = q
+            coordinates[i] = np.array([x,y,z],dtype=float)
+        # Read footer  
+        footer = xyzfile.readline()
+        # Read SMILES and InChi
+        smiles1, smiles2 = xyzfile.readline().split()
+        inchi1,  inchi2  = xyzfile.readline().split()
+    # Construct the dictionary
+    data = {'smiles':smiles1, 'inchi':inchi1, 
+            'header':header, 'footer':footer, 
+            'elements':elements, 'charges':charges, 
+            'coordinates':coordinates}
+    return data
 
 
 def bp_to_df(bp):
@@ -113,3 +146,45 @@ def df_to_bps(df_in):
             new_structure.add(new_model)
         all_structures.append(new_structure)
     return all_structures
+
+
+def bp_from_xyz_dict(data,struct_name='structure'):
+    """Construct a biopython structure from xyz data (stored in a dict)."""
+    # Read info from dictionary
+    elements = data['elements']
+    charges = data['charges']
+    coordinates = data['coordinates']
+    # Create a residue
+    # (each small molecule is counted as just one residue)
+    r = Bio.PDB.Residue.Residue((' ',1,' '),'res',0)
+    # Iterate through all atoms and collect info
+    for i in range(len(charges)):
+        atom_name = elements[i]+str(i)
+        position  = coordinates[i]
+        full_name = elements[i]+str(i)
+        b_factor  = 0.0
+        occupancy = 1.0
+        alt_loc   = ' '
+        serial_n  = i
+        element   = elements[i]
+        # Create an atom with the provided information
+        a = Bio.PDB.Atom.Atom(atom_name, 
+                              position, 
+                              b_factor, 
+                              occupancy, 
+                              alt_loc, 
+                              full_name, 
+                              serial_n, 
+                              element=element)
+        # Add the atom to the residue
+        r.add(a)
+    # Create one chain and add the residue
+    c = Bio.PDB.Chain.Chain('A')
+    c.add(r)
+    # Create one model and add the chain
+    m = Bio.PDB.Model.Model(0)
+    m.add(c)
+    # Create one structure and add the model
+    s = Bio.PDB.Structure.Structure(struct_name)
+    s.add(m)
+    return s

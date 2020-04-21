@@ -26,16 +26,12 @@ def gen_labels_dips(path_to_dips, cutoff, cutoff_type, num_threads):
     logging.basicConfig(format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
                         level=logging.INFO)
-    requested_files = fi.find_files(path_to_dips, 'pdb*.gz', relative=True)
-    requested_keys = set()
-    for f in requested_files:
-        requested_keys.add(f)
+    requested_files = fi.find_files(path_to_dips, 'mmcif', relative=True)
+    requested_keys = set([os.path.splitext(x)[0] for x in requested_files])
 
     produced_files = fi.find_files(
-        path_to_dips, 'pdb*.gz.labels', relative=True)
-    produced_keys = set()
-    for f in produced_files:
-        produced_keys.add(os.path.splitext(f)[0])
+        path_to_dips, 'labels', relative=True)
+    produced_keys = set([os.path.splitext(x)[0] for x in produced_files])
 
     work_keys = requested_keys.difference(produced_keys)
     work_files = [os.path.join(path_to_dips, key) for key in work_keys]
@@ -55,19 +51,18 @@ def _gen_labels_dips_single(f, cutoff, cutoff_type):
 
     start_time = timeit.default_timer()
     start_time_reading = timeit.default_timer()
-    df = dt.bp_to_df(dt.read_pdb(f))
+    df = dt.bp_to_df(dt.read_mmcif(f + '.mmcif'))
     elapsed_reading = timeit.default_timer() - start_time_reading
 
     start_time_processing = timeit.default_timer()
     # Keep only first model.
-    df = df[df['model'] == '1']
+    df = df[df['model'] == 1]
     neighbors = gl.get_all_neighbors(
         [df], [], cutoff, cutoff_type)
     elapsed_processing = timeit.default_timer() - start_time_processing
 
     start_time_writing = timeit.default_timer()
-    output_name = pdb_name + '.labels'
-    output_file = os.path.join(os.path.dirname(f), output_name)
+    output_file = f + '.labels'
     neighbors.to_csv(output_file, index=False)
     elapsed_writing = timeit.default_timer() - start_time_writing
     elapsed = timeit.default_timer() - start_time
