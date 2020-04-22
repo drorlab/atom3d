@@ -4,6 +4,8 @@ import gzip
 import os
 
 import Bio.PDB
+from rdkit import Chem
+
 import pandas as pd
 import numpy as np
 
@@ -188,3 +190,33 @@ def bp_from_xyz_dict(data,struct_name='structure'):
     s = Bio.PDB.Structure.Structure(struct_name)
     s.add(m)
     return s
+
+
+def read_sdf_to_mol(sdf_file):
+    
+    suppl = Chem.SDMolSupplier(sdf_file)
+    molecules = [mol for mol in suppl]
+    
+    return molecules
+
+
+def get_coordinates_of_conformer(mol):
+    """Reads the coordinates of the conformer
+    
+    Args:
+        mol (Mol): Molecule in RDKit format.
+        
+    Returns:
+        xyz (float array): Coordinates      
+        
+    """
+        
+    symb = [a.GetSymbol() for a in mol.GetAtoms()]
+    conf = mol.GetConformer() 
+    xyz  = np.empty([mol.GetNumAtoms(),3])
+        
+    for ia, name in enumerate(symb): 
+        position = conf.GetAtomPosition(ia)
+        xyz[ia]  = np.array([position.x, position.y, position.z])
+    
+    return xyz
