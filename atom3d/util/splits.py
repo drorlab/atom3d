@@ -1,4 +1,5 @@
 # Splits data into test, validation, and training sets.
+import numpy as np
 
 def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shuffle=True,random_seed=None):
     """Creates data indices for training and validation splits.
