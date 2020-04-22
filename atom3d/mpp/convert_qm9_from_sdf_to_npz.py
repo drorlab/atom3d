@@ -25,7 +25,7 @@ class MoleculesDataset():
         
         df = pd.read_csv(csv_file)
         self.raw_data = [ df[col] for col in df.keys() ]
-        self.raw_mols = dt.read_sdf_to_mol(sdf_file)
+        self.raw_mols = dt.read_sdf_to_mol(sdf_file, sanitize=False)
         
         # Simple sanity check:
         # Is the number of molecules the same in both files?
@@ -190,6 +190,6 @@ if __name__ == "__main__":
     qm9_sdf = 'qm9/qm9_from_moleculenet/gdb9.sdf'
     qm9_csv = 'qm9/qm9_from_moleculenet/gdb9.sdf.csv'
     qm9_npz = 'qm9/qm9_npz'
-    ds = convert_sdfcsv_to_npz(qm9_csv, qm9_sdf, qm9_npz, split_indices=None):
+    ds = convert_sdfcsv_to_npz(qm9_csv, qm9_sdf, qm9_npz, split_indices=None)
 
 
