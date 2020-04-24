@@ -41,6 +41,7 @@ def map_clusters(data):
             clusters[c].append(data.loc[i, 'pdb'])
     return clusters
 
+# TODO: automate cluster combinations to make roughly even-sized splits, even with different input data
 def combine_clusters(clusters):
     combined_clusters = {1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[]}
     curr = 9
@@ -102,7 +103,7 @@ def time_split(data, identity=None, write_to_file=False):
     return train_pdbs, val_pdbs, test_pdbs
 
 
-def core_split(data, core_pdbs, cv_method, write_to_file=False):
+def core_split(data, core_pdbs, cv_method, identity, write_to_file=False):
     test = data[[p in core_pdbs for p in data.pdb]]
     train = data[[p not in core_pdbs for p in data.pdb]]
     print(f'{len(train)} train, {len(test)} test examples')
@@ -115,18 +116,22 @@ def core_split(data, core_pdbs, cv_method, write_to_file=False):
             train_pdbs = train.iloc[train_idx,:].pdb
             val_pdbs = train.iloc[val_idx,:].pdb
             cv_splits.append((train_pdbs,val_pdbs))
-    
+        if write_to_file:
+            for i, (train_pdbs, val_pdbs) in enumerate(cv_splits):
+                train_pdbs.to_csv(f'splits/core_split/train_{cv_method}_cv{i}.txt', index=False, header=False)
+                val_pdbs.to_csv(f'splits/core_split/val_{cv_method}_cv{i}.txt', index=False, header=False)
+            test.pdb.to_csv(f'splits/core_split/test.txt', index=False, header=False)
+
     elif cv_method == 'cluster':
         print('splitting into 10 folds by cluster...')
         clusters = map_clusters(train)
         combined_clusters = combine_clusters(clusters)
         cv_splits = cluster_cv(train, combined_clusters)
-    
-    if write_to_file:
-        for i, (train_pdbs, val_pdbs) in enumerate(cv_splits):
-            train_pdbs.to_csv(f'splits/core_split/train_{cv_method}_cv{i}.txt', index=False, header=False)
-            val_pdbs.to_csv(f'splits/core_split/val_{cv_method}_cv{i}.txt', index=False, header=False)
-        test.pdb.to_csv(f'splits/core_split/test.txt', index=False, header=False)
+        if write_to_file:
+            for i, (train_pdbs, val_pdbs) in enumerate(cv_splits):
+                train_pdbs.to_csv(f'splits/core_split/train_{cv_method}{identity}_cv{i}.txt', index=False, header=False)
+                val_pdbs.to_csv(f'splits/core_split/val_{cv_method}{identity}_cv{i}.txt', index=False, header=False)
+            test.pdb.to_csv(f'splits/core_split/test.txt', index=False, header=False)
     
     return cv_splits
 
@@ -147,7 +152,7 @@ def main(split, datapath, cv_method, identity, write_to_file):
     elif split == 'core':
         with open(os.path.join(datapath, 'core_pdbs.txt')) as f:
             core_pdbs = f.read().splitlines()
-        cv_splits = core_split(refined_set, core_pdbs, cv_method, write_to_file)
+        cv_splits = core_split(refined_set, core_pdbs, cv_method, identity, write_to_file)
     
     elif split == 'cluster':
         cv_splits = cluster_split(refined_set, write_to_file)
@@ -159,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument('split', type=str, help='split type. can be "time", "core"')
     parser.add_argument('datapath', type=str, help='directory where PDBBind is located')
     parser.add_argument('--cv_method', type=str, default='random', help='cross-validation strategy, either "random" or "clustered". Default: random')
-    parser.add_argument('--identity', type=int, default=None, help='sequence identity cutoff for splitting. Must be used with --cv_method=cluster Default: none')
+    parser.add_argument('--identity', type=int, default=None, help='sequence identity cutoff for splitting. Must be used if --cv_method=cluster. Default: none')
     parser.add_argument('--write_to_file', action='store_true', help='write the split pdbs to files (T/F)')
     args = parser.parse_args()
     if args.identity and args.identity not in [30,40,50,70,90,95,100]:

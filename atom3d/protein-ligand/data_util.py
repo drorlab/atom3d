@@ -13,10 +13,21 @@ def get_ligand(ligfile):
     lig = Chem.RemoveHs(lig)
     return lig
 
+def get_sequence(pdb_file):
+    """
+    Returns list of chain sequences from PDB file
+    """
+#     fname = os.path.join(path, pdb, pdb + '_protein.pdb')
+    seqs = []
+    for seq in SeqIO.parse(pdb_file, 'pdb-atom'):
+        seqs.append(str(seq.seq))
+    return list(set(seqs))
+
 def pairwise_identity(sequences):
     """
     Sequences is a list of sequences returned by get_sequence, so each item is a list of at least one sequence.
     Returns maximum ID between sets of sequences
+    WARNING: THIS FUNCTION IS REALLY SLOW. Not practical for large datasets – use pre-clustered PDB instead (see get_pdb_clusters)
     """
     id_mat = np.zeros((len(sequences), len(sequences)))
     for i in tqdm(range(len(sequences))):
@@ -58,10 +69,10 @@ def get_pdb_clusters(id_level):
                 pdb2cluster[pdb].add(i)
                 cluster2pdb[i].add(pdb)
             
-    for pdb, clust in pdb2cluster.items():
-        pdb2cluster[pdb] = list(clust)
-    for clust, pdb in cluster2pdb.items():
-        cluster2pdb[clust] = list(pdb)
+#     for pdb, clust in pdb2cluster.items():
+#         pdb2cluster[pdb] = list(clust)
+#     for clust, pdb in cluster2pdb.items():
+#         cluster2pdb[clust] = list(pdb)
     
     os.system(f'rm bc-{id_level}.out')
     
