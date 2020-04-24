@@ -12,19 +12,21 @@ import numpy as np
 
 
 patterns = {
-    'pdb': re.compile('pdb[0-9]*$'),
-    'pdb.gz': re.compile('pdb[0-9]*\.gz$'),
-    'mmcif': re.compile('mmcif$')
+    'pdb': 'pdb[0-9]*$',
+    'pdb.gz': 'pdb[0-9]*\.gz$',
+    'mmcif': 'mmcif$'
 }
+
+_regexes = {k: re.compile(v) for k, v in patterns.items()}
 
 
 def read_any(f):
     """Read file into biopython structure."""
-    if patterns['pdb'].match(f):
+    if _regexes['pdb'].search(f):
         return read_pdb(f)
-    elif patterns['pdb.gz'].match(f):
+    elif _regexes['pdb.gz'].search(f):
         return read_pdb_gz(f)
-    elif patterns['mmcif'].match(f):
+    elif _regexes['mmcif'].search(f):
         return read_mmcif(f)
     else:
         raise ValueError(f"Unrecognized filetype for {f:}")
