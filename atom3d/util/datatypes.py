@@ -2,6 +2,7 @@
 import collections as col
 import gzip
 import os
+import re
 
 import Bio.PDB
 from rdkit import Chem
@@ -10,18 +11,38 @@ import pandas as pd
 import numpy as np
 
 
+patterns = {
+    'pdb': re.compile('pdb[0-9]*$'),
+    'pdb.gz': re.compile('pdb[0-9]*\.gz$'),
+    'mmcif': re.compile('mmcif$')
+}
+
+
+def read_any(f):
+    """Read file into biopython structure."""
+    if patterns['pdb'].match(f):
+        return read_pdb(f)
+    elif patterns['pdb.gz'].match(f):
+        return read_pdb_gz(f)
+    elif patterns['mmcif'].match(f):
+        return read_mmcif(f)
+    else:
+        raise ValueError(f"Unrecognized filetype for {f:}")
+
+
+def read_pdb_gz(pdb_gz_file):
+    name = os.path.basename(pdb_gz_file)
+    parser = Bio.PDB.PDBParser(QUIET=True)
+    bp = parser.get_structure(
+        name, gzip.open(pdb_gz_file, mode='rt', encoding='latin1'))
+    return bp
+
+
 def read_pdb(pdb_file):
     """Load pdb file in to biopython representation."""
-    parser = Bio.PDB.PDBParser(QUIET=True)
-    _, ext = os.path.splitext(pdb_file)
     name = os.path.basename(pdb_file)
-    if ext == ".gz":
-        bp = parser.get_structure(
-            name, gzip.open(pdb_file, mode='rt', encoding='latin1'))
-    elif ".pdb" in ext:
-        bp = parser.get_structure(name, pdb_file)
-    else:
-        raise ValueError("Unrecognized filetype " + pdb_file)
+    parser = Bio.PDB.PDBParser(QUIET=True)
+    bp = parser.get_structure(name, pdb_file)
     return bp
 
 
@@ -31,11 +52,11 @@ def read_mmcif(mmcif_file):
     return parser.get_structure(os.path.basename(mmcif_file), mmcif_file)
 
 
-def write_pdb(out_file, structure):
+def write_pdb(out_file, structure, **kwargs):
     """Write a biopython structure to a pdb file."""
     io = Bio.PDB.PDBIO()
     io.set_structure(structure)
-    io.save(out_file)
+    io.save(out_file, **kwargs)
     return
 
 
@@ -66,15 +87,15 @@ def read_xyz(filename):
             elements.append(el)
             charges[i] = q
             coordinates[i] = np.array([x,y,z],dtype=float)
-        # Read footer  
+        # Read footer
         footer = xyzfile.readline()
         # Read SMILES and InChi
         smiles1, smiles2 = xyzfile.readline().split()
         inchi1,  inchi2  = xyzfile.readline().split()
     # Construct the dictionary
-    data = {'smiles':smiles1, 'inchi':inchi1, 
-            'header':header, 'footer':footer, 
-            'elements':elements, 'charges':charges, 
+    data = {'smiles':smiles1, 'inchi':inchi1,
+            'header':header, 'footer':footer,
+            'elements':elements, 'charges':charges,
             'coordinates':coordinates}
     return data
 
@@ -170,13 +191,13 @@ def bp_from_xyz_dict(data,struct_name='structure'):
         serial_n  = i
         element   = elements[i]
         # Create an atom with the provided information
-        a = Bio.PDB.Atom.Atom(atom_name, 
-                              position, 
-                              b_factor, 
-                              occupancy, 
-                              alt_loc, 
-                              full_name, 
-                              serial_n, 
+        a = Bio.PDB.Atom.Atom(atom_name,
+                              position,
+                              b_factor,
+                              occupancy,
+                              alt_loc,
+                              full_name,
+                              serial_n,
                               element=element)
         # Add the atom to the residue
         r.add(a)
@@ -193,30 +214,30 @@ def bp_from_xyz_dict(data,struct_name='structure'):
 
 
 def read_sdf_to_mol(sdf_file,sanitize=True):
-    
+
     suppl = Chem.SDMolSupplier(sdf_file,sanitize=sanitize)
     molecules = [mol for mol in suppl]
-    
+
     return molecules
 
 
 def get_coordinates_of_conformer(mol):
     """Reads the coordinates of the conformer
-    
+
     Args:
         mol (Mol): Molecule in RDKit format.
-        
+
     Returns:
-        xyz (float array): Coordinates      
-        
+        xyz (float array): Coordinates
+
     """
-        
+
     symb = [a.GetSymbol() for a in mol.GetAtoms()]
-    conf = mol.GetConformer() 
+    conf = mol.GetConformer()
     xyz  = np.empty([mol.GetNumAtoms(),3])
-        
-    for ia, name in enumerate(symb): 
+
+    for ia, name in enumerate(symb):
         position = conf.GetAtomPosition(ia)
         xyz[ia]  = np.array([position.x, position.y, position.z])
-    
+
     return xyz
