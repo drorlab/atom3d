@@ -220,13 +220,13 @@ def identity_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_i
     return train_set, val_set, test_set
 
 
-def find_similar(query_pdb, blast_db, cutoff):
+def find_similar(query_pdb, blast_db, cutoff, dataset_size):
     """
     Find all other pdbs that have sequence identity greater than cutoff.
     """
     sim = set()
     for chain, seq in get_chain_sequences(query_pdb):
-        blastp_cline = NcbiblastpCommandline(db=blast_db, outfmt="10 nident sacc", num_alignments=len(pdb_dataset))
+        blastp_cline = NcbiblastpCommandline(db=blast_db, outfmt="10 nident sacc", num_alignments=dataset_size)
         out, err = blastp_cline(stdin=seq)
         
         for res in out.split():
@@ -244,12 +244,13 @@ def create_identity_split(pdb_files, pdb_ids, cutoff, split_size, min_fam_in_spl
     Create a split while retaining diversity specified by min_fam_in_split. 
     Returns split and removes any pdbs in this split from the remaining dataset
     """
+    dataset_size = len(pdb_files)
     split = set()
     idx = 0
     while len(split) < split_size:
         rand_pdb = pdb_files[idx]
         split.add(pdb_ids[idx])
-        hits = find_similar(rand_pdb, 'blast_db', cutoff)
+        hits = find_similar(rand_pdb, 'blast_db', cutoff, dataset_size)
         # ensure that at least min_fam_in_split families in each split
         if len(hits) > split_size / min_fam_in_split:
             idx +=1
