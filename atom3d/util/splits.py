@@ -1,3 +1,11 @@
+import numpy as np
+import subprocess
+import os
+from Bio.Blast.Applications import NcbiblastpCommandline
+from Bio import SeqIO
+from datatypes import *
+
+
 # Splits data into test, validation, and training sets.
 
 def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shuffle=True,random_seed=None):
@@ -40,3 +48,265 @@ def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shu
         
     return indices_test, indices_vali, indices_train
 
+####################################
+# split by pre-clustered sequence 
+# identity clusters from PDB
+####################################
+
+def cluster_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_in_split=5, random_seed=None):
+    """
+    Splits pdb dataset into train, validation, and test using pre-computed sequence identity clusters from PDB
+    
+    Args:
+        pdb_dataset (str[]): list of pdb files in dataset
+        cutoff (float): sequence identity cutoff (can be .3, .4, .5, .7, .9, .95, 1.0)
+        val_split (float): fraction of data used for validation. Default: 0.1
+        test_split (float): fraction of data used for testing. Default: 0.1
+        min_fam_in_split (int): controls variety of val/test sets. Default: 5
+        random_seed (int):  specifies random seed for shuffling. Default: None
+    
+    Returns:
+        train_set (str[]):  pdbs in the train set
+        val_set (str[]):  pdbs in the validation set
+        test_set (str[]): pdbs in the test set
+        
+    """
+    if random_seed is not None:
+        np.random.seed(random_seed)
+        
+    n = len(pdb_dataset)
+    test_size = n * test_split
+    val_size = n * val_split
+    max_hit_size_test = test_size / min_fam_in_split
+    max_hit_size_val = val_size / min_fam_in_split
+    
+    np.random.shuffle(pdb_dataset)
+    pdb_ids = [os.path.basename(p).rstrip('.pdb')[:4] for p in pdb_dataset]
+    
+    clusterings = get_pdb_clusters(cutoff, pdb_ids)
+    
+    print('generating validation set...')
+    val_set, pdb_dataset, pdb_ids = create_cluster_split(pdb_dataset, pdb_ids, clusterings, cutoff, val_size, min_fam_in_split)
+    print('generating test set...')
+    test_set, pdb_dataset, pdb_ids = create_cluster_split(pdb_dataset, pdb_ids, clusterings, cutoff, test_size, min_fam_in_split)
+    train_set = set(pdb_ids)
+    
+    print('train size', len(train_set))
+    print('val size', len(val_set))
+    print('test size', len(test_set))
+    
+    return train_set, val_set, test_set
+
+
+def get_pdb_clusters(id_level, pdb_ids=None):
+    """
+    Downloads pre-calculated clusters from PDB at given cutoff. 
+    Returns dictionaries mapping PDB IDs to cluster IDs and vice versa.
+    """
+    id_level = int(id_level * 100)
+    if id_level not in [30,40,50,70,90,95,100]:
+        raise Exception('invalid invalid identity cutoff. possible values = 30,40,50,70,90,95,100')
+    print('getting clusters from PDB...')
+    subprocess.call('wget ftp://resources.rcsb.org/sequence/clusters/bc-{}.out'.format(id_level), shell=True)
+    pdb2cluster = {}
+    cluster2pdb = {}
+    with open(f'bc-{id_level}.out') as f:
+        for i, line in enumerate(f):
+            cluster2pdb[i] = set()
+            pdbs = line.strip().split()
+            pdbs = [p[:4].lower() for p in pdbs]
+            for pdb in pdbs:
+                if pdb_ids is not None and pdb not in pdb_ids:
+                    continue
+                if pdb not in pdb2cluster:
+                    pdb2cluster[pdb] = set()
+                pdb2cluster[pdb].add(i)
+                cluster2pdb[i].add(pdb)
+    
+    os.system(f'rm bc-{id_level}.out')
+    
+    return pdb2cluster, cluster2pdb
+
+
+def find_cluster_members(pdb, clusterings):
+    """
+    Find all other pdbs that co-occur in a cluster with a given pdb
+    """
+    pdb2cluster, cluster2pdb = clusterings
+    clusters = pdb2cluster[pdb]
+    all_pdbs = set()
+    for clust in clusters:
+        pdbs = cluster2pdb[clust]
+        all_pdbs = all_pdbs.union(pdbs)
+    return all_pdbs
+
+def create_cluster_split(pdb_files, pdb_ids, clusterings, cutoff, split_size, min_fam_in_split):
+    """
+    Create a split while retaining diversity specified by min_fam_in_split. 
+    Returns split and removes any pdbs in this split from the remaining dataset
+    """
+    split = set()
+    idx = 0
+    while len(split) < split_size:
+        rand_pdb = pdb_ids[idx]
+        split.add(pdb_ids[idx])
+        hits = find_cluster_members(rand_pdb, clusterings)
+        # ensure that at least min_fam_in_split families in each split
+        if len(hits) > split_size / min_fam_in_split:
+            idx +=1
+            continue
+        split = split.union(hits)
+        idx += 1
+    
+    for hit in split:
+        loc = pdb_ids.index(hit)
+        pdb_files.pop(loc)
+        pdb_ids.pop(loc)
+    
+    return split, pdb_files, pdb_ids
+
+
+####################################
+# split by calculating sequence identity 
+# to any example in training set
+####################################
+
+def identity_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_in_split=5, blast_db=None, random_seed=None):
+    """
+    Splits pdb dataset into train, validation, and test using pre-computed sequence identity clusters from PDB
+    
+    Args:
+        pdb_dataset (str[]): list of pdb files in dataset
+        cutoff (float): sequence identity cutoff (can be .3, .4, .5, .7, .9, .95, 1.0)
+        val_split (float): fraction of data used for validation. Default: 0.1
+        test_split (float): fraction of data used for testing. Default: 0.1
+        min_fam_in_split (int): controls variety of val/test sets. Default: 5
+        blast_db (str): location of pre-computed BLAST DB for dataset. If None, compute and save in 'blast_db'. Default: None
+        random_seed (int):  specifies random seed for shuffling. Default: None
+    
+    Returns:
+        train_set (str[]):  pdbs in the train set
+        val_set (str[]):  pdbs in the validation set
+        test_set (str[]): pdbs in the test set
+        
+    """
+    if blast_db is None:
+        write_pdb_dataset_to_blast_db(pdb_dataset, 'blast_db')
+        blast_db = 'blast_db'
+        
+    if random_seed is not None:
+        np.random.seed(random_seed)
+        
+    n = len(pdb_dataset)
+    test_size = n * test_split
+    val_size = n * val_split
+    max_hit_size_test = test_size / min_fam_in_split
+    max_hit_size_val = val_size / min_fam_in_split
+    
+    np.random.shuffle(pdb_dataset)
+    pdb_ids = [os.path.basename(p).rstrip('.pdb')[:4] for p in pdb_dataset]
+    
+    print('generating validation set...')
+    val_set, pdb_dataset, pdb_ids = create_identity_split(pdb_dataset, pdb_ids, cutoff, val_size, min_fam_in_split)
+    print('generating test set...')
+    test_set, pdb_dataset, pdb_ids = create_identity_split(pdb_dataset, pdb_ids, cutoff, test_size, min_fam_in_split)
+    train_set = set(pdb_ids)
+    
+    print('train size', len(train_set))
+    print('val size', len(val_set))
+    print('test size', len(test_set))
+    
+    return train_set, val_set, test_set
+
+
+def find_similar(query_pdb, blast_db, cutoff):
+    """
+    Find all other pdbs that have sequence identity greater than cutoff.
+    """
+    sim = set()
+    for chain, seq in get_chain_sequences(query_pdb):
+        blastp_cline = NcbiblastpCommandline(db=blast_db, outfmt="10 nident sacc", num_alignments=len(pdb_dataset))
+        out, err = blastp_cline(stdin=seq)
+        
+        for res in out.split():
+            nident, match = res.split(',')
+            ref_pdb = match.split('_')[0]
+            seq_id = float(nident) / len(seq)
+            if seq_id >= cutoff:
+                sim.add(ref_pdb)
+                
+    return sim
+
+
+def create_identity_split(pdb_files, pdb_ids, cutoff, split_size, min_fam_in_split):
+    """
+    Create a split while retaining diversity specified by min_fam_in_split. 
+    Returns split and removes any pdbs in this split from the remaining dataset
+    """
+    split = set()
+    idx = 0
+    while len(split) < split_size:
+        rand_pdb = pdb_files[idx]
+        split.add(pdb_ids[idx])
+        hits = find_similar(rand_pdb, 'blast_db', cutoff)
+        # ensure that at least min_fam_in_split families in each split
+        if len(hits) > split_size / min_fam_in_split:
+            idx +=1
+            continue
+        split = split.union(hits)
+        idx += 1
+    
+    for hit in split:
+        loc = pdb_ids.index(hit)
+        pdb_files.pop(loc)
+        pdb_ids.pop(loc)
+    
+    return split, pdb_files, pdb_ids
+
+
+####################################
+# useful functions
+####################################
+
+def write_pdb_dataset_to_blast_db(pdb_dataset, blast_db):
+    """Write provided pdb dataset to blast db, for use with BLAST.
+    
+    Inputs:
+    - pdb_dataset: list of pdb files
+    """
+    print('writing pdb dataset to BLAST db')
+    flat_map = {}
+    for pdb_file in tqdm(pdb_dataset):
+        for (chain, seq) in get_chain_sequences(pdb_file):
+            flat_map[chain] = seq
+
+    write_fasta(flat_map, blast_db)
+
+    subprocess.check_output('makeblastdb -in ' + blast_db + ' -dbtype prot', shell=True)
+    
+    
+def get_chain_sequences(pdb_file):
+    """
+    Returns list of chain sequences from PDB file
+    """
+#     fname = os.path.join(path, pdb, pdb + '_protein.pdb')
+    chain_seqs = []
+    for seq in SeqIO.parse(pdb_file, 'pdb-atom'):
+        try:
+            pdb_id = seq.idcode
+        except:
+            pdb_id = os.path.basename(pdb_file).rstrip('.pdb')
+        chain = pdb_id + '_' + seq.annotations['chain']
+        chain_seqs.append((chain,str(seq.seq)))
+    return chain_seqs
+
+
+def write_fasta(seq_dict, outfile):
+    """
+    Takes dictionary of sequences keyed by id and writes to fasta file
+    """
+    with open(outfile, 'w') as f:
+        for i, s in seq_dict.items():
+            f.write('>'+i+'\n')
+            f.write(s + '\n')
+            
