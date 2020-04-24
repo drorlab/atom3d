@@ -11,22 +11,6 @@ import atom3d.psp.util as util
 import atom3d.util.file as fi
 
 
-def read_labels_tmscore(labels_dir):
-    '''
-    Read all tmscore files in <label_dir> into a panda DataFrame.
-    '''
-    tmscore_files = fi.find_files(labels_dir, 'dat')
-    frames = []
-    for filename in tmscore_files:
-        target_name = util.get_target_name(filename)
-        df = pd.read_csv(
-                filename, delimiter='\s*',
-                engine='python').dropna()
-        frames.append(df)
-    all_df = pd.concat(frames, sort=False).reset_index(drop=True)
-    return all_df
-
-
 def run_tmscore_per_structure(tmscore_exe, decoy, native):
     '''
     Run TM-score to compare 'decoy' and 'native'. Return a tuple of

@@ -4,4 +4,5 @@
 
 ## Install Python Dependencies
 requirements:
-	 pip install -r requirements.txt
+	conda install -c conda-forge -y rdkit
+	pip install -r requirements.txt

@@ -1,9 +1,10 @@
+argparse
 biopython
 click
 easy-parallel
 numpy
 pandas
 scipy
+tables
 tqdm
-argparse
 sklearn
