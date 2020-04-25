@@ -16,8 +16,7 @@ import atom3d.util.file as fi
 @click.argument('sharded')
 @click.option('--filetype', type=click.Choice(['pdb', 'pdb.gz', 'mmcif']),
               default='pdb', help='which kinds of files are we sharding.')
-@click.option('--onemodel', default=False, help='keep only first model')
-def shard_dataset(input_dir, sharded, filetype, onemodel):
+def shard_dataset(input_dir, sharded, filetype):
     """Shard whole input dataset."""
     logging.basicConfig(format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
@@ -47,8 +46,6 @@ def shard_dataset(input_dir, sharded, filetype, onemodel):
         dfs = []
         for f in files[start:stop]:
             df = dt.bp_to_df(dt.read_any(f))
-            if onemodel:
-                df = df[df['model'] == df['model'].unique()[0]]
             dfs.append(df)
 
         _write_shard(sharded, shard_num, dfs)
