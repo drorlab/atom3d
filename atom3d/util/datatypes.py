@@ -143,7 +143,7 @@ def df_to_bps(df_in):
     """Convert dataframe representation to biopython representations."""
     df = df_in.copy()
     all_structures = []
-    for (structure, s_atoms) in df.groupby(['structure']):
+    for (structure, s_atoms) in split_df(df_in):
         new_structure = Bio.PDB.Structure.Structure(structure)
         for (model, m_atoms) in df.groupby(['model']):
             new_model = Bio.PDB.Model.Model(model)
@@ -153,7 +153,8 @@ def df_to_bps(df_in):
                     # Take first atom as representative for residue values.
                     rep = r_atoms.iloc[0]
                     new_residue = Bio.PDB.Residue.Residue(
-                        (rep['hetero'], rep['residue'], rep['altloc']), rep['resname'], rep['segid'])
+                        (rep['hetero'], rep['residue'], rep['altloc']),
+                        rep['resname'], rep['segid'])
                     for row, atom in r_atoms.iterrows():
                         new_atom = Bio.PDB.Atom.Atom(
                             atom['name'],
@@ -171,6 +172,15 @@ def df_to_bps(df_in):
             new_structure.add(new_model)
         all_structures.append(new_structure)
     return all_structures
+
+
+def split_df(df):
+    return [(x, y) for x, y in df.groupby('structure')]
+
+
+def merge_dfs(dfs):
+    return pd.concat(dfs).reset_index(drop=True)
+
 
 
 def bp_from_xyz_dict(data,struct_name='structure'):

@@ -2,8 +2,10 @@
 import logging
 import math
 import os
+import shutil
 
 import click
+import numpy as np
 import pandas as pd
 import tqdm
 
@@ -22,8 +24,9 @@ def shard_dataset(input_dir, sharded, filetype):
                         '%(message)s',
                         level=logging.INFO)
 
-    if not os.path.exists(os.path.dirname(sharded)):
-        os.makedirs(os.path.dirname(sharded))
+    dirname = os.path.dirname(sharded)
+    if not os.path.exists(dirname) and dirname != '':
+        os.makedirs(dirname, exist_ok=True)
 
     num_shards = get_num_shards(sharded)
 
@@ -37,26 +40,27 @@ def shard_dataset(input_dir, sharded, filetype):
     else:
         num_written = 0
 
-    shard_size = int(math.ceil((1.0 * len(files)) / num_shards))
+    shard_ranges = _get_shard_ranges(len(files), num_shards)
+    shard_size = shard_ranges[0, 1] - shard_ranges[0, 0]
+
+    total = 0
     logging.info(f'Structures per shard: {shard_size:}')
     for shard_num in tqdm.trange(num_written, num_shards):
-        start = shard_num * shard_size
-        stop = min((shard_num + 1) * shard_size, len(files))
+        start, stop = shard_ranges[shard_num]
 
         dfs = []
         for f in files[start:stop]:
             df = dt.bp_to_df(dt.read_any(f))
             dfs.append(df)
+        df = dt.merge_dfs(dfs)
 
-        _write_shard(sharded, shard_num, dfs)
+        _write_shard(sharded, shard_num, df)
 
 
 def read_shard(sharded, shard_num):
     """Read a single shard of a sharded dataset."""
     shard = _get_shard(sharded, shard_num)
-    raw = pd.read_hdf(shard, 'structures')
-    dfs = [x for _, x in raw.groupby('structure')]
-    return dfs
+    return pd.read_hdf(shard, 'structures')
 
 
 def read_structure(sharded, name):
@@ -91,6 +95,39 @@ def get_num_structures(sharded):
     return get_names(sharded).shape[0]
 
 
+def move(source_sharded, dest_sharded):
+    """Move sharded dataset."""
+    copy(source_sharded, dest_sharded)
+    delete(source_sharded)
+
+
+def copy(source_sharded, dest_sharded):
+    """Copy sharded dataset."""
+    num_shards = get_num_shards(source_sharded)
+    for i in range(num_shards):
+        source_shard = _get_shard(source_sharded, i)
+        dest_shard = _get_shard(dest_sharded, i)
+        if os.path.exists(source_shard):
+            shutil.copyfile(source_shard, dest_shard)
+    source_metadata_path = _get_metadata(source_sharded)
+    dest_metadata_path = _get_metadata(dest_sharded)
+    if os.path.exists(source_metadata_path):
+        shutil.copyfile(source_metadata_path, dest_metadata_path)
+
+
+
+def delete(sharded):
+    """Delete sharded dataset."""
+    num_shards = get_num_shards(sharded)
+    for i in range(num_shards):
+        shard = _get_shard(sharded, i)
+        if os.path.exists(shard):
+            os.remove(shard)
+    metadata_path = _get_metadata(sharded)
+    if os.path.exists(metadata_path):
+        os.remove(metadata_path)
+
+
 def _get_prefix(sharded):
     return '@'.join(sharded.split('@')[:-1])
 
@@ -107,12 +144,22 @@ def _get_metadata(sharded):
     return f'{prefix:}_meta_{num_shards:}.h5'
 
 
-def _write_shard(sharded, shard_num, dfs):
+def _get_shard_ranges(num_structures, num_shards):
+    """Get list of shard starts and ends."""
+    base_shard_size = int(num_structures / num_shards)
+    excess = num_structures - base_shard_size * num_shards
+    shard_sizes = np.ones((num_shards), dtype=np.int32) * base_shard_size
+    shard_sizes[:excess] += 1
+    stops = np.cumsum(shard_sizes)
+    starts = stops - shard_sizes
+    return np.stack((starts, stops)).T
+
+
+def _write_shard(sharded, shard_num, df):
     """Write to a single shard of a sharded dataset."""
-    df = pd.concat(dfs).reset_index(drop=True)
     metadata = pd.DataFrame(
         [(shard_num, x, y.index[0], y.index[0] + len(y))
-         for x, y in df.groupby('structure')],
+         for x, y in dt.split_df(df)],
         columns=['shard_num', 'name', 'start', 'stop'])
 
     # Check that we are writing same name again to same sharded dataset.
