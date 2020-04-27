@@ -50,7 +50,7 @@ def shard_dataset(input_dir, sharded, filetype):
 
         dfs = []
         for f in files[start:stop]:
-            df = dt.bp_to_df(dt.read_any(f))
+            df = dt.bp_to_df(dt.read_any(f, name=None))
             dfs.append(df)
         df = dt.merge_dfs(dfs)
 

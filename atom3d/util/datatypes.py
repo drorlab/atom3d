@@ -20,38 +20,42 @@ patterns = {
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
 
 
-def read_any(f):
+def read_any(f, name=None):
     """Read file into biopython structure."""
     if _regexes['pdb'].search(f):
-        return read_pdb(f)
+        return read_pdb(f, name)
     elif _regexes['pdb.gz'].search(f):
-        return read_pdb_gz(f)
+        return read_pdb_gz(f, name)
     elif _regexes['mmcif'].search(f):
-        return read_mmcif(f)
+        return read_mmcif(f, name)
     else:
         raise ValueError(f"Unrecognized filetype for {f:}")
 
 
-def read_pdb_gz(pdb_gz_file):
-    name = os.path.basename(pdb_gz_file)
+def read_pdb_gz(pdb_gz_file, name=None):
+    if name is None:
+        name = os.path.basename(pdb_gz_file)
     parser = Bio.PDB.PDBParser(QUIET=True)
     bp = parser.get_structure(
         name, gzip.open(pdb_gz_file, mode='rt', encoding='latin1'))
     return bp
 
 
-def read_pdb(pdb_file):
+def read_pdb(pdb_file, name=None):
     """Load pdb file in to biopython representation."""
-    name = os.path.basename(pdb_file)
+    if name is None:
+        name = os.path.basename(pdb_file)
     parser = Bio.PDB.PDBParser(QUIET=True)
     bp = parser.get_structure(name, pdb_file)
     return bp
 
 
-def read_mmcif(mmcif_file):
+def read_mmcif(mmcif_file, name=None):
     """Load mmcif file in to biopython representation."""
+    if name is None:
+        os.path.basename(mmcif_file)
     parser = Bio.PDB.MMCIFParser(QUIET=True)
-    return parser.get_structure(os.path.basename(mmcif_file), mmcif_file)
+    return parser.get_structure(name, mmcif_file)
 
 
 def write_pdb(out_file, structure, **kwargs):
