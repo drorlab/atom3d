@@ -3,7 +3,7 @@ import subprocess
 import os
 from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio import SeqIO
-from datatypes import *
+import datatypes as dt
 
 
 # Splits data into test, validation, and training sets.
@@ -49,6 +49,32 @@ def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shu
         
     return indices_test, indices_vali, indices_train
 
+
+def time_split(data, val_years, test_years):
+    """
+    Splits data into train, val, test by year.
+    
+    Args:
+        data (DataFrame): year data, with columns named 'pdb' and 'year'
+        val_years (str[]): years to include in validation set
+        test_years (str[]): years to include in test set
+        
+    Returns: 
+        train_set (str[]):  pdbs in the train set
+        val_set (str[]):  pdbs in the validation set
+        test_set (str[]): pdbs in the test set
+    """
+    val = data[data.year.isin(val_years)]
+    test = data[data.year.isin(test_years)]
+    train = data[~data.pdb.isin(val.pdb.tolist() + test.pdb.tolist())]
+    
+    train_set = train['pdb'].tolist()
+    val_set = val['pdb'].tolist()
+    test_set = test['pdb'].tolist()
+    
+    return train_set, val_set, test_set
+
+
 ####################################
 # split by pre-clustered sequence 
 # identity clusters from PDB
@@ -82,7 +108,7 @@ def cluster_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_in
     max_hit_size_val = val_size / min_fam_in_split
     
     np.random.shuffle(pdb_dataset)
-    pdb_ids = [os.path.basename(p).rstrip('.pdb')[:4] for p in pdb_dataset]
+    pdb_ids = [dt.get_pdb_code(p) for p in pdb_dataset]
     
     clusterings = get_pdb_clusters(cutoff, pdb_ids)
     
@@ -205,7 +231,7 @@ def identity_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_i
     max_hit_size_val = val_size / min_fam_in_split
     
     np.random.shuffle(pdb_dataset)
-    pdb_ids = [os.path.basename(p).rstrip('.pdb')[:4] for p in pdb_dataset]
+    pdb_ids = [dt.get_pdb_code(p) for p in pdb_dataset]
     
     print('generating validation set...')
     val_set, pdb_dataset, pdb_ids = create_identity_split(pdb_dataset, pdb_ids, cutoff, val_size, min_fam_in_split)

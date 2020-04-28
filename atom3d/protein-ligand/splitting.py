@@ -165,7 +165,7 @@ if __name__ == "__main__":
     parser.add_argument('datapath', type=str, help='directory where PDBBind is located')
     parser.add_argument('--cv_method', type=str, default='random', help='cross-validation strategy, either "random" or "clustered". Default: random')
     parser.add_argument('--identity', type=int, default=None, help='sequence identity cutoff for splitting. Must be used if --cv_method=cluster. Default: none')
-    parser.add_argument('--write_to_file', action='store_true', help='write the split pdbs to files (T/F)')
+    parser.add_argument('--write_to_file', action='store_true', help='write the pdbs in each split to text files (T/F)')
     args = parser.parse_args()
     if args.identity and args.identity not in [30,40,50,70,90,95,100]:
         raise Exception('invalid identity cutoff. possible values = 30,40,50,70,90,95,100')

@@ -14,7 +14,7 @@ import numpy as np
 patterns = {
     'pdb': 'pdb[0-9]*$',
     'pdb.gz': 'pdb[0-9]*\.gz$',
-    'mmcif': 'mmcif$'
+    'mmcif': '(mm)?cif$'
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}

@@ -8,3 +8,5 @@ scipy
 tables
 tqdm
 sklearn
+torch
+h5py

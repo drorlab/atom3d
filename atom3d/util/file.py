@@ -19,3 +19,9 @@ def find_files(path, suffix, relative=None):
         cwd=os.getcwd(), shell=True)
     (stdout, stderr) = out.communicate()
     return stdout.decode().split()
+
+def get_pdb_code(path_to_pdb):
+    return path_to_pdb.split('/')[-1][:4]
+
+def get_pdb_name(path_to_pdb):
+    return path_to_pdb.split('/')[-1]
