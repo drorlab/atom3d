@@ -169,5 +169,4 @@ dependencies:
     - torch-sparse==0.6.2
     - torch-spline-conv==1.2.0
     - urllib3==1.25.9
-prefix: /home/martin/anaconda3/envs/geometric
 
