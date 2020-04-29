@@ -12,10 +12,22 @@ from scipy.spatial import KDTree
 atoms = ['C', 'H', 'O', 'N', 'S', 'ZN', 'NA', 'FE', 'CA', 'MN', 'NI', 'CO', 'MG', 'CU', 'X']
 atom_int_dict = dict(zip(atoms, range(len(atoms))))
 
-def prot_df_to_graph(df, edge_dist_cutoff=5):
+def prot_df_to_graph(df, edge_dist_cutoff=5.0):
+	"""
+	Converts protein in dataframe representation to a graph compatible with Pytorch-Geometric
+
+	Args:
+		df (DataFrame): protein in dataframe format
+		edge_dist_cutoff (float): max distance to define an edge between two atoms
+
+	Returns:
+		feats (LongTensor): features for each node, one-hot encoded by element
+		edges (LongTensor): edges in COO format
+		pos (FloatTensor): x-y-z coordinates of each node
+	"""
 
 	num_nodes = df.shape[0]
-	pos = torch.Tensor(df[['x', 'y', 'z']].to_numpy())
+	pos = torch.FloatTensor(df[['x', 'y', 'z']].to_numpy())
 
 	kd_tree = KDTree(pos)
 	edge_tuples = list(kd_tree.query_pairs(edge_dist_cutoff))

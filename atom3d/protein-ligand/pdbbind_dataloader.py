@@ -1,8 +1,6 @@
 import torch
-import torch.utils.data as data
 import numpy as np
 import pandas as pd
-import h5py
 import sys
 sys.path.append('..')
 from util import datatypes as dt
@@ -10,37 +8,30 @@ from util import file as fi
 from util import splits as sp
 from get_labels import get_label
 from util import graph
-from tqdm import tqdm
 import os
 import torch
 from torch_geometric.data import Dataset, Data, DataLoader
 
 
-def files_exist(files):
-    return len(files) != 0 and all([os.path.exists(f) for f in files])
-
 # loader for pytorch-geometric
 
 class GraphPDBBind(Dataset):
+    """
+    PDBBind dataset in pytorch-geometric format. 
+    Ref: https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/data/dataset.html#Dataset
+    """
     def __init__(self, root, transform=None, pre_transform=None):
         super(GraphPDBBind, self).__init__(root, transform, pre_transform)
 
         self.pdb_idx_dict = self.get_idx_mapping()
-    # @property
-    # def raw_dir(self):
-    #     return self.root
 
     @property
     def raw_file_names(self):
         return os.listdir(self.raw_dir)
 
-    # @property
-    # def raw_paths(self):
-    #     return fi.find_files
-
     @property
     def processed_file_names(self):
-        num_samples = len(self.raw_file_names) // 3
+        num_samples = len(self.raw_file_names) // 3 # each example has protein/pocket/ligand files
         return [f'data_{i}.pt' for i in range(num_samples)]
 
     def get_idx_mapping(self):
@@ -81,6 +72,11 @@ class GraphPDBBind(Dataset):
 
 
 def pdbbind_dataloader(batch_size, data_dir='../data/PDBBind', split_file=None):
+    """
+    Creates dataloader for PDBBind dataset with specified split. 
+    Assumes pre-computed split in 'split_file', which is used to index Dataset object
+    TODO: implement on-the-fly splitting using split functions
+    """
     if split_file is not None:
         indices = sp.read_split_file(split_file)
 
