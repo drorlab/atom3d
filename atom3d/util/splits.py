@@ -3,7 +3,7 @@ import subprocess
 import os
 from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio import SeqIO
-import datatypes as dt
+import util.datatypes as dt
 
 
 # Splits data into test, validation, and training sets.
@@ -73,6 +73,21 @@ def time_split(data, val_years, test_years):
     test_set = test['pdb'].tolist()
     
     return train_set, val_set, test_set
+
+
+def read_split_file(split_file):
+    """
+    Reads text file with pre-defined split, one example per row, returning list of examples
+    """
+    with open(split_file) as f:
+        # file may contain integer indices or string identifiers (e.g. PDB codes)
+        lines = f.readlines()
+        try:
+            split = [int(x.strip()) for x in lines]
+        except ValueError:
+            split = [x.strip() for x in lines]
+    return split
+
 
 
 ####################################

@@ -16,16 +16,6 @@ import argparse
 from rdkit.Chem import PandasTools
 
 
-def combine_sdfs(in_sdfs, out_sdf):
-    """
-    Combines many SDF files into single SDF file with all molecules
-    """
-
-    list_str = ' '.join(in_sdfs)
-    for s in in_sdfs:
-        subprocess.call(f'cat {s} >> {out_sdf}', shell=True)
-
-
 def convert_to_hdf5(input_dir, label_file, hdf_file):
     cif_files = fi.find_files(input_dir, 'cif')
     proteins = []
@@ -33,21 +23,13 @@ def convert_to_hdf5(input_dir, label_file, hdf_file):
     pdb_codes = []
     for f in tqdm(cif_files, desc='reading structures'):
         pdb_code = fi.get_pdb_code(f)
-        pdb_codes.append(pdb_code)
         if '_protein' in f:
+            pdb_codes.append(pdb_code)
             df = dt.bp_to_df(dt.read_any(f))
             proteins.append(df)
         elif '_pocket' in f:
             df = dt.bp_to_df(dt.read_any(f))
             pockets.append(df)
-    
-    print('converting ligands...')
-    sdf_files = fi.find_files(input_dir, 'sdf')
-    big_sdf = os.path.join(input_dir, 'all_ligands.sdf')
-    combine_sdfs(sdf_files, big_sdf)
-    lig_df = PandasTools.LoadSDF(big_sdf, molColName='Mol')
-    lig_df.index = pdb_codes
-    lig_df.to_hdf(hdf_file, 'ligands')
     
     print('converting proteins...')
     protein_df = pd.concat(proteins)
@@ -57,6 +39,14 @@ def convert_to_hdf5(input_dir, label_file, hdf_file):
     protein_df.to_hdf(hdf_file, 'proteins')
     pocket_df.to_hdf(hdf_file, 'pockets')
     pdb_codes.to_hdf(hdf_file, 'pdb_codes')
+    
+    print('converting ligands...')
+    sdf_files = fi.find_files(input_dir, 'sdf')
+    big_sdf = os.path.join(input_dir, 'all_ligands.sdf')
+    combine_sdfs(sdf_files, big_sdf)
+    lig_df = PandasTools.LoadSDF(big_sdf, molColName='Mol')
+    lig_df.index = pdb_codes
+    lig_df.to_hdf(hdf_file, 'ligands')
     
     print('converting labels...')
     label_df = pd.read_csv(label_file)

@@ -7,15 +7,22 @@ import os
 import sys
 sys.path.append('..')
 from util import datatypes as dt
+from util import file as fi
 import argparse
 
+def get_label(pdb, label_df):
+    return label_df[label_df['pdb'] == pdb]['label'].iloc[0]
+
 def main(datapath, outpath):
+    valid_pdbs = [fi.get_pdb_code(f) for f in fi.find_files(os.path.join(outpath, 'raw'), 'sdf')]
     dat = []
     with open(os.path.join(datapath, 'index/INDEX_refined_data.2019')) as f:
         for line in f:
             if line.startswith('#'):
                 continue
             l = line.strip().split()
+            if l[0] not in valid_pdbs:
+                continue
             dat.append(l[:5]+l[6:])
     refined_set = pd.DataFrame(dat, columns=['pdb','res','year','neglog_aff','affinity','ref','ligand'])
 
