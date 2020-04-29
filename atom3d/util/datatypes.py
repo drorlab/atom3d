@@ -257,3 +257,54 @@ def get_coordinates_of_conformer(mol):
         xyz[ia]  = np.array([position.x, position.y, position.z])
 
     return xyz
+
+
+def get_connectivity_matrix(mol):
+    """Generates the connection matrix from a molecule.
+    
+    Args:
+        mol (Mol): a molecule in RDKit format
+        
+    Returns:
+        connect_matrix (2D numpy array): connectivity matrix
+    
+    """
+    
+    # Initialization
+    num_at = mol.GetNumAtoms()
+    connect_matrix = np.zeros([num_at,num_at],dtype=int)
+    
+    # Go through all atom pairs and check for bonds between them
+    for a in mol.GetAtoms():
+        for b in mol.GetAtoms():
+            bond = mol.GetBondBetweenAtoms(a.GetIdx(),b.GetIdx()) 
+            if bond is not None:
+                connect_matrix[a.GetIdx(),b.GetIdx()] = 1
+                
+    return connect_matrix
+
+
+def get_bonds_matrix(mol):
+    """Provides bond types encoded as single (1.0). double (2.0), triiple (3.0), and aromatic (1.5).
+    
+    Args:
+        mol (Mol): a molecule in RDKit format
+        
+    Returns:
+        connect_matrix (2D numpy array): connectivity matrix
+    
+    """
+    
+    # Initialization
+    num_at = mol.GetNumAtoms()
+    bonds_matrix = np.zeros([num_at,num_at])
+    
+    # Go through all atom pairs and check for bonds between them
+    for a in mol.GetAtoms():
+        for b in mol.GetAtoms():
+            bond = mol.GetBondBetweenAtoms(a.GetIdx(),b.GetIdx()) 
+            if bond is not None:
+                bt = bond.GetBondTypeAsDouble()
+                bonds_matrix[a.GetIdx(),b.GetIdx()] = bt
+                
+    return bonds_matrix
