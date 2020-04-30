@@ -124,8 +124,7 @@ class MoleculesDataset():
         # Add the data from the CSV file (dynamically)
         for ip,prop in enumerate(self.data_keys):
             locals()[prop] = [col[ip] for col in self.data]
-            save_dict[prop] = locals()[prop]
-            # Use only those quantities that are of one of the defined data types 
+            # Use only those quantities that are of one of the defined data types
             if datatypes is not None and np.array(locals()[prop]).dtype in datatypes:
                 save_dict[prop] = locals()[prop]
         # Add the data from the SDF file
@@ -181,9 +180,9 @@ def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None, 
     test_file_name  = out_dir_name+'/test.npz'
     vali_file_name  = out_dir_name+'/valid.npz'
     train_file_name = out_dir_name+'/train.npz'
-    if len(test_indices) > 0: ds.write_compressed(test_file_name, indices=test_indices )
-    if len(vali_indices) > 0: ds.write_compressed(vali_file_name, indices=vali_indices )
-    if len(train_indices) > 0: ds.write_compressed(train_file_name,indices=train_indices)
+    if len(test_indices) > 0: ds.write_compressed(test_file_name, indices=test_indices, datatypes=datatypes )
+    if len(vali_indices) > 0: ds.write_compressed(vali_file_name, indices=vali_indices, datatypes=datatypes )
+    if len(train_indices) > 0: ds.write_compressed(train_file_name, indices=train_indices, datatypes=datatypes )
         
     return ds
 
