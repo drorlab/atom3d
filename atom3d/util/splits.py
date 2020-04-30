@@ -1,9 +1,10 @@
 import numpy as np
 import subprocess
-import os
+import os, sys
 from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio import SeqIO
-import util.datatypes as dt
+sys.path.append('../..')
+import atom3d.util.datatypes as dt
 
 
 # Splits data into test, validation, and training sets.
