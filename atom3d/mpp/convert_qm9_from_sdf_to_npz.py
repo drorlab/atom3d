@@ -1,13 +1,15 @@
 import os, sys
+import click
 import pickle
 import pandas as pd
 import numpy as np
-
+import argparse
 sys.path.append('../..')
 import atom3d.util.splits as split
 import atom3d.util.datatypes as dt
 
 from rdkit import Chem
+
 
 
 class MoleculesDataset():
@@ -82,7 +84,7 @@ class MoleculesDataset():
         return sample
     
     
-    def write_compressed(self,filename,indices=None):
+    def write_compressed(self, filename, indices=None, datatypes=None):
         """Writes (a subset of) the data set as compressed numpy arrays.
 
         Args:
@@ -123,6 +125,9 @@ class MoleculesDataset():
         for ip,prop in enumerate(self.data_keys):
             locals()[prop] = [col[ip] for col in self.data]
             save_dict[prop] = locals()[prop]
+            # Use only those quantities that are of one of the defined data types 
+            if datatypes is not None and np.array(locals()[prop]).dtype in datatypes:
+                save_dict[prop] = locals()[prop]
         # Add the data from the SDF file
         save_dict['index']     = index
         save_dict['num_atoms'] = num_atoms
@@ -135,7 +140,7 @@ class MoleculesDataset():
         return
 
 
-def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None):
+def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None, datatypes=None):
     """Converts a data set given as CSV list and SDF coordinates to npz train/validation/test sets.
         
     Args:
@@ -187,9 +192,15 @@ def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None):
 # - MAIN - #
 
 if __name__ == "__main__":
-    qm9_sdf = 'qm9/qm9_from_moleculenet/gdb9.sdf'
-    qm9_csv = 'qm9/qm9_from_moleculenet/gdb9.sdf.csv'
-    qm9_npz = 'qm9/qm9_npz'
-    ds = convert_sdfcsv_to_npz(qm9_csv, qm9_sdf, qm9_npz, split_indices=None)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('csv_file', type=str, help='label file in CSV format')
+    parser.add_argument('sdf_file', type=str, help='structure file in SDF format')
+    parser.add_argument('out_dir', type=str, help='directory to write npz files')
+    args = parser.parse_args()
+    
+    cormorant_datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
+
+    ds = convert_sdfcsv_to_npz(args.csv_file, args.sdf_file, args.out_dir, datatypes=cormorant_datatypes)
 
 
