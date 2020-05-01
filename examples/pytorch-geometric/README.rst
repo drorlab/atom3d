@@ -1,11 +1,12 @@
-Using Cormorant
-===============
+Using PyTorch Geometric
+=======================
 
+PyTorch Geometric is available at https://github.com/rusty1s/pytorch_geometric
 
 Preparing the data sets
 -----------------------
 
-For Pytorch-Geometric to read the data sets, they must be preprocessed::
+For PyTorch Geometric to read the data sets, they must be preprocessed::
 
     bash prepare_qm9.sh
     bash prepare_pdbbind.sh
