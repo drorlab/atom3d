@@ -308,3 +308,4 @@ def get_bonds_matrix(mol):
                 bonds_matrix[a.GetIdx(),b.GetIdx()] = bt
                 
     return bonds_matrix
+
