@@ -37,6 +37,7 @@ You can install it by running::
     pip install torch-spline-conv==latest+${CUDA} -f https://pytorch-geometric.com/whl/torch-1.5.0.html
     pip install torch-geometric
 
+where `${CUDA}` should be replaced by either `cpu`, `cu92`, `cu101` or `cu102` depending on your PyTorch installation (`cu102` if installed as above).
 
 Training example
 ----------------
