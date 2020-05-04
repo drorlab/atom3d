@@ -13,6 +13,7 @@ import torch
 from torch_geometric.data import Dataset, Data, DataLoader
 
 
+
 # loader for pytorch-geometric
 
 class GraphPDBBind(Dataset):
@@ -27,7 +28,7 @@ class GraphPDBBind(Dataset):
 
     @property
     def raw_file_names(self):
-        return os.listdir(self.raw_dir)
+        return sorted(os.listdir(self.raw_dir))
 
     @property
     def processed_file_names(self):
@@ -53,11 +54,14 @@ class GraphPDBBind(Dataset):
         label_df = pd.read_csv(label_file)
         i = 0
         for raw_path in self.raw_paths:
-            if '_pocket' in raw_path:
-                pdb_code = fi.get_pdb_code(raw_path)
-                x, edge_index, pos = graph.prot_df_to_graph(dt.bp_to_df(dt.read_any(raw_path, name=pdb_code)))
-                y = get_label(pdb_code, label_df)
-                data = Data(x, edge_index, pos, y)
+            pdb_code = fi.get_pdb_code(raw_path)
+            y = get_label(pdb_code, label_df)
+            if '_ligand' in raw_path:
+                mol_graph = graph.mol_to_graph(dt.read_sdf_to_mol(raw_path)[0])
+            elif '_pocket' in raw_path:
+                prot_graph = graph.prot_df_to_graph(dt.bp_to_df(dt.read_any(raw_path, name=pdb_code)))
+                node_feats, edge_index, edge_feats, pos = graph.combine_graphs(prot_graph, mol_graph)
+                data = Data(node_feats, edge_index, edge_feats, pos, y)
                 torch.save(data, os.path.join(self.processed_dir, 'data_{}.pt'.format(i)))
                 i += 1
             else:
