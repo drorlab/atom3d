@@ -195,10 +195,19 @@ if __name__ == "__main__":
     parser.add_argument('csv_file', type=str, help='label file in CSV format')
     parser.add_argument('sdf_file', type=str, help='structure file in SDF format')
     parser.add_argument('out_dir', type=str, help='directory to write npz files')
+    parser.add_argument('-i', dest='idx_dir', type=str, default=None, help='directory from which to read split indices') 
     args = parser.parse_args()
     
     cormorant_datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
 
-    ds = convert_sdfcsv_to_npz(args.csv_file, args.sdf_file, args.out_dir, datatypes=cormorant_datatypes)
+    if args.idx_dir is not None:
+        test_indices  = np.loadtxt(args.idx_dir+'/indices_test.dat',dtype=int)
+        vali_indices  = np.loadtxt(args.idx_dir+'/indices_valid.dat',dtype=int)
+        train_indices = np.loadtxt(args.idx_dir+'/indices_train.dat',dtype=int)
+        split = [test_indices, vali_indices, train_indices]
+    else:
+        split = None
+
+    ds = convert_sdfcsv_to_npz(args.csv_file, args.sdf_file, args.out_dir, split_indices=split, datatypes=cormorant_datatypes)
 
 
