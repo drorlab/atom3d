@@ -1,5 +1,4 @@
 import os, sys
-import click
 import pickle
 import pandas as pd
 import numpy as np
@@ -172,9 +171,9 @@ def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None, 
         pass
 
     # Save the indices for the split
-    np.savetxt(out_dir_name+'/indices_test.dat',test_indices)
-    np.savetxt(out_dir_name+'/indices_valid.dat',vali_indices)
-    np.savetxt(out_dir_name+'/indices_train.dat',train_indices)
+    np.savetxt(out_dir_name+'/indices_test.dat',test_indices,fmt='%1d')
+    np.savetxt(out_dir_name+'/indices_valid.dat',vali_indices,fmt='%1d')
+    np.savetxt(out_dir_name+'/indices_train.dat',train_indices,fmt='%1d')
 
     # Save the data sets as compressed numpy files
     test_file_name  = out_dir_name+'/test.npz'
