@@ -179,9 +179,9 @@ def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None, 
     test_file_name  = out_dir_name+'/test.npz'
     vali_file_name  = out_dir_name+'/valid.npz'
     train_file_name = out_dir_name+'/train.npz'
-    if len(test_indices) > 0: ds.write_compressed(test_file_name, indices=test_indices, datatypes=datatypes, fmt='%1d' )
-    if len(vali_indices) > 0: ds.write_compressed(vali_file_name, indices=vali_indices, datatypes=datatypes, fmt='%1d' )
-    if len(train_indices) > 0: ds.write_compressed(train_file_name, indices=train_indices, datatypes=datatypes, fmt='%1d' )
+    if len(test_indices) > 0: ds.write_compressed(test_file_name, indices=test_indices, datatypes=datatypes )
+    if len(vali_indices) > 0: ds.write_compressed(vali_file_name, indices=vali_indices, datatypes=datatypes )
+    if len(train_indices) > 0: ds.write_compressed(train_file_name, indices=train_indices, datatypes=datatypes )
         
     return ds
 
