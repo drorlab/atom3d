@@ -126,6 +126,19 @@ def delete(sharded):
         os.remove(metadata_path)
 
 
+def add_to_shard(sharded, shard_num, df, key):
+    """Add dataframe under key to shard."""
+    shard = _get_shard(sharded, shard_num)
+    df.to_hdf(shard, key, mode='a')
+
+
+def has(sharded, shard_num, key):
+    """If key is present in shard."""
+    shard = _get_shard(sharded, shard_num)
+    with pd.HDFStore(shard, mode='r') as f:
+        return key in [x[1:] for x in f.keys()]
+
+
 def _get_prefix(sharded):
     return '@'.join(sharded.split('@')[:-1])
 
