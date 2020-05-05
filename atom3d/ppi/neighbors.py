@@ -25,17 +25,17 @@ index_columns = ['structure', 'model', 'chain', 'residue']
               type=click.Choice(['heavy', 'CA'], case_sensitive=False),
               help='How to compute distance between residues: CA is based on '
               'alpha-carbons, heavy is based on any heavy atom.')
-def gen_labels_main(input_pdbs, output_labels, bound_pdbs, cutoff,
-                    cutoff_type):
+def get_neighbors_main(input_pdbs, output_labels, bound_pdbs, cutoff,
+                       cutoff_type):
     input_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in input_pdbs]
     bound_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in bound_pdbs]
 
-    neighbors = get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type)
+    neighbors = get_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type)
     # Write label file.
     neighbors.to_csv(output_labels, index=False)
 
 
-def get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
+def get_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
     """Given input dfs, and optionally bound dfs, generate neighbors."""
 
     names, unbound_subunits, bound_subunits = subunits(input_dfs, bound_dfs)
@@ -75,7 +75,7 @@ def get_all_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
     return neighbors
 
 
-def get_all_negatives(input_dfs, bound_dfs, neighbors):
+def get_negatives(input_dfs, bound_dfs, neighbors):
     names, unbound_subunits, bound_subunits = subunits(input_dfs, bound_dfs)
     for i in range(len(bound_subunits)):
         for j in range(i + 1, len(bound_subunits)):
@@ -85,7 +85,7 @@ def get_all_negatives(input_dfs, bound_dfs, neighbors):
     return negatives
 
 
-def get_all_res(df):
+def get_res(df):
     """Get all residues."""
     return df[index_columns].drop_duplicates()
 
@@ -156,7 +156,7 @@ def _get_negatives(neighbors, df0, df1):
 
 def _get_idx_to_res_mapping(df):
     """Define mapping from residue index to single id number."""
-    idx_to_res = get_all_res(df).reset_index(drop=True)
+    idx_to_res = get_res(df).reset_index(drop=True)
     res_to_idx = idx_to_res.reset_index().set_index(index_columns)['index']
     return idx_to_res, res_to_idx
 
@@ -194,4 +194,4 @@ def _get_heavy_neighbors(df0, df1, cutoff):
 
 
 if __name__ == "__main__":
-    gen_labels_main()
+    get_neighbors_main()
