@@ -14,19 +14,40 @@ import numpy as np
 patterns = {
     'pdb': 'pdb[0-9]*$',
     'pdb.gz': 'pdb[0-9]*\.gz$',
-    'mmcif': '(mm)?cif$'
+    'mmcif': '(mm)?cif$',
+    'shard': '@[0-9]+',
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
 
 
+def is_shard(f):
+    """If file is in sharded format."""
+    return _regexes['shard'].search(f)
+
+
+def is_pdb(f):
+    """If file is in pdb format."""
+    return _regexes['pdb'].search(f)
+
+
+def is_mmcif(f):
+    """If file is in mmcif format."""
+    return _regexes['mmcif'].search(f)
+
+
+def is_pdb_gz(f):
+    """If file is in mmcif format."""
+    return _regexes['pdb.gz'].search(f)
+
+
 def read_any(f, name=None):
     """Read file into biopython structure."""
-    if _regexes['pdb'].search(f):
+    if is_pdb(f):
         return read_pdb(f, name)
-    elif _regexes['pdb.gz'].search(f):
+    elif is_pdb_gz(f):
         return read_pdb_gz(f, name)
-    elif _regexes['mmcif'].search(f):
+    elif is_mmcif(f):
         return read_mmcif(f, name)
     else:
         raise ValueError(f"Unrecognized filetype for {f:}")
@@ -261,51 +282,51 @@ def get_coordinates_of_conformer(mol):
 
 def get_connectivity_matrix(mol):
     """Generates the connection matrix from a molecule.
-    
+
     Args:
         mol (Mol): a molecule in RDKit format
-        
+
     Returns:
         connect_matrix (2D numpy array): connectivity matrix
-    
+
     """
-    
+
     # Initialization
     num_at = mol.GetNumAtoms()
     connect_matrix = np.zeros([num_at,num_at],dtype=int)
-    
+
     # Go through all atom pairs and check for bonds between them
     for a in mol.GetAtoms():
         for b in mol.GetAtoms():
-            bond = mol.GetBondBetweenAtoms(a.GetIdx(),b.GetIdx()) 
+            bond = mol.GetBondBetweenAtoms(a.GetIdx(),b.GetIdx())
             if bond is not None:
                 connect_matrix[a.GetIdx(),b.GetIdx()] = 1
-                
+
     return connect_matrix
 
 
 def get_bonds_matrix(mol):
     """Provides bond types encoded as single (1.0). double (2.0), triiple (3.0), and aromatic (1.5).
-    
+
     Args:
         mol (Mol): a molecule in RDKit format
-        
+
     Returns:
         connect_matrix (2D numpy array): connectivity matrix
-    
+
     """
-    
+
     # Initialization
     num_at = mol.GetNumAtoms()
     bonds_matrix = np.zeros([num_at,num_at])
-    
+
     # Go through all atom pairs and check for bonds between them
     for a in mol.GetAtoms():
         for b in mol.GetAtoms():
-            bond = mol.GetBondBetweenAtoms(a.GetIdx(),b.GetIdx()) 
+            bond = mol.GetBondBetweenAtoms(a.GetIdx(),b.GetIdx())
             if bond is not None:
                 bt = bond.GetBondTypeAsDouble()
                 bonds_matrix[a.GetIdx(),b.GetIdx()] = bt
-                
+
     return bonds_matrix
 

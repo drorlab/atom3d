@@ -1,6 +1,5 @@
 """Code for sharding structures."""
 import logging
-import math
 import os
 import shutil
 
@@ -113,7 +112,6 @@ def copy(source_sharded, dest_sharded):
     dest_metadata_path = _get_metadata(dest_sharded)
     if os.path.exists(source_metadata_path):
         shutil.copyfile(source_metadata_path, dest_metadata_path)
-
 
 
 def delete(sharded):
