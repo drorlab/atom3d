@@ -15,15 +15,15 @@ patterns = {
     'pdb': 'pdb[0-9]*$',
     'pdb.gz': 'pdb[0-9]*\.gz$',
     'mmcif': '(mm)?cif$',
-    'shard': '@[0-9]+',
+    'sharded': '@[0-9]+',
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
 
 
-def is_shard(f):
+def is_sharded(f):
     """If file is in sharded format."""
-    return _regexes['shard'].search(f)
+    return _regexes['sharded'].search(f)
 
 
 def is_pdb(f):
