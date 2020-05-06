@@ -53,7 +53,7 @@ def reshard(input_sharded, output_sharded):
     next_output_shard_num, next_input_shard_num = 0, 0
     to_write, to_consume = [], []
     while True:
-        if len(to_consume) == 0:
+        if len(to_consume) == 0 and (next_input_shard_num != input_num_shards):
             # Read next shard if need more examples.
             df = sh.read_shard(input_sharded, next_input_shard_num)
             to_consume = [y for (_, y) in dt.split_df(df)]
@@ -69,5 +69,5 @@ def reshard(input_sharded, output_sharded):
             next_output_shard_num += 1
             t.update(1)
 
-            if (next_input_shard_num == input_num_shards):
+            if (next_output_shard_num == output_num_shards):
                 break
