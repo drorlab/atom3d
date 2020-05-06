@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import argparse
 sys.path.append('../..')
-import atom3d.util.splits as split
+import atom3d.util.splits as splits
 import atom3d.util.datatypes as dt
 
 from rdkit import Chem
@@ -138,12 +138,11 @@ class MoleculesDataset():
         return
 
 
-def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None, datatypes=None):
+def convert_sdfcsv_to_npz(in_dir_name, out_dir_name, split_indices=None, datatypes=None):
     """Converts a data set given as CSV list and SDF coordinates to npz train/validation/test sets.
         
     Args:
-        csv_file (str): CSV file with labels.
-        sdf_file (str): SDF file with coordinates.
+        in_dir_name (str): NAme of the input directory.
         out_dir_name (Str): Name of the output directory.
         split_indices (list): List of int lists [test_indices, vali_indices, train_indices]
 
@@ -154,12 +153,21 @@ def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None, 
     
     seed = 42
 
+    csv_file = in_dir_name+'/gdb9.sdf.csv'
+    sdf_file = in_dir_name+'/gdb9.sdf'
+    unc_file = in_dir_name+'/uncharacterized.txt'
+
     # Create the internal data set
     ds = MoleculesDataset(csv_file,sdf_file)
 
+    # Load the list of molecules to ignore 
+    with open(unc_file, 'r') as f:
+        exclude = [int(x.split()[0]) for x in f.read().split('\n')[9:-2]]
+    assert len(exclude) == 3054 
+
     # Define indices to split the data set
     if split_indices is None:
-        test_indices, vali_indices, train_indices = split.random_split(len(ds),vali_split=0.1,test_split=0.1,random_seed=seed)
+        test_indices, vali_indices, train_indices = splits.random_split(len(ds),vali_split=0.1,test_split=0.1,random_seed=seed,exclude=exclude)
     else:
         test_indices, vali_indices, train_indices = split_indices
     print('Training: %i molecules. Validation: %i molecules. Test: %i molecules.'%(len(train_indices),len(vali_indices),len(test_indices)))
@@ -192,8 +200,7 @@ def convert_sdfcsv_to_npz(csv_file, sdf_file, out_dir_name, split_indices=None, 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('csv_file', type=str, help='label file in CSV format')
-    parser.add_argument('sdf_file', type=str, help='structure file in SDF format')
+    parser.add_argument('in_dir', type=str, help='directory with the raw data')
     parser.add_argument('out_dir', type=str, help='directory to write npz files')
     parser.add_argument('-i', dest='idx_dir', type=str, default=None, help='directory from which to read split indices') 
     args = parser.parse_args()
@@ -208,6 +215,6 @@ if __name__ == "__main__":
     else:
         split = None
 
-    ds = convert_sdfcsv_to_npz(args.csv_file, args.sdf_file, args.out_dir, split_indices=split, datatypes=cormorant_datatypes)
+    ds = convert_sdfcsv_to_npz(args.in_dir, args.out_dir, split_indices=split, datatypes=cormorant_datatypes)
 
 
