@@ -109,13 +109,13 @@ def subunits(input_dfs, bound_dfs):
         # Mapping from bound name to unbound name.
         bound_subunits = []
         for b, i in zip(bound_dfs, input_dfs):
-            b_name = b['structure'].unique()
-            i_name = i['structure'].unique()
+            i_name = i[['structure', 'model']].drop_duplicates()
+            b_name = b[['structure', 'model']].drop_duplicates()
             if len(b_name) > 1 or len(i_name) > 1:
                 raise RuntimeError('Multiple structure names in single df.')
-            i_name = i_name[0]
+            i_name = tuple(i_name.iloc[0])
             tmp = b.copy()
-            tmp['structure'] = i_name
+            tmp['structure'] = i_name[0]
             names.append(i_name)
             bound_subunits.append(tmp)
 
