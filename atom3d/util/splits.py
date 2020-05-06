@@ -10,7 +10,7 @@ import atom3d.util.datatypes as dt
 # Splits data into test, validation, and training sets.
 import numpy as np
 
-def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shuffle=True,random_seed=None):
+def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shuffle=True,random_seed=None,exclude=None):
     """Creates data indices for training and validation splits.
         
         Args:
@@ -26,16 +26,28 @@ def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shu
             indices_train (int[]): indices of the training set.
             
     """
-        
-    indices = np.arange(dataset_size,dtype=int)
-        
-    # Calculate the numbers of elements per split
-    vsplit = int(np.floor(vali_split * dataset_size))
-    tsplit = int(np.floor(test_split * dataset_size))
-    if train_split is not None:
-        train = int(np.floor(train_split * dataset_size))
+    
+    # Initialize the indices
+    all_indices = np.arange(dataset_size,dtype=int)
+    print('Splitting dataset with',len(all_indices),'entries.')
+
+    # Delete all indices that shall be excluded
+    if exclude is None:
+        indices = all_indices
     else:
-        train = dataset_size-vsplit-tsplit
+        print('Excluding',len(exclude),'entries.')
+        to_keep = np.invert(np.isin(all_indices, exclude))
+        indices = all_indices[to_keep]
+        print('Remaining',len(indices),'entries.')
+    num_indices = len(indices)
+
+    # Calculate the numbers of elements per split
+    vsplit = int(np.floor(vali_split * num_indices))
+    tsplit = int(np.floor(test_split * num_indices))
+    if train_split is not None:
+        train = int(np.floor(train_split * num_indices))
+    else:
+        train = num_indices-vsplit-tsplit
         
     # Shuffle the dataset if desired
     if shuffle:
