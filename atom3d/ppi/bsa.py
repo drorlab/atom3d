@@ -67,7 +67,9 @@ def _merge_dfs(df0, df1):
 def _compute_asa(df):
     """Compute solvent-accessible surface area for provided strucutre."""
     bp = dt.df_to_bp(df)
-    result, sasa_classes = freesasa.calcBioPDB(bp)
+    structure = freesasa.structureFromBioPDB(
+        bp, options={'hydrogen': True, 'skip-unknown': True})
+    result = freesasa.calc(structure)
     return result.totalArea()
 
 
