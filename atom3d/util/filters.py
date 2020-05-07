@@ -4,6 +4,7 @@ import pandas as pd
 
 PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
 RESOLUTION_FILE = 'metadata/resolu.idx'
+SCOP_CLA_LATEST_FILE = 'metadata/scop-cla-latest.txt'
 
 
 def form_source_filter(allowed=[], excluded=[]):
@@ -27,7 +28,7 @@ def form_source_filter(allowed=[], excluded=[]):
         elif len(excluded) > 0:
             to_keep = ~source[pdb_codes].isin(excluded)
         else:
-            to_keep = pdb_codes
+            to_keep = pd.Series([True] * len(df), index=df['structure'])
         return df[to_keep.values]
     return filter_fn
 
@@ -53,7 +54,7 @@ def form_molecule_type_filter(allowed=[], excluded=[]):
         elif len(excluded) > 0:
             to_keep = ~molecule_type[pdb_codes].isin(excluded)
         else:
-            to_keep = pdb_codes
+            to_keep = pd.Series([True] * len(df), index=df['structure'])
         return df[to_keep.values]
     return filter_fn
 
@@ -106,3 +107,56 @@ def first_model_filter(df):
 
     to_keep = models_to_keep.loc[df.set_index(['structure', 'model']).index]
     return df[to_keep.values]
+
+
+def form_scop_filter(level, allowed=[], excluded=[]):
+    """
+    Filter by SCOP classification at a specified level.
+
+    Valid levels are type, class, fold, superfamily, family.
+    """
+    scop = pd.read_csv(SCOP_CLA_LATEST_FILE, skiprows=6, delimiter=' ',
+                       names=['pdb_code', 'scop'], usecols=[1, 10])
+    scop['pdb_code'] = scop['pdb_code'].apply(lambda x: x.lower())
+    scop['type'] = \
+        scop['scop'].apply(lambda x: int(x.split(',')[0].split('=')[1]))
+    scop['class'] = \
+        scop['scop'].apply(lambda x: int(x.split(',')[1].split('=')[1]))
+    scop['fold'] =  \
+        scop['scop'].apply(lambda x: int(x.split(',')[2].split('=')[1]))
+    scop['superfamily'] = \
+        scop['scop'].apply(lambda x: int(x.split(',')[3].split('=')[1]))
+    scop['family'] = \
+        scop['scop'].apply(lambda x: int(x.split(',')[4].split('=')[1]))
+    del scop['scop']
+    scop = scop.set_index('pdb_code')
+    scop = scop[level]
+
+    # Build quick lookup tables.
+    if allowed:
+        permitted = pd.Series(
+            {pdb_code: x.drop_duplicates().isin(allowed).any()
+             for pdb_code, x in scop.groupby('pdb_code')})
+    if excluded:
+        forbidden = pd.Series(
+            {pdb_code: x.drop_duplicates().isin(excluded).any()
+             for pdb_code, x in scop.groupby('pdb_code')})
+
+    def filter_fn(df):
+        pdb_codes = df['structure'].apply(lambda x: x[:4].lower())
+
+        if len(allowed) > 0:
+            to_keep = permitted[pdb_codes]
+            # If didn't find, be conservative and do not use.
+            to_keep[to_keep.isna()] = False
+            to_keep = to_keep.astype(bool)
+        elif len(excluded) > 0:
+            to_exclude = forbidden[pdb_codes]
+            # If didn't find, be conservative and do not use.
+            to_exclude[to_exclude.isna()] = True
+            to_exclude = to_exclude.astype(bool)
+            to_keep = ~to_exclude
+        else:
+            to_keep = pd.Series([True] * len(df), index=df['structure'])
+        return df[to_keep.values]
+    return filter_fn
