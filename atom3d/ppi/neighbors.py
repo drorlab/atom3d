@@ -199,13 +199,12 @@ def lookup_subunit(name, df):
     """Lookup up subunit by name."""
     db5 = len(name) == 2
     if db5:
-        bsel = (df['structure'] == name[0]) & (df['model'] == name[1])
-        usel = bsel
+        usel = (df['structure'] == name[0]) & (df['model'] == name[1])
+        bsel = (df['structure'] == name[0]) & (df['model'] == (name[1] - 1))
     else:
-        bsel = (df['structure'] == name[0]) & (df['model'] == name[1]) & \
+        usel = (df['structure'] == name[0]) & (df['model'] == name[1]) & \
             (df['chain'] == name[2])
-        usel = (df['structure'] == name[0]) & (df['model'] == name[1] - 1) & \
-            (df['chain'] == name[2])
+        bsel = usel
     bound = df[bsel]
     unbound = df[usel]
     return {'name': name, 'bound': bound, 'unbound': unbound}

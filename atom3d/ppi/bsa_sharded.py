@@ -70,10 +70,13 @@ def _bsa_db(sharded, shard_num, output_bsa, db5):
         logger.info(f'{pair_name:}')
         subunit0 = nb.lookup_subunit(name0, shard)
         subunit1 = nb.lookup_subunit(name1, shard)
+
+        # We use bound for indiviudal subunits in bsa computation, as sometimes
+        # the actual structure between bound and unbound differ.
         if name0 not in cache:
-            cache[name0] = bsa._compute_asa(subunit0['unbound'])
+            cache[name0] = bsa._compute_asa(subunit0['bound'])
         if name1 not in cache:
-            cache[name1] = bsa._compute_asa(subunit1['unbound'])
+            cache[name1] = bsa._compute_asa(subunit1['bound'])
         all_results.append(bsa.compute_bsa(
             subunit0, subunit1, cache[name0], cache[name1]))
 
