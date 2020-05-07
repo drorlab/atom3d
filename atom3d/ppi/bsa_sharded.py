@@ -27,6 +27,9 @@ db_sem = mp.Semaphore()
 def bsa_db(sharded, output_bsa, num_threads):
     num_shards = sh.get_num_shards(sharded)
 
+    dirname = os.path.dirname(output_bsa)
+    os.makedirs(dirname, exist_ok=True)
+
     inputs = [(sharded, x, output_bsa) for x in range(num_shards)]
     logger.info(f'{num_shards:} shards to do.')
     logger.info(f'Using {num_threads:} threads')
