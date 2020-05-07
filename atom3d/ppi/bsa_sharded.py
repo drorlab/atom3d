@@ -24,19 +24,17 @@ db_sem = mp.Semaphore()
 @click.argument('output_bsa', type=click.Path())
 @click.option('-n', '--num_threads', default=8,
               help='Number of threads to use for parallel processing.')
-@click.option('--db5/--no-db5', default=False,
-              help='Whether files are in DB5 merged format.')
-def bsa_db(sharded, output_bsa, num_threads, db5):
+def bsa_db(sharded, output_bsa, num_threads):
     num_shards = sh.get_num_shards(sharded)
 
-    inputs = [(sharded, x, output_bsa, db5) for x in range(num_shards)]
+    inputs = [(sharded, x, output_bsa) for x in range(num_shards)]
     logger.info(f'{num_shards:} shards to do.')
     logger.info(f'Using {num_threads:} threads')
 
     par.submit_jobs(_bsa_db, inputs, num_threads)
 
 
-def _bsa_db(sharded, shard_num, output_bsa, db5):
+def _bsa_db(sharded, shard_num, output_bsa):
     logger.info(f'Processing shard {shard_num:}')
     start_time = timeit.default_timer()
     start_time_reading = timeit.default_timer()
