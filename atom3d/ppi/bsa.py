@@ -5,14 +5,18 @@ import pandas as pd
 import atom3d.ppi.neighbors as nb
 import atom3d.util.datatypes as dt
 
+
+freesasa.setVerbosity(freesasa.nowarnings)
+
+
 @click.command(help='Find buried surface area (bsa) for provided pdb files.')
 @click.argument('input_pdbs', nargs=-1, type=click.Path(exists=True))
 @click.option('-b', '--bound_pdbs', multiple=True,
               type=click.Path(exists=True),
               help='If provided, use these PDB files to define bound complex.')
 def compute_all_bsa_main(input_pdbs, bound_pdbs):
-    input_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in input_pdbs]
-    bound_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in bound_pdbs]
+    input_dfs = [dt.bp_to_df(dt.read_any(x)) for x in input_pdbs]
+    bound_dfs = [dt.bp_to_df(dt.read_any(x)) for x in bound_pdbs]
     subunits = nb.get_subunits(input_dfs, bound_dfs)
     print(compute_all_bsa(subunits))
 
@@ -67,8 +71,14 @@ def _merge_dfs(df0, df1):
 def _compute_asa(df):
     """Compute solvent-accessible surface area for provided strucutre."""
     bp = dt.df_to_bp(df)
-    structure = freesasa.structureFromBioPDB(
-        bp, options={'hydrogen': True, 'skip-unknown': True})
+    structure = freesasa.Structure(
+        classifier=freesasa.Classifier.getStandardClassifier('naccess'),
+        options={'hydrogen': True, 'skip-unknown': True})
+    for i, atom in df.iterrows():
+        if atom['resname'] != 'UNK' and atom['element'] != 'H':
+            structure.addAtom(
+                atom['name'], atom['resname'], atom['residue'],
+                atom['chain'], atom['x'], atom['y'], atom['z'])
     result = freesasa.calc(structure)
     return result.totalArea()
 

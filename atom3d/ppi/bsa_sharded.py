@@ -83,10 +83,6 @@ def _bsa_db(sharded, shard_num, output_bsa):
         except AssertionError as e:
             logger.warning(e)
             logger.warning(f'Failed BSA on {pair_name:}')
-            all_results.append(pd.Series(
-                {'bsa': 0, 'complex_asa': 0, 'asa0': 0, 'asa1': 0,
-                 'subunit0': name0, 'subunit1': name1}))
-
 
     if len(all_results) > 0:
         to_add = pd.concat(all_results, axis=1).T
