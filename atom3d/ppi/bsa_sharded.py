@@ -71,14 +71,22 @@ def _bsa_db(sharded, shard_num, output_bsa):
         subunit0 = nb.lookup_subunit(name0, shard)
         subunit1 = nb.lookup_subunit(name1, shard)
 
-        # We use bound for indiviudal subunits in bsa computation, as sometimes
-        # the actual structure between bound and unbound differ.
-        if name0 not in cache:
-            cache[name0] = bsa._compute_asa(subunit0['bound'])
-        if name1 not in cache:
-            cache[name1] = bsa._compute_asa(subunit1['bound'])
-        all_results.append(bsa.compute_bsa(
-            subunit0, subunit1, cache[name0], cache[name1]))
+        try:
+            # We use bound for indiviudal subunits in bsa computation, as
+            # sometimes the actual structure between bound and unbound differ.
+            if name0 not in cache:
+                cache[name0] = bsa._compute_asa(subunit0['bound'])
+            if name1 not in cache:
+                cache[name1] = bsa._compute_asa(subunit1['bound'])
+            all_results.append(bsa.compute_bsa(
+                subunit0, subunit1, cache[name0], cache[name1]))
+        except AssertionError as e:
+            logger.warning(e)
+            logger.warning(f'Failed BSA on {pair_name:}')
+            all_results.append(
+                {'bsa': 0, 'complex_asa': 0, 'asa0': 0, 'asa1': 0,
+                 'subunit0': name0, 'subunit1': name1})
+
 
     if len(all_results) > 0:
         to_add = pd.concat(all_results, axis=1).T

@@ -174,11 +174,12 @@ def df_to_bps(df_in):
             new_model = Bio.PDB.Model.Model(model)
             for (chain, c_atoms) in m_atoms.groupby(['chain']):
                 new_chain = Bio.PDB.Chain.Chain(chain)
-                for (residue, r_atoms) in c_atoms.groupby(['residue']):
+                for (residue, r_atoms) in c_atoms.groupby(
+                        ['residue', 'insertion_code']):
                     # Take first atom as representative for residue values.
                     rep = r_atoms.iloc[0]
                     new_residue = Bio.PDB.Residue.Residue(
-                        (rep['hetero'], rep['residue'], rep['altloc']),
+                        (rep['hetero'], rep['residue'], rep['insertion_code']),
                         rep['resname'], rep['segid'])
                     for row, atom in r_atoms.iterrows():
                         new_atom = Bio.PDB.Atom.Atom(

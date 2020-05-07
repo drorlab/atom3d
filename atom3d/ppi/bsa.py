@@ -5,7 +5,6 @@ import pandas as pd
 import atom3d.ppi.neighbors as nb
 import atom3d.util.datatypes as dt
 
-
 @click.command(help='Find buried surface area (bsa) for provided pdb files.')
 @click.argument('input_pdbs', nargs=-1, type=click.Path(exists=True))
 @click.option('-b', '--bound_pdbs', multiple=True,
