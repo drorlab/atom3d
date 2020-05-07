@@ -68,7 +68,6 @@ def _bsa_db(sharded, shard_num, output_bsa):
         pair_name = (name0, name1)
         if (curr_bsa_db is not None) and (pair_name in curr_bsa_db.index):
             continue
-        logger.info(f'{pair_name:}')
         subunit0 = nb.lookup_subunit(name0, shard)
         subunit1 = nb.lookup_subunit(name1, shard)
 
