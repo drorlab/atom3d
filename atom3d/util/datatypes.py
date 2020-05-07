@@ -134,6 +134,8 @@ def bp_to_df(bp):
         residue = atom.get_parent()
         chain = residue.get_parent()
         model = chain.get_parent()
+        df['ensemble'].append(bp._id)
+        df['subunit'].append(0)
         df['structure'].append(bp._id)
         df['model'].append(model.serial_num)
         df['chain'].append(chain.id)
@@ -168,7 +170,7 @@ def df_to_bps(df_in):
     """Convert dataframe representation to biopython representations."""
     df = df_in.copy()
     all_structures = []
-    for (structure, s_atoms) in split_df(df_in):
+    for (structure, s_atoms) in split_df(df_in, ['ensemble', 'structure']):
         new_structure = Bio.PDB.Structure.Structure(structure)
         for (model, m_atoms) in df.groupby(['model']):
             new_model = Bio.PDB.Model.Model(model)
@@ -200,8 +202,8 @@ def df_to_bps(df_in):
     return all_structures
 
 
-def split_df(df):
-    return [(x, y) for x, y in df.groupby('structure')]
+def split_df(df, key):
+    return [(x, y) for x, y in df.groupby(key)]
 
 
 def merge_dfs(dfs):
