@@ -280,7 +280,7 @@ def find_similar(query_pdb, blast_db, cutoff, dataset_size):
     """
     sim = set()
     for chain, seq in get_chain_sequences(query_pdb):
-        blastp_cline = NcbiblastpCommandline(db=blast_db, outfmt="10 nident sacc", num_alignments=dataset_size)
+        blastp_cline = NcbiblastpCommandline(db=blast_db, outfmt="10 nident sacc", num_alignments=dataset_size, cmd='/usr/local/ncbi/blast/bin/blastp')
         out, err = blastp_cline(stdin=seq)
         
         for res in out.split():
