@@ -98,7 +98,8 @@ def _bsa_db(sharded, shard_num, output_bsa):
                 new_bsa_db = pd.concat([curr_bsa_db, to_add])
             else:
                 new_bsa_db = to_add
-            new_bsa_db.to_csv(output_bsa, index=False)
+            new_bsa_db.to_csv(output_bsa + f'.tmp{shard_num:}', index=False)
+            os.rename(output_bsa + f'.tmp{shard_num:}', output_bsa)
             elapsed_writing = timeit.default_timer() - start_time_writing
         elapsed_waiting += timeit.default_timer() - start_time_waiting - \
             elapsed_writing
