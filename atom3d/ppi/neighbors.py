@@ -30,27 +30,29 @@ def get_neighbors_main(input_pdbs, output_labels, bound_pdbs, cutoff,
     input_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in input_pdbs]
     bound_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in bound_pdbs]
 
-    neighbors = get_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type)
+    neighbors, _ = get_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type)
     # Write label file.
     neighbors.to_csv(output_labels, index=False)
 
 
-def get_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
-    """Given input dfs, and optionally bound dfs, generate neighbors."""
+def get_neighbors(subunits, cutoff, cutoff_type):
+    """Given subunits, and optionally bound dfs, generate neighbors."""
 
-    names, unbound_subunits, bound_subunits = subunits(input_dfs, bound_dfs)
     # Extract neighboring pairs of residues.  These are defined as pairs of
     # residues that are close to one another while spanning different subunits.
     neighbors = []
-    for i in range(len(bound_subunits)):
-        for j in range(i + 1, len(bound_subunits)):
+    used_pairs = []
+    for i in range(len(subunits)):
+        for j in range(i + 1, len(subunits)):
             if cutoff_type == 'CA':
                 curr = _get_ca_neighbors(
-                    bound_subunits[i], bound_subunits[j], cutoff)
+                    subunits[i]['bound'], subunits[j]['bound'], cutoff)
             else:
                 curr = _get_heavy_neighbors(
-                    bound_subunits[i], bound_subunits[j], cutoff)
+                    subunits[i]['bound'], subunits[j]['bound'], cutoff)
             neighbors.append(curr)
+            if len(curr) > 0:
+                used_pairs.append((subunits[i]['name'], subunits[j]['name']))
 
     if len(neighbors) > 0:
         neighbors = pd.concat(neighbors)
@@ -61,7 +63,8 @@ def get_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
     neighbors['label'] = 1
 
     # Remove entries that are not present in input structures.
-    _, res_to_idx = _get_idx_to_res_mapping(pd.concat(unbound_subunits))
+    _, res_to_idx = _get_idx_to_res_mapping(
+        pd.concat([x['unbound'] for x in subunits]))
     to_drop = []
     for i, neighbor in neighbors.iterrows():
         res0 = tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
@@ -72,16 +75,14 @@ def get_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type):
         f'Removing {len(to_drop):} / {len(neighbors):} due to no matching '
         f'residue in unbound.')
     neighbors = neighbors.drop(to_drop).reset_index(drop=True)
-    return neighbors
+    return neighbors, used_pairs
 
 
-def get_negatives(input_dfs, bound_dfs, neighbors):
-    names, unbound_subunits, bound_subunits = subunits(input_dfs, bound_dfs)
-    for i in range(len(bound_subunits)):
-        for j in range(i + 1, len(bound_subunits)):
-            negatives = _get_negatives(neighbors,
-                                       unbound_subunits[i],
-                                       unbound_subunits[j])
+def get_negatives(subunits, neighbors):
+    for i in range(len(subunits)):
+        for j in range(i + 1, len(subunits)):
+            negatives = _get_negatives(
+                neighbors, subunits[i]['unbound'], subunits[j]['unbound'])
     return negatives
 
 
@@ -90,7 +91,7 @@ def get_res(df):
     return df[index_columns].drop_duplicates()
 
 
-def subunits(input_dfs, bound_dfs):
+def get_subunits(input_dfs, bound_dfs):
     """Extract subunits to define protein interfaces for."""
     names = []
 
@@ -131,7 +132,8 @@ def subunits(input_dfs, bound_dfs):
             names.append(name)
             bound_subunits.append(x)
         unbound_subunits = bound_subunits
-    return names, unbound_subunits, bound_subunits
+    return [{'name': n, 'unbound': us, 'bound': bs}
+            for (n, us, bs) in zip(names, unbound_subunits, bound_subunits)]
 
 
 def _get_negatives(neighbors, df0, df1):
@@ -191,6 +193,23 @@ def _get_heavy_neighbors(df0, df1, cutoff):
     res = pd.concat((res0, res1), axis=1)
     res = res.drop_duplicates()
     return res
+
+
+def lookup_subunit(name, df):
+    """Lookup up subunit by name."""
+    db5 = len(name) == 2
+    if db5:
+        bsel = (df['structure'] == name[0]) & (df['model'] == name[1])
+        usel = bsel
+    else:
+        bsel = (df['structure'] == name[0]) & (df['model'] == name[1]) & \
+            (df['chain'] == name[2])
+        usel = (df['structure'] == name[0]) & (df['model'] == name[1] - 1) & \
+            (df['chain'] == name[2])
+    bound = df[bsel]
+    unbound = df[usel]
+    return {'name': name, 'bound': bound, 'unbound': unbound}
+
 
 
 if __name__ == "__main__":

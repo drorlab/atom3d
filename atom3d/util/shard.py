@@ -56,10 +56,10 @@ def shard_dataset(input_dir, sharded, filetype):
         _write_shard(sharded, shard_num, df)
 
 
-def read_shard(sharded, shard_num):
+def read_shard(sharded, shard_num, key='structures'):
     """Read a single shard of a sharded dataset."""
     shard = _get_shard(sharded, shard_num)
-    return pd.read_hdf(shard, 'structures')
+    return pd.read_hdf(shard, key)
 
 
 def read_structure(sharded, name):

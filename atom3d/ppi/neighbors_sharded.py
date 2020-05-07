@@ -57,6 +57,7 @@ def _gen_labels_shard(sharded, shard_num, cutoff, cutoff_type, db5):
     shard = sh.read_shard(sharded, shard_num)
 
     all_neighbors = []
+    all_pairs = []
     for structure, x in shard.groupby('structure'):
         if db5:
             lb = x[x['model'] == 0].copy()
@@ -65,14 +66,16 @@ def _gen_labels_shard(sharded, shard_num, cutoff, cutoff_type, db5):
             ru = x[x['model'] == 3].copy()
             lb['model'] = 1
             rb['model'] = 3
-            neighbors = nb.get_neighbors(
-                [lu, ru], [lb, rb], cutoff, cutoff_type)
+            subunits = nb.get_subunits([lb, rb], [lb, rb])
         else:
-            neighbors = nb.get_neighbors(
-                [x], [], cutoff, cutoff_type)
+            subunits = nb.get_subunits([x], [])
+        neighbors, used_pairs = nb.get_neighbors(subunits, cutoff, cutoff_type)
+        all_pairs.append(pd.Series(used_pairs))
         all_neighbors.append(neighbors)
     all_neighbors = pd.concat(all_neighbors).reset_index(drop=True)
+    all_pairs = pd.concat(all_pairs).reset_index(drop=True)
     sh.add_to_shard(sharded, shard_num, all_neighbors, 'neighbors')
+    sh.add_to_shard(sharded, shard_num, all_pairs, 'pairs')
     logger.info(f'Done processing shard {shard_num:}')
 
 
