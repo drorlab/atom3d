@@ -68,6 +68,8 @@ def _gen_labels_shard(sharded, shard_num, cutoff, cutoff_type, db5):
             rb['model'] = 3
             subunits = nb.get_subunits([lb, rb], [lb, rb])
         else:
+            # Only keep first model.
+            x = x[x['model'] == sorted(x['model'].unique())[0]]
             subunits = nb.get_subunits([x], [])
         neighbors, used_pairs = nb.get_neighbors(subunits, cutoff, cutoff_type)
         all_pairs.append(pd.Series(used_pairs))
