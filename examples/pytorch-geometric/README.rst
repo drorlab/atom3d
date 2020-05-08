@@ -3,16 +3,6 @@ Using PyTorch Geometric
 
 PyTorch Geometric is available at https://github.com/rusty1s/pytorch_geometric
 
-Preparing the data sets
------------------------
-
-For PyTorch Geometric to read the data sets, they must be preprocessed::
-
-    bash prepare_qm9.sh
-    bash prepare_pdbbind.sh
-
-while still the atom3d environment should be activated.
-
 
 Installation
 ------------
@@ -42,8 +32,8 @@ where `${CUDA}` should be replaced by either `cpu`, `cu92`, `cu101` or `cu102` d
 Training example
 ----------------
 
-The training scripts can be invoked using::
+The training scripts can be invoked like this::
 
-    ???
+    python train_qm9.py --target 7 --prefix qm9-u0
 
-
+where the mapping of target numbers and quantities for QM9 can be looked up in the file qm9_targets.dat.

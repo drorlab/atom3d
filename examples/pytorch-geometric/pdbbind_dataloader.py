@@ -2,16 +2,18 @@ import torch
 import numpy as np
 import pandas as pd
 import sys
-sys.path.append('..')
+sys.path.append('../../atom3d')
 from util import datatypes as dt
 from util import file as fi
 from util import splits as sp
-from get_labels import get_label
+from protein_ligand.get_labels import get_label
 from util import graph
 import os
 import torch
 from torch_geometric.data import Dataset, Data, DataLoader
 
+import logging
+import pdb
 
 
 # loader for pytorch-geometric
@@ -55,13 +57,13 @@ class GraphPDBBind(Dataset):
         i = 0
         for raw_path in self.raw_paths:
             pdb_code = fi.get_pdb_code(raw_path)
-            y = get_label(pdb_code, label_df)
+            y = torch.FloatTensor([get_label(pdb_code, label_df)])
             if '_ligand' in raw_path:
-                mol_graph = graph.mol_to_graph(dt.read_sdf_to_mol(raw_path)[0])
+                mol_graph = graph.mol_to_graph(dt.read_sdf_to_mol(raw_path, addHs=True)[0])
             elif '_pocket' in raw_path:
                 prot_graph = graph.prot_df_to_graph(dt.bp_to_df(dt.read_any(raw_path, name=pdb_code)))
-                node_feats, edge_index, edge_feats, pos = graph.combine_graphs(prot_graph, mol_graph)
-                data = Data(node_feats, edge_index, edge_feats, pos, y)
+                node_feats, edge_index, edge_feats, pos = graph.combine_graphs(prot_graph, mol_graph, edges_between=True)
+                data = Data(node_feats, edge_index, edge_feats, y=y, pos=pos)
                 torch.save(data, os.path.join(self.processed_dir, 'data_{}.pt'.format(i)))
                 i += 1
             else:
@@ -75,7 +77,7 @@ class GraphPDBBind(Dataset):
         return data
 
 
-def pdbbind_dataloader(batch_size, data_dir='../data/PDBBind', split_file=None):
+def pdbbind_dataloader(batch_size, data_dir='../../data/pdbbind', split_file=None):
     """
     Creates dataloader for PDBBind dataset with specified split. 
     Assumes pre-computed split in 'split_file', which is used to index Dataset object
@@ -88,7 +90,10 @@ def pdbbind_dataloader(batch_size, data_dir='../data/PDBBind', split_file=None):
     # if split specifies pdb ids, convert to indices
     if isinstance(indices[0], str):
         indices = [dataset.pdb_to_idx(x) for x in indices if dataset.pdb_to_idx(x)]
-    return DataLoader(dataset.index_select(indices), batch_size)
+    return DataLoader(dataset.index_select(indices), batch_size, shuffle=True)
+
+if __name__=="__main__":
+    dataset = GraphPDBBind(root='../../data/pdbbind')
 
 
 

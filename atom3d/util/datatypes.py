@@ -5,6 +5,7 @@ import os
 import re
 
 import Bio.PDB
+from rdkit import Chem
 
 import pandas as pd
 import numpy as np
@@ -13,22 +14,43 @@ import numpy as np
 patterns = {
     'pdb': 'pdb[0-9]*$',
     'pdb.gz': 'pdb[0-9]*\.gz$',
-    'mmcif': '(mm)?cif$'
+    'mmcif': '(mm)?cif$',
+    'sharded': '@[0-9]+',
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
 
 
+def is_sharded(f):
+    """If file is in sharded format."""
+    return _regexes['sharded'].search(f)
+
+
+def is_pdb(f):
+    """If file is in pdb format."""
+    return _regexes['pdb'].search(f)
+
+
+def is_mmcif(f):
+    """If file is in mmcif format."""
+    return _regexes['mmcif'].search(f)
+
+
+def is_pdb_gz(f):
+    """If file is in mmcif format."""
+    return _regexes['pdb.gz'].search(f)
+
+
 def read_any(f, name=None):
     """Read file into biopython structure."""
-    if _regexes['pdb'].search(f):
+    if is_pdb(f):
         return read_pdb(f, name)
-    elif _regexes['pdb.gz'].search(f):
+    elif is_pdb_gz(f):
         return read_pdb_gz(f, name)
-    elif _regexes['mmcif'].search(f):
+    elif is_mmcif(f):
         return read_mmcif(f, name)
     else:
-        raise ValueError("Unrecognized filetype for {:}".format(f))
+        raise ValueError(f"Unrecognized filetype for {f:}")
 
 
 def read_pdb_gz(pdb_gz_file, name=None):
@@ -112,6 +134,8 @@ def bp_to_df(bp):
         residue = atom.get_parent()
         chain = residue.get_parent()
         model = chain.get_parent()
+        df['ensemble'].append(bp._id)
+        df['subunit'].append(0)
         df['structure'].append(bp._id)
         df['model'].append(model.serial_num)
         df['chain'].append(chain.id)
@@ -146,17 +170,18 @@ def df_to_bps(df_in):
     """Convert dataframe representation to biopython representations."""
     df = df_in.copy()
     all_structures = []
-    for (structure, s_atoms) in split_df(df_in):
+    for (structure, s_atoms) in split_df(df_in, ['ensemble', 'structure']):
         new_structure = Bio.PDB.Structure.Structure(structure)
         for (model, m_atoms) in df.groupby(['model']):
             new_model = Bio.PDB.Model.Model(model)
             for (chain, c_atoms) in m_atoms.groupby(['chain']):
                 new_chain = Bio.PDB.Chain.Chain(chain)
-                for (residue, r_atoms) in c_atoms.groupby(['residue']):
+                for (residue, r_atoms) in c_atoms.groupby(
+                        ['hetero', 'residue', 'insertion_code']):
                     # Take first atom as representative for residue values.
                     rep = r_atoms.iloc[0]
                     new_residue = Bio.PDB.Residue.Residue(
-                        (rep['hetero'], rep['residue'], rep['altloc']),
+                        (rep['hetero'], rep['residue'], rep['insertion_code']),
                         rep['resname'], rep['segid'])
                     for row, atom in r_atoms.iterrows():
                         new_atom = Bio.PDB.Atom.Atom(
@@ -177,8 +202,8 @@ def df_to_bps(df_in):
     return all_structures
 
 
-def split_df(df):
-    return [(x, y) for x, y in df.groupby('structure')]
+def split_df(df, key='ensemble'):
+    return [(x, y) for x, y in df.groupby(key)]
 
 
 def merge_dfs(dfs):
@@ -228,11 +253,12 @@ def bp_from_xyz_dict(data,struct_name='structure'):
     return s
 
 
-def read_sdf_to_mol(sdf_file,sanitize=True):
-    from rdkit import Chem
+def read_sdf_to_mol(sdf_file,sanitize=True, addHs=False):
 
     suppl = Chem.SDMolSupplier(sdf_file,sanitize=sanitize)
     molecules = [mol for mol in suppl]
+    if addHs:
+        molecules = [Chem.AddHs(mol, addCoords=True) for mol in suppl]
 
     return molecules
 
@@ -308,3 +334,4 @@ def get_bonds_matrix(mol):
                 bonds_matrix[a.GetIdx(),b.GetIdx()] = bt
 
     return bonds_matrix
+

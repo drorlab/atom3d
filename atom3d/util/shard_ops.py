@@ -53,21 +53,27 @@ def reshard(input_sharded, output_sharded):
     next_output_shard_num, next_input_shard_num = 0, 0
     to_write, to_consume = [], []
     while True:
-        if len(to_consume) == 0:
+        if len(to_consume) == 0 and (next_input_shard_num != input_num_shards):
             # Read next shard if need more examples.
             df = sh.read_shard(input_sharded, next_input_shard_num)
             to_consume = [y for (_, y) in dt.split_df(df)]
             next_input_shard_num += 1
 
-        to_write.append(to_consume.pop(0))
+        if len(to_consume) != 0:
+            to_write.append(to_consume.pop(0))
 
         if len(to_write) == shard_sizes[next_output_shard_num]:
-            # Write output shard if have number needed, or all done.
+            # Write output shard if have number needed.
+
+            if len(to_write) == 0:
+                # Insert empty dataframe if nothing to write.
+                to_write = [df.iloc[0:0]]
+
             sh._write_shard(output_sharded, next_output_shard_num,
                             dt.merge_dfs(to_write))
             to_write = []
             next_output_shard_num += 1
             t.update(1)
 
-            if (next_input_shard_num == input_num_shards):
+            if (next_output_shard_num == output_num_shards):
                 break
