@@ -1,11 +1,9 @@
 import numpy as np
-import tqdm
 import subprocess
 import os, sys
 from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio import SeqIO
 sys.path.append('../..')
-import atom3d.util.datatypes as dt
 
 
 # Splits data into test, validation, and training sets.
@@ -108,12 +106,12 @@ def read_split_file(split_file):
 # identity clusters from PDB
 ####################################
 
-def cluster_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_in_split=5, random_seed=None):
+def cluster_split(all_chain_sequences, cutoff, val_split=0.1, test_split=0.1, min_fam_in_split=5, random_seed=None):
     """
     Splits pdb dataset into train, validation, and test using pre-computed sequence identity clusters from PDB
 
     Args:
-        pdb_dataset (str[]): list of pdb files in dataset
+        all_chain_sequences ((str, chain_sequences)[]): tuple of pdb ids and chain_sequences in dataset
         cutoff (float): sequence identity cutoff (can be .3, .4, .5, .7, .9, .95, 1.0)
         val_split (float): fraction of data used for validation. Default: 0.1
         test_split (float): fraction of data used for testing. Default: 0.1
@@ -126,9 +124,6 @@ def cluster_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_in
         test_set (str[]): pdbs in the test set
 
     """
-    all_chain_sequences = \
-        [get_chain_sequences(p) for p in tqdm.tqdm(pdb_dataset)]
-
     if random_seed is not None:
         np.random.seed(random_seed)
 
@@ -234,12 +229,12 @@ def create_cluster_split(all_chain_sequences, clusterings, cutoff, split_size,
 # to any example in training set
 ####################################
 
-def identity_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_in_split=5, blast_db=None, random_seed=None):
+def identity_split(all_chain_sequences, cutoff, val_split=0.1, test_split=0.1, min_fam_in_split=5, blast_db=None, random_seed=None):
     """
     Splits pdb dataset into train, validation, and test using pre-computed sequence identity clusters from PDB
 
     Args:
-        pdb_dataset (str[]): list of pdb files in dataset
+        all_chain_sequences ((str, chain_sequences)[]): tuple of pdb ids and chain_sequences in dataset
         cutoff (float): sequence identity cutoff (can be .3, .4, .5, .7, .9, .95, 1.0)
         val_split (float): fraction of data used for validation. Default: 0.1
         test_split (float): fraction of data used for testing. Default: 0.1
@@ -253,9 +248,6 @@ def identity_split(pdb_dataset, cutoff, val_split=0.1, test_split=0.1, min_fam_i
         test_set (str[]): pdbs in the test set
 
     """
-    all_chain_sequences = [(dt.get_pdb_code(p), get_chain_sequences(p))
-                           for p in tqdm.tqdm(pdb_dataset)]
-
     if blast_db is None:
         write_to_blast_db(all_chain_sequences, 'blast_db')
         blast_db = 'blast_db'
