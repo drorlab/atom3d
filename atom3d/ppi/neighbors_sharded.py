@@ -27,10 +27,8 @@ logger = log.getLogger('genLabels')
               help='Number of threads to use for parallel processing.')
 @click.option('--overwrite/--no-overwrite', default=False,
               help='Overwrite existing neighbors.')
-@click.option('--db5/--no-db5', default=False,
-              help='Whether files are in DB5 merged format.')
-def get_neighbors_sharded(sharded, cutoff, cutoff_type, num_threads, overwrite,
-                          db5):
+def get_neighbors_sharded(sharded, cutoff, cutoff_type, num_threads,
+                          overwrite):
     num_shards = sh.get_num_shards(sharded)
 
     requested_shards = list(range(num_shards))
@@ -46,38 +44,22 @@ def get_neighbors_sharded(sharded, cutoff, cutoff_type, num_threads, overwrite,
                 f'{len(work_shards):} left to do.')
     logger.info(f'Using {num_threads:} threads')
 
-    inputs = [(sharded, shard_num, cutoff, cutoff_type, db5)
+    inputs = [(sharded, shard_num, cutoff, cutoff_type)
               for shard_num in work_shards]
 
     par.submit_jobs(_gen_labels_shard, inputs, num_threads)
 
 
-def _gen_labels_shard(sharded, shard_num, cutoff, cutoff_type, db5):
+def _gen_labels_shard(sharded, shard_num, cutoff, cutoff_type):
     logger.info(f'Processing shard {shard_num:}')
     shard = sh.read_shard(sharded, shard_num)
 
     all_neighbors = []
-    all_pairs = []
-    for structure, x in shard.groupby('structure'):
-        if db5:
-            lb = x[x['model'] == 0].copy()
-            lu = x[x['model'] == 1].copy()
-            rb = x[x['model'] == 2].copy()
-            ru = x[x['model'] == 3].copy()
-            lb['model'] = 1
-            rb['model'] = 3
-            subunits = nb.get_subunits([lb, rb], [lb, rb])
-        else:
-            # Only keep first model.
-            x = x[x['model'] == sorted(x['model'].unique())[0]]
-            subunits = nb.get_subunits([x], [])
-        neighbors, used_pairs = nb.get_neighbors(subunits, cutoff, cutoff_type)
-        all_pairs.append(pd.Series(used_pairs))
+    for e, ensemble in shard.groupby('ensemble'):
+        neighbors = nb.neighbors_from_ensemble(ensemble, cutoff, cutoff_type)
         all_neighbors.append(neighbors)
     all_neighbors = pd.concat(all_neighbors).reset_index(drop=True)
-    all_pairs = pd.concat(all_pairs).reset_index(drop=True)
     sh.add_to_shard(sharded, shard_num, all_neighbors, 'neighbors')
-    sh.add_to_shard(sharded, shard_num, all_pairs, 'pairs')
     logger.info(f'Done processing shard {shard_num:}')
 
 

@@ -1,5 +1,4 @@
 """Generate BSA database for sharded dataset."""
-import ast
 import os
 import timeit
 
@@ -28,7 +27,8 @@ def bsa_db(sharded, output_bsa, num_threads):
     num_shards = sh.get_num_shards(sharded)
 
     dirname = os.path.dirname(output_bsa)
-    os.makedirs(dirname, exist_ok=True)
+    if dirname != '':
+        os.makedirs(dirname, exist_ok=True)
 
     inputs = [(sharded, x, output_bsa) for x in range(num_shards)]
     logger.info(f'{num_shards:} shards to do.')
@@ -42,18 +42,13 @@ def _bsa_db(sharded, shard_num, output_bsa):
     start_time = timeit.default_timer()
     start_time_reading = timeit.default_timer()
     shard = sh.read_shard(sharded, shard_num)
-    pairs = sh.read_shard(sharded, shard_num, 'pairs')
     elapsed_reading = timeit.default_timer() - start_time_reading
 
     start_time_waiting = timeit.default_timer()
     with db_sem:
         start_time_reading = timeit.default_timer()
         if os.path.exists(output_bsa):
-            curr_bsa_db = pd.read_csv(
-                output_bsa, converters={
-                    "subunit0": ast.literal_eval,
-                    "subunit1": ast.literal_eval
-                }).set_index(['subunit0', 'subunit1'])
+            curr_bsa_db = pd.read_csv(output_bsa).set_index(['ensemble'])
         else:
             curr_bsa_db = None
         tmp_elapsed_reading = timeit.default_timer() - start_time_reading
@@ -64,25 +59,24 @@ def _bsa_db(sharded, shard_num, output_bsa):
     start_time_processing = timeit.default_timer()
     all_results = []
     cache = {}
-    for i, (name0, name1) in enumerate(pairs):
-        pair_name = (name0, name1)
-        if (curr_bsa_db is not None) and (pair_name in curr_bsa_db.index):
+    for e, ensemble in shard.groupby('ensemble'):
+        if (curr_bsa_db is not None) and (e in curr_bsa_db.index):
             continue
-        subunit0 = nb.lookup_subunit(name0, shard)
-        subunit1 = nb.lookup_subunit(name1, shard)
+        (name0, name1, _, _), (bdf0, bdf1, _, _) = nb.get_subunits(ensemble)
 
         try:
             # We use bound for indiviudal subunits in bsa computation, as
             # sometimes the actual structure between bound and unbound differ.
             if name0 not in cache:
-                cache[name0] = bsa._compute_asa(subunit0['bound'])
+                cache[name0] = bsa._compute_asa(bdf0)
             if name1 not in cache:
-                cache[name1] = bsa._compute_asa(subunit1['bound'])
-            all_results.append(bsa.compute_bsa(
-                subunit0, subunit1, cache[name0], cache[name1]))
+                cache[name1] = bsa._compute_asa(bdf1)
+            result = bsa.compute_bsa(bdf0, bdf1, cache[name0], cache[name1])
+            result['ensemble'] = e
+            all_results.append(result)
         except AssertionError as e:
             logger.warning(e)
-            logger.warning(f'Failed BSA on {pair_name:}')
+            logger.warning(f'Failed BSA on {e:}')
 
     if len(all_results) > 0:
         to_add = pd.concat(all_results, axis=1).T

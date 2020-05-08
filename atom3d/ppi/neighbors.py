@@ -1,4 +1,4 @@
-"""Methods to extract protein interface labels from pdb file[s]."""
+"""Methods to extract protein interface labels pair."""
 import logging
 
 import click
@@ -6,18 +6,16 @@ import numpy as np
 import pandas as pd
 import scipy.spatial as spa
 
-import atom3d.util.datatypes as dt
+import atom3d.util.shard as sh
 
 
 index_columns = ['structure', 'model', 'chain', 'residue']
 
 
-@click.command(help='Find neighbors for provided PDB files and output.')
-@click.argument('input_pdbs', nargs=-1, type=click.Path(exists=True))
+@click.command(help='Find neighbors for entry in sharded.')
+@click.argument('sharded', type=click.Path())
+@click.argument('ensemble')
 @click.argument('output_labels', type=click.Path())
-@click.option('-b', '--bound_pdbs', multiple=True,
-              type=click.Path(exists=True),
-              help='If provided, use these PDB files to define the neighbors.')
 @click.option('-c', '--cutoff', type=int, default=8,
               help='Maximum distance (in angstroms), for two residues to be '
               'considered neighbors.')
@@ -25,46 +23,50 @@ index_columns = ['structure', 'model', 'chain', 'residue']
               type=click.Choice(['heavy', 'CA'], case_sensitive=False),
               help='How to compute distance between residues: CA is based on '
               'alpha-carbons, heavy is based on any heavy atom.')
-def get_neighbors_main(input_pdbs, output_labels, bound_pdbs, cutoff,
-                       cutoff_type):
-    input_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in input_pdbs]
-    bound_dfs = [dt.bp_to_df(dt.read_pdb(x)) for x in bound_pdbs]
+def get_neighbors_main(sharded, ensemble, output_labels, cutoff, cutoff_type):
+    ensemble = sh.read_ensemble(sharded, ensemble)
 
-    neighbors, _ = get_neighbors(input_dfs, bound_dfs, cutoff, cutoff_type)
+    neighbors = neighbors_from_ensemble(ensemble, cutoff, cutoff_type)
     # Write label file.
     neighbors.to_csv(output_labels, index=False)
 
 
-def get_neighbors(subunits, cutoff, cutoff_type):
-    """Given subunits, and optionally bound dfs, generate neighbors."""
+def neighbors_from_ensemble(ensemble, cutoff, cutoff_type):
+    _, (bdf0, bdf1, udf0, udf1) = get_subunits(ensemble)
+    neighbors = get_neighbors(bdf0, bdf1, cutoff, cutoff_type)
+    if udf0 is not None and udf1 is not None:
+        neighbors = remove_unmatching(neighbors, udf0, udf1)
 
-    # Extract neighboring pairs of residues.  These are defined as pairs of
-    # residues that are close to one another while spanning different subunits.
-    neighbors = []
-    used_pairs = []
-    for i in range(len(subunits)):
-        for j in range(i + 1, len(subunits)):
-            if cutoff_type == 'CA':
-                curr = _get_ca_neighbors(
-                    subunits[i]['bound'], subunits[j]['bound'], cutoff)
-            else:
-                curr = _get_heavy_neighbors(
-                    subunits[i]['bound'], subunits[j]['bound'], cutoff)
-            neighbors.append(curr)
-            if len(curr) > 0:
-                used_pairs.append((subunits[i]['name'], subunits[j]['name']))
+    return neighbors
 
-    if len(neighbors) > 0:
-        neighbors = pd.concat(neighbors)
+
+def get_subunits(ensemble):
+    subunits = ensemble['subunit'].unique()
+
+    if len(subunits) == 4:
+        lb = [x for x in subunits if x.endswith('ligand_bound')][0]
+        lu = [x for x in subunits if x.endswith('ligand_unbound')][0]
+        rb = [x for x in subunits if x.endswith('receptor_bound')][0]
+        ru = [x for x in subunits if x.endswith('receptor_unbound')][0]
+        bdf0 = ensemble[ensemble['subunit'] == lb]
+        bdf1 = ensemble[ensemble['subunit'] == rb]
+        udf0 = ensemble[ensemble['subunit'] == lu]
+        udf1 = ensemble[ensemble['subunit'] == ru]
+        names = (lb, rb, lu, ru)
+    elif len(subunits) == 2:
+        udf0, udf1 = None, None
+        bdf0 = ensemble[ensemble['subunit'] == subunits[0]]
+        bdf1 = ensemble[ensemble['subunit'] == subunits[1]]
+        names = (subunits[0], subunits[1], None, None)
     else:
-        neighbor_columns = [x + '0' for x in index_columns] + \
-            [x + '1' for x in index_columns]
-        neighbors = pd.DataFrame([], columns=neighbor_columns)
-    neighbors['label'] = 1
+        raise RuntimeError('Incorrect number of subunits for pair')
+    return names, (bdf0, bdf1, udf0, udf1)
 
+
+def remove_unmatching(neighbors, df0, df1):
     # Remove entries that are not present in input structures.
     _, res_to_idx = _get_idx_to_res_mapping(
-        pd.concat([x['unbound'] for x in subunits]))
+        pd.concat([df0, df1]))
     to_drop = []
     for i, neighbor in neighbors.iterrows():
         res0 = tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
@@ -75,15 +77,17 @@ def get_neighbors(subunits, cutoff, cutoff_type):
         f'Removing {len(to_drop):} / {len(neighbors):} due to no matching '
         f'residue in unbound.')
     neighbors = neighbors.drop(to_drop).reset_index(drop=True)
-    return neighbors, used_pairs
+    return neighbors
 
 
-def get_negatives(subunits, neighbors):
-    for i in range(len(subunits)):
-        for j in range(i + 1, len(subunits)):
-            negatives = _get_negatives(
-                neighbors, subunits[i]['unbound'], subunits[j]['unbound'])
-    return negatives
+def get_neighbors(df0, df1, cutoff, cutoff_type):
+    """Given pair of structures, generate neighbors."""
+    if cutoff_type == 'CA':
+        neighbors = _get_ca_neighbors(df0, df1, cutoff)
+    else:
+        neighbors = _get_heavy_neighbors(df0, df1, cutoff)
+    neighbors['label'] = 1
+    return neighbors
 
 
 def get_res(df):
@@ -91,52 +95,7 @@ def get_res(df):
     return df[index_columns].drop_duplicates()
 
 
-def get_subunits(input_dfs, bound_dfs):
-    """Extract subunits to define protein interfaces for."""
-    names = []
-
-    if len(bound_dfs) > 0:
-        # If bound pdbs are provided, we use their atoms to define which
-        # residues are neighboring in the input files.
-        # If we provide bound pdbs, we assume they are in a one-to-one
-        # correspondence to the input pdbs, and that they define each
-        # individual subunit we are trying to predict interfaces for.  We also
-        # assume that model/chain/residue correspondence is exact between the
-        # bound and input files.
-        if len(bound_dfs) != len(input_dfs):
-            raise RuntimeError('If providing bound dfs, provide same number '
-                               'and in same order as input dfs.')
-
-        # Mapping from bound name to unbound name.
-        bound_subunits = []
-        for b, i in zip(bound_dfs, input_dfs):
-            i_name = i[['structure', 'model']].drop_duplicates()
-            b_name = b[['structure', 'model']].drop_duplicates()
-            if len(b_name) > 1 or len(i_name) > 1:
-                raise RuntimeError('Multiple structure names in single df.')
-            i_name = tuple(i_name.iloc[0])
-            tmp = b.copy()
-            tmp['structure'] = i_name[0]
-            names.append(i_name)
-            bound_subunits.append(tmp)
-
-        unbound_subunits = input_dfs
-    else:
-        # If bound pdbs are not provided, we directly use the input files to
-        # define which residues are neighboring.  In this case, we also assume
-        # that each individual chain is its own subunit we are trying to
-        # predict interfaces for.
-        df = pd.concat(input_dfs)
-        bound_subunits = []
-        for name, x in df.groupby(['structure', 'model', 'chain']):
-            names.append(name)
-            bound_subunits.append(x)
-        unbound_subunits = bound_subunits
-    return [{'name': n, 'unbound': us, 'bound': bs}
-            for (n, us, bs) in zip(names, unbound_subunits, bound_subunits)]
-
-
-def _get_negatives(neighbors, df0, df1):
+def get_negatives(neighbors, df0, df1):
     """Get negative pairs, given positives."""
     idx_to_res0, res_to_idx0 = _get_idx_to_res_mapping(df0)
     idx_to_res1, res_to_idx1 = _get_idx_to_res_mapping(df1)
@@ -193,22 +152,6 @@ def _get_heavy_neighbors(df0, df1, cutoff):
     res = pd.concat((res0, res1), axis=1)
     res = res.drop_duplicates()
     return res
-
-
-def lookup_subunit(name, df):
-    """Lookup up subunit by name."""
-    db5 = len(name) == 2
-    if db5:
-        usel = (df['structure'] == name[0]) & (df['model'] == name[1])
-        bsel = (df['structure'] == name[0]) & (df['model'] == (name[1] - 1))
-    else:
-        usel = (df['structure'] == name[0]) & (df['model'] == name[1]) & \
-            (df['chain'] == name[2])
-        bsel = usel
-    bound = df[bsel]
-    unbound = df[usel]
-    return {'name': name, 'bound': bound, 'unbound': unbound}
-
 
 
 if __name__ == "__main__":

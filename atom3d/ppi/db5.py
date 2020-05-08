@@ -23,10 +23,10 @@ def db5_ensembler(pdb_files):
                 f'{pdb_code:} does not have correct files present')
 
         ensembles[pdb_code] = {
-            'receptor_bound': receptor_bound[0],
-            'receptor_unbound': receptor_unbound[0],
-            'ligand_bound': ligand_bound[0],
-            'ligand_unbound': ligand_unbound[0],
+            pdb_code + '_receptor_bound': receptor_bound[0],
+            pdb_code + '_receptor_unbound': receptor_unbound[0],
+            pdb_code + '_ligand_bound': ligand_bound[0],
+            pdb_code + '_ligand_unbound': ligand_unbound[0],
         }
 
     return ensembles

@@ -4,52 +4,35 @@ import pandas as pd
 
 import atom3d.ppi.neighbors as nb
 import atom3d.util.datatypes as dt
+import atom3d.util.shard as sh
 
 
 freesasa.setVerbosity(freesasa.nowarnings)
 
 
-@click.command(help='Find buried surface area (bsa) for provided pdb files.')
-@click.argument('input_pdbs', nargs=-1, type=click.Path(exists=True))
-@click.option('-b', '--bound_pdbs', multiple=True,
-              type=click.Path(exists=True),
-              help='If provided, use these PDB files to define bound complex.')
-def compute_all_bsa_main(input_pdbs, bound_pdbs):
-    input_dfs = [dt.bp_to_df(dt.read_any(x)) for x in input_pdbs]
-    bound_dfs = [dt.bp_to_df(dt.read_any(x)) for x in bound_pdbs]
-    subunits = nb.get_subunits(input_dfs, bound_dfs)
-    print(compute_all_bsa(subunits))
+@click.command(help='Find buried surface area (bsa) for entry in sharded.')
+@click.argument('sharded', type=click.Path())
+@click.argument('ensemble')
+def compute_all_bsa_main(sharded, ensemble):
+    ensemble = sh.read_ensemble(sharded, ensemble)
+    _, (bdf0, bdf1, udf0, udf1) = nb.get_subunits(ensemble)
+    print(compute_bsa(bdf0, bdf1))
 
 
-def compute_all_bsa(subunits):
-    """Compute bsa between all possible subunit pairings."""
-    results = []
-    asas = [_compute_asa(subunit['unbound']) for subunit in subunits]
-
-    for i in range(len(subunits)):
-        for j in range(i + 1, len(subunits)):
-            results.append(compute_bsa(
-                subunits[i], subunits[j], asas[i], asas[j]))
-    results = pd.concat(results, axis=1).T
-    return results
-
-
-def compute_bsa(subunit0, subunit1, asa0=None, asa1=None):
+def compute_bsa(df0, df1, asa0=None, asa1=None):
     """Given two subunits, compute bsa."""
     result = {}
-    bound = _merge_dfs(subunit0['bound'], subunit1['bound'])
+    bound = _merge_dfs(df0, df1)
     complex_asa = _compute_asa(bound)
     if asa0 is None:
-        asa0 = _compute_asa(subunit0['unbound'])
+        asa0 = _compute_asa(df0)
     if asa1 is None:
-        asa1 = _compute_asa(subunit1['unbound'])
+        asa1 = _compute_asa(df1)
     buried_surface_area = asa0 + asa1 - complex_asa
     result['bsa'] = buried_surface_area
     result['complex_asa'] = complex_asa
     result['asa0'] = asa0
     result['asa1'] = asa1
-    result['subunit0'] = subunit0['name']
-    result['subunit1'] = subunit1['name']
     return pd.Series(result)
 
 
