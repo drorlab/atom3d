@@ -85,7 +85,7 @@ def get_names(sharded):
     """Get ensemble names in sharded dataset."""
     metadata_path = _get_metadata(sharded)
     metadata = pd.read_hdf(metadata_path, f'metadata')
-    return metadata['name']
+    return metadata['ensemble']
 
 
 def get_num_shards(sharded):
