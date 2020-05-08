@@ -35,7 +35,7 @@ def shard_dataset(input_dir, sharded, filetype):
     # Check if already partly written.  If so, resume from there.
     metadata_path = _get_metadata(sharded)
     if os.path.exists(metadata_path):
-        metadata = pd.read_hdf(metadata_path, f'metadata')
+        metadata = pd.read_hdf(metadata_path, 'metadata')
         num_written = len(metadata['shard_num'].unique())
     else:
         num_written = 0
@@ -44,7 +44,7 @@ def shard_dataset(input_dir, sharded, filetype):
     shard_size = shard_ranges[0, 1] - shard_ranges[0, 0]
 
     total = 0
-    logging.info(f'Structures per shard: {shard_size:}')
+    logging.info('Structures per shard: {:}'.format(shard_size))
     for shard_num in tqdm.trange(num_written, num_shards):
         start, stop = shard_ranges[shard_num]
 
@@ -66,7 +66,7 @@ def read_shard(sharded, shard_num):
 def read_structure(sharded, name):
     """Read structure from sharded dataset."""
     metadata_path = _get_metadata(sharded)
-    metadata = pd.read_hdf(metadata_path, f'metadata')
+    metadata = pd.read_hdf(metadata_path, 'metadata')
     entry = metadata[metadata['name'] == name]
     if len(entry) != 1:
         raise RuntimeError('Need exactly one matchin in structure lookup')
@@ -81,7 +81,7 @@ def read_structure(sharded, name):
 def get_names(sharded):
     """Get structure names in sharded dataset."""
     metadata_path = _get_metadata(sharded)
-    metadata = pd.read_hdf(metadata_path, f'metadata')
+    metadata = pd.read_hdf(metadata_path, 'metadata')
     return metadata['name']
 
 
@@ -135,13 +135,13 @@ def _get_prefix(sharded):
 def _get_shard(sharded, shard_num):
     num_shards = get_num_shards(sharded)
     prefix = _get_prefix(sharded)
-    return f'{prefix:}_{shard_num:04d}_{num_shards:}.h5'
+    return '{:}_{:04d}_{:}.h5'.format(prefix, shard_num, num_shards)
 
 
 def _get_metadata(sharded):
     num_shards = get_num_shards(sharded)
     prefix = _get_prefix(sharded)
-    return f'{prefix:}_meta_{num_shards:}.h5'
+    return '{:}_meta_{:}.h5'.format(prefix, num_shards)
 
 
 def _get_shard_ranges(num_structures, num_shards):
@@ -165,14 +165,14 @@ def _write_shard(sharded, shard_num, df):
     # Check that we are writing same name again to same sharded dataset.
     metadata_path = _get_metadata(sharded)
     if os.path.exists(metadata_path):
-        metadata = pd.concat((pd.read_hdf(metadata_path, f'metadata'),
+        metadata = pd.concat((pd.read_hdf(metadata_path, 'metadata'),
                               metadata)).reset_index(drop=True)
         if metadata['name'].duplicated().any():
             raise RuntimeError('Writing duplicate to sharded')
 
     path = _get_shard(sharded, shard_num)
-    df.to_hdf(path, f'structures')
-    metadata.to_hdf(metadata_path, f'metadata', mode='w')
+    df.to_hdf(path, 'structures')
+    metadata.to_hdf(metadata_path, 'metadata', mode='w')
 
 
 if __name__ == "__main__":

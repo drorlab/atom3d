@@ -68,14 +68,14 @@ def run_tmscore_per_target(tmscore_exe, output_filename, target_name,
 
 @click.command()
 @click.argument('data_dir', type=click.Path(exists=True))
+@click.argument('target_list', type=click.Path(exists=True))
+@click.argument('labels_dir')
 @click.option('--struct_format', '-ext', default='pdb')
-@click.option('--labels_dir', '-labels', default='labels/scores') # Relative to data_dir
-@click.option('--target_list', '-target', default='targets.dat')  # Relative to data_dir
 @click.option('--num_cpus', '-c', default=1)
 @click.option('--overwrite', '-ow', is_flag=True)
 @click.option('--tmscore_exe', '-tm',
-              default='/oak/stanford/groups/rondror/users/bjing/bin/TMscore')
-def main(data_dir, struct_format, labels_dir, target_list,
+              default='/oak/stanford/groups/rondror/projects/atom3d/software/tmscore/TMscore')
+def main(data_dir, target_list, labels_dir, struct_format,
          num_cpus, overwrite, tmscore_exe):
     """ Compute rmsd, tm-score, gdt-ts, gdt-ha of decoy structures
     """
@@ -83,15 +83,16 @@ def main(data_dir, struct_format, labels_dir, target_list,
     logger.info("Compute rmsd, tm-score, gdt-ts, gdt-ha of decoys in {:}".format(
         data_dir))
 
-    labels_path = os.path.join(data_dir, labels_dir)
-    with open(os.path.join(data_dir, target_list), 'r') as f:
+    os.makedirs(labels_dir, exist_ok=True)
+
+    with open(target_list, 'r') as f:
         requested_filenames = \
-            [os.path.join(labels_path, '{:}.dat'.format(x.strip())) for x in f]
+            [os.path.join(label_dir, '{:}.dat'.format(x.strip())) for x in f]
     logger.info("{:} requested keys".format(len(requested_filenames)))
 
     produced_filenames = []
     if not overwrite:
-        produced_filenames = [f for f in fi.find_files(labels_path, 'dat') \
+        produced_filenames = [f for f in fi.find_files(label_dir, 'dat') \
                               if 'targets' not in f]
     logger.info("{:} produced keys".format(len(produced_filenames)))
 

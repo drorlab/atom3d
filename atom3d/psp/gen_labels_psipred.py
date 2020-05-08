@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import parallel as par
 
-import atom3d.psp.util as util
 import atom3d.util.file as fi
 
 
@@ -129,27 +128,27 @@ def run_psipred(blast_path, nr_path, psipred_path, pssms_dir, psfms_dir,
 
 
 @click.command()
-@click.argument('data_dir', type=click.Path(exists=True))
-@click.option('--fastas_dir', '-fastas', default='fastas') # Relative to data_dir
-@click.option('--pssms_dir', '-pssm', default='labels/pssms') # Relative to data_dir
-@click.option('--psfms_dir', '-psfm', default='labels/psfms') # Relative to data_dir
-@click.option('--secstructs_dir', '-ss', default='labels/secstructs') # Relative to data_dir
-@click.option('--target_list', '-target', default='targets.dat') # Relative to data_dir
+@click.argument('target_list', type=click.Path(exists=True))
+@click.argument('fastas_dir', type=click.Path(exists=True))
+@click.argument('pssms_dir')
+@click.argument('psfms_dir')
+@click.argument('secstructs_dir')
+@click.option('--tmp_dir', '-tmp', default='/tmp/psipred/')
 @click.option('--num_cpus', '-c', default=1)
 @click.option('--blast_path', '-bl',
-              default='/oak/stanford/groups/rondror/users/bjing/bin/blast/bin')
+              default='/oak/stanford/groups/rondror/projects/atom3d/software/blast/bin')
 @click.option('--nr_path', '-nr',
-              default='/oak/stanford/groups/rondror/projects/ppi/non-redundant/nr')
+              default='/oak/stanford/groups/rondror/projects/atom3d/software/non-redundant/nr')
 @click.option('--psipred_path', '-psi',
-              default='/oak/stanford/groups/rondror/users/bjing/bin/psipred')
-def main(data_dir, fastas_dir, pssms_dir, psfms_dir, secstructs_dir,
-         target_list, num_cpus, blast_path, nr_path, psipred_path):
+              default='/oak/stanford/groups/rondror/projects/atom3d/software/psipred')
+def main(data_dir, target_list, fastas_dir, pssms_dir, psfms_dir,
+         secstructs_dir, num_cpus, blast_path, nr_path, psipred_path):
     """ Run psipreds to generate the PSSMs and secondary structure predictions
     for each residue in a protein structure.
     """
     logger = logging.getLogger(__name__)
 
-    with open(os.path.join(data_dir, target_list), 'r') as f:
+    with open(target_list, 'r') as f:
         targets = [t.strip() for t in f.readlines()]
 
     logger.info("Running psipreds on {:} structures in {:}".format(
@@ -162,11 +161,6 @@ def main(data_dir, fastas_dir, pssms_dir, psfms_dir, secstructs_dir,
         run_psipred(blast_path, nr_path, psipred_path, pssms_dir, psfms_dir,
                     secstructs_dir, tmp_dir, target, fasta_file)
 
-    pssms_dir = os.path.join(data_dir, pssms_dir)
-    psfms_dir = os.path.join(data_dir, psfms_dir)
-    secstructs_dir = os.path.join(data_dir, secstructs_dir)
-    tmp_dir = os.path.join(data_dir, '.tmp')
-
     os.makedirs(pssms_dir, exist_ok=True)
     os.makedirs(psfms_dir, exist_ok=True)
     os.makedirs(secstructs_dir, exist_ok=True)
@@ -174,8 +168,7 @@ def main(data_dir, fastas_dir, pssms_dir, psfms_dir, secstructs_dir,
 
     inputs = []
     for i, target in enumerate(targets):
-        fasta_file = os.path.join(
-            data_dir, fastas_dir, '{:}.fasta'.format(target))
+        fasta_file = os.path.join(fastas_dir, '{:}.fasta'.format(target))
         if os.path.exists(fasta_file):
             inputs.append((i+1, blast_path, nr_path, psipred_path, pssms_dir,
                            psfms_dir, secstructs_dir, tmp_dir, target, fasta_file))
