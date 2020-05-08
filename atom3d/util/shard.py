@@ -5,12 +5,16 @@ import shutil
 
 import click
 import numpy as np
+import multiprocess as mp
 import pandas as pd
 import tqdm
 
 import atom3d.util.datatypes as dt
 import atom3d.util.ensemble as en
 import atom3d.util.file as fi
+
+
+db_sem = mp.Semaphore()
 
 
 @click.command(help='Combine files into sharded HDF5 files.')
@@ -172,22 +176,26 @@ def _get_shard_ranges(num_structures, num_shards):
 
 def _write_shard(sharded, shard_num, df):
     """Write to a single shard of a sharded dataset."""
+    path = _get_shard(sharded, shard_num)
+    df.to_hdf(path, f'structures')
+
     metadata = pd.DataFrame(
         [(shard_num, x, y.index[0], y.index[0] + len(y))
          for x, y in dt.split_df(df, 'ensemble')],
         columns=['shard_num', 'ensemble', 'start', 'stop'])
 
-    # Check that we are writing same name again to same sharded dataset.
-    metadata_path = _get_metadata(sharded)
-    if os.path.exists(metadata_path):
-        metadata = pd.concat((pd.read_hdf(metadata_path, f'metadata'),
-                              metadata)).reset_index(drop=True)
-        if metadata['ensemble'].duplicated().any():
-            raise RuntimeError('Writing duplicate to sharded')
-
     path = _get_shard(sharded, shard_num)
     df.to_hdf(path, f'structures')
-    metadata.to_hdf(metadata_path, f'metadata', mode='w')
+    with db_sem:
+        # Check that we are writing same name again to same sharded dataset.
+        metadata_path = _get_metadata(sharded)
+        if os.path.exists(metadata_path):
+            metadata = pd.concat((pd.read_hdf(metadata_path, f'metadata'),
+                                  metadata)).reset_index(drop=True)
+            if metadata['ensemble'].duplicated().any():
+                raise RuntimeError('Writing duplicate to sharded')
+
+        metadata.to_hdf(metadata_path, f'metadata', mode='w')
 
 
 if __name__ == "__main__":
