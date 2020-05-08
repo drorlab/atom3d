@@ -1,8 +1,11 @@
-import numpy as np
+import os
 import subprocess
+import sys
+
+import numpy as np
 import tqdm
-import os, sys
 from Bio.Blast.Applications import NcbiblastpCommandline
+
 from Bio import SeqIO
 sys.path.append('../..')
 
@@ -11,15 +14,18 @@ import atom3d.util.datatypes as dt
 
 # Splits data into test, validation, and training sets.
 
-def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shuffle=True,random_seed=None,exclude=None):
+def random_split(dataset_size, train_split=None, vali_split=0.1,
+                 test_split=0.1, shuffle=True, random_seed=None, exclude=None):
     """Creates data indices for training and validation splits.
 
         Args:
             dataset_size (int): number of elements in the dataset
-            vali_split (float): fraction of data used for validation. Default: 0.1
+            vali_split (float):
+                fraction of data used for validation. Default: 0.1
             test_split (float): fraction of data used for testing. Default: 0.1
             shuffle (bool):     indices are shuffled. Default: True
-            random_seed (int):  specifies random seed for shuffling. Default: None
+            random_seed (int):
+                specifies random seed for shuffling. Default: None
 
         Returns:
             indices_test (int[]):  indices of the test set.
@@ -29,17 +35,17 @@ def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shu
     """
 
     # Initialize the indices
-    all_indices = np.arange(dataset_size,dtype=int)
-    print('Splitting dataset with',len(all_indices),'entries.')
+    all_indices = np.arange(dataset_size, dtype=int)
+    print('Splitting dataset with', len(all_indices), 'entries.')
 
     # Delete all indices that shall be excluded
     if exclude is None:
         indices = all_indices
     else:
-        print('Excluding',len(exclude),'entries.')
+        print('Excluding', len(exclude), 'entries.')
         to_keep = np.invert(np.isin(all_indices, exclude))
         indices = all_indices[to_keep]
-        print('Remaining',len(indices),'entries.')
+        print('Remaining', len(indices), 'entries.')
     num_indices = len(indices)
 
     # Calculate the numbers of elements per split
@@ -48,7 +54,7 @@ def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shu
     if train_split is not None:
         train = int(np.floor(train_split * num_indices))
     else:
-        train = num_indices-vsplit-tsplit
+        train = num_indices - vsplit - tsplit
 
     # Shuffle the dataset if desired
     if shuffle:
@@ -57,9 +63,9 @@ def random_split(dataset_size,train_split=None,vali_split=0.1,test_split=0.1,shu
         np.random.shuffle(indices)
 
     # Determine the indices of each split
-    indices_test  = indices[:tsplit]
-    indices_vali  = indices[tsplit:tsplit+vsplit]
-    indices_train = indices[tsplit+vsplit:tsplit+vsplit+train]
+    indices_test = indices[:tsplit]
+    indices_vali = indices[tsplit:tsplit + vsplit]
+    indices_train = indices[tsplit + vsplit:tsplit + vsplit + train]
 
     return indices_test, indices_vali, indices_train
 
@@ -91,10 +97,13 @@ def time_split(data, val_years, test_years):
 
 def read_split_file(split_file):
     """
-    Reads text file with pre-defined split, one example per row, returning list of examples
+    Read text file with pre-defined split, returning list of examples.
+
+    One example per row in text file.
     """
     with open(split_file) as f:
-        # file may contain integer indices or string identifiers (e.g. PDB codes)
+        # file may contain integer indices or string identifiers (e.g. PDB
+        # codes)
         lines = f.readlines()
         try:
             split = [int(x.strip()) for x in lines]
@@ -103,19 +112,23 @@ def read_split_file(split_file):
     return split
 
 
-
 ####################################
 # split by pre-clustered sequence
 # identity clusters from PDB
 ####################################
 
-def cluster_split(all_chain_sequences, cutoff, val_split=0.1, test_split=0.1, min_fam_in_split=5, random_seed=None):
+def cluster_split(all_chain_sequences, cutoff, val_split=0.1,
+                  test_split=0.1, min_fam_in_split=5, random_seed=None):
     """
-    Splits pdb dataset into train, validation, and test using pre-computed sequence identity clusters from PDB
+    Splits pdb dataset using pre-computed sequence identity clusters from PDB.
+
+    Generates train, val, test sets.
 
     Args:
-        all_chain_sequences ((str, chain_sequences)[]): tuple of pdb ids and chain_sequences in dataset
-        cutoff (float): sequence identity cutoff (can be .3, .4, .5, .7, .9, .95, 1.0)
+        all_chain_sequences ((str, chain_sequences)[]):
+            tuple of pdb ids and chain_sequences in dataset
+        cutoff (float):
+            sequence identity cutoff (can be .3, .4, .5, .7, .9, .95, 1.0)
         val_split (float): fraction of data used for validation. Default: 0.1
         test_split (float): fraction of data used for testing. Default: 0.1
         min_fam_in_split (int): controls variety of val/test sets. Default: 5
@@ -162,10 +175,15 @@ def get_pdb_clusters(id_level, pdb_ids=None):
     Returns dictionaries mapping PDB IDs to cluster IDs and vice versa.
     """
     id_level = int(id_level * 100)
-    if id_level not in [30,40,50,70,90,95,100]:
-        raise Exception('invalid invalid identity cutoff. possible values = 30,40,50,70,90,95,100')
+    if id_level not in [30, 40, 50, 70, 90, 95, 100]:
+        raise Exception(
+            'invalid invalid identity cutoff. '
+            'possible values = 30,40,50,70,90,95,100')
     print('getting clusters from PDB...')
-    subprocess.call('wget ftp://resources.rcsb.org/sequence/clusters/bc-{}.out'.format(id_level), shell=True)
+    subprocess.call(
+        'wget ftp://resources.rcsb.org/sequence/clusters/bc-{}.out'.format(
+            id_level),
+        shell=True)
     pdb2cluster = {}
     cluster2pdb = {}
     with open(f'bc-{id_level}.out') as f:
@@ -232,17 +250,25 @@ def create_cluster_split(all_chain_sequences, clusterings, cutoff, split_size,
 # to any example in training set
 ####################################
 
-def identity_split(all_chain_sequences, cutoff, val_split=0.1, test_split=0.1, min_fam_in_split=5, blast_db=None, random_seed=None):
+def identity_split(
+        all_chain_sequences, cutoff, val_split=0.1, test_split=0.1,
+        min_fam_in_split=5, blast_db=None, random_seed=None):
     """
-    Splits pdb dataset into train, validation, and test using pre-computed sequence identity clusters from PDB
+    Splits pdb dataset using pre-computed sequence identity clusters from PDB.
+
+    Generates train, val, test sets.
 
     Args:
-        all_chain_sequences ((str, chain_sequences)[]): tuple of pdb ids and chain_sequences in dataset
-        cutoff (float): sequence identity cutoff (can be .3, .4, .5, .7, .9, .95, 1.0)
+        all_chain_sequences ((str, chain_sequences)[]):
+            tuple of pdb ids and chain_sequences in dataset
+        cutoff (float):
+            sequence identity cutoff (can be .3, .4, .5, .7, .9, .95, 1.0)
         val_split (float): fraction of data used for validation. Default: 0.1
         test_split (float): fraction of data used for testing. Default: 0.1
         min_fam_in_split (int): controls variety of val/test sets. Default: 5
-        blast_db (str): location of pre-computed BLAST DB for dataset. If None, compute and save in 'blast_db'. Default: None
+        blast_db (str):
+            location of pre-computed BLAST DB for dataset. If None, compute and
+            save in 'blast_db'. Default: None
         random_seed (int):  specifies random seed for shuffling. Default: None
 
     Returns:
@@ -287,7 +313,11 @@ def find_similar(chain_sequences, blast_db, cutoff, dataset_size):
     """
     sim = set()
     for chain, seq in chain_sequences:
-        blastp_cline = NcbiblastpCommandline(db=blast_db, outfmt="10 nident sacc", num_alignments=dataset_size, cmd='/usr/local/ncbi/blast/bin/blastp')
+        blastp_cline = NcbiblastpCommandline(
+            db=blast_db,
+            outfmt="10 nident sacc",
+            num_alignments=dataset_size,
+            cmd='/usr/local/ncbi/blast/bin/blastp')
         out, err = blastp_cline(stdin=seq)
 
         for res in out.split():
@@ -347,7 +377,11 @@ def write_to_blast_db(all_chain_sequences, blast_db):
 
     write_fasta(flat_map, blast_db)
 
-    subprocess.check_output('makeblastdb -in ' + blast_db + ' -dbtype prot', shell=True)
+    subprocess.check_output(
+        'makeblastdb -in ' +
+        blast_db +
+        ' -dbtype prot',
+        shell=True)
 
 
 def get_chain_sequences(pdb_file):
@@ -359,10 +393,10 @@ def get_chain_sequences(pdb_file):
     for seq in SeqIO.parse(pdb_file, 'pdb-atom'):
         try:
             pdb_id = seq.idcode
-        except:
+        except BaseException:
             pdb_id = os.path.basename(pdb_file).rstrip('.pdb')
         chain = pdb_id + '_' + seq.annotations['chain']
-        chain_seqs.append((chain,str(seq.seq)))
+        chain_seqs.append((chain, str(seq.seq)))
     return chain_seqs
 
 
@@ -378,5 +412,5 @@ def write_fasta(seq_dict, outfile):
     """
     with open(outfile, 'w') as f:
         for i, s in seq_dict.items():
-            f.write('>'+i+'\n')
+            f.write('>' + i + '\n')
             f.write(s + '\n')
