@@ -1,9 +1,12 @@
 import numpy as np
 import subprocess
+import tqdm
 import os, sys
 from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio import SeqIO
 sys.path.append('../..')
+
+import atom3d.util.datatypes as dt
 
 
 # Splits data into test, validation, and training sets.
@@ -361,6 +364,12 @@ def get_chain_sequences(pdb_file):
         chain = pdb_id + '_' + seq.annotations['chain']
         chain_seqs.append((chain,str(seq.seq)))
     return chain_seqs
+
+
+def get_all_chain_sequences(pdb_dataset):
+    """Return list of tuples of (pdb_code, chain_sequences) for PDB dataset."""
+    return [(dt.get_pdb_code(p), get_chain_sequences(p))
+            for p in tqdm.tqdm(pdb_dataset)]
 
 
 def write_fasta(seq_dict, outfile):
