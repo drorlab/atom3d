@@ -335,3 +335,34 @@ def get_bonds_matrix(mol):
 
     return bonds_matrix
 
+def mol_to_df(mol, addHs=True):
+    """
+    Convert Mol object to dataframe format (with PDB columns)
+    """
+    df = col.defaultdict(list)
+    if addHs:
+        mol = Chem.AddHs(mol, addCoords=True)
+    conf = mol.GetConformer()
+    for i, a in enumerate(mol.GetAtoms()):
+        position = conf.GetAtomPosition(i)
+        df['structure'].append(None)
+        df['model'].append(None)
+        df['chain'].append('LIG')
+        df['hetero'].append('')
+        df['insertion_code'].append('')
+        df['residue'].append(999)
+        df['segid'].append('')
+        df['resname'].append('LIG')
+        df['altloc'].append('')
+        df['occupancy'].append('')
+        df['bfactor'].append('')
+        df['x'].append(position.x)
+        df['y'].append(position.y)
+        df['z'].append(position.z)
+        df['element'].append(a.GetSymbol())
+        df['name'].append(a.GetSymbol())
+        df['fullname'].append(a.GetSymbol())
+        df['serial_number'].append(None)
+    df = pd.DataFrame(df)
+    return df
+
