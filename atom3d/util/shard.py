@@ -64,6 +64,13 @@ def shard_dataset(input_dir, sharded, filetype, ensembler):
         _write_shard(sharded, shard_num, df)
 
 
+def iter_shards(sharded):
+    """Iterate through shards."""
+    num_shards = get_num_shards(sharded)
+    for i in range(num_shards):
+        yield read_shard(sharded, i)
+
+
 def read_shard(sharded, shard_num):
     """Read a single shard of a sharded dataset."""
     shard = _get_shard(sharded, shard_num)
