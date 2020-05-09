@@ -8,9 +8,12 @@ SCOP_CLA_LATEST_FILE = 'metadata/scop-cla-latest.txt'
 def get_scop_index():
     """Get index mapping from PDB code to SCOP classification."""
 
-    scop = pd.read_csv(SCOP_CLA_LATEST_FILE, skiprows=6, delimiter=' ',
-                       names=['pdb_code', 'scop'], usecols=[1, 10])
-    scop['pdb_code'] = scop['pdb_code'].apply(lambda x: x.lower())
+    scop = pd.read_csv(
+        SCOP_CLA_LATEST_FILE, skiprows=6, delimiter=' ',
+        names=['fa-domid', 'fa-pdbid', 'fa-pdbreg', 'fa-uniid', 'fa-unireg',
+               'sf-domid', 'sf-pdbid', 'sf-pdbreg', 'sf-uniid', 'sf-unireg',
+               'scop'])
+    scop['pdb_code'] = scop['fa-pdbid'].apply(lambda x: x.lower())
     scop['type'] = \
         scop['scop'].apply(lambda x: int(x.split(',')[0].split('=')[1]))
     scop['class'] = \
