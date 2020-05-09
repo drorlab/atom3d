@@ -10,9 +10,7 @@ import atom3d.util.datatypes as dt
 
 
 def find_similar(chain_sequences, blast_db, cutoff, dataset_size):
-    """
-    Find all other pdbs that have sequence identity greater than cutoff.
-    """
+    """Find all other pdbs that have sequence identity greater than cutoff."""
     sim = set()
     for chain, s in chain_sequences:
         blastp_cline = NcbiblastpCommandline(
@@ -132,11 +130,11 @@ def get_all_chain_sequences(pdb_dataset):
             for p in tqdm.tqdm(pdb_dataset)]
 
 
-def write_fasta(seq_dict, outfile):
+def write_fasta(chain_sequences, outfile):
     """
-    Takes dictionary of sequences keyed by id and writes to fasta file
+    Write chain_sequences to fasta file.
     """
     with open(outfile, 'w') as f:
-        for i, s in seq_dict.items():
-            f.write('>' + i + '\n')
-            f.write(s + '\n')
+        for chain, seq in chain_sequences.items():
+            f.write('>' + chain + '\n')
+            f.write(seq + '\n')
