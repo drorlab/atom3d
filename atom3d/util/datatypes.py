@@ -253,9 +253,9 @@ def bp_from_xyz_dict(data,struct_name='structure'):
     return s
 
 
-def read_sdf_to_mol(sdf_file,sanitize=True, addHs=False):
+def read_sdf_to_mol(sdf_file,sanitize=True, addHs=False, removeHs=True):
 
-    suppl = Chem.SDMolSupplier(sdf_file,sanitize=sanitize)
+    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=removeHs)
     molecules = [mol for mol in suppl]
     if addHs:
         molecules = [Chem.AddHs(mol, addCoords=True) for mol in suppl]
