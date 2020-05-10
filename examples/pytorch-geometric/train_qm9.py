@@ -91,7 +91,10 @@ def test(model,loader,device,std):
 
 
 
-def main(target = 0, dim = 64, prefix='mu'):
+def main(target = 0, dim = 64, prefix='mu', seed=42):
+
+    # Set the random seed
+    torch.manual_seed(seed)
 
     # Set up logging
     try:
@@ -190,8 +193,9 @@ if __name__ == '__main__':
     parser.add_argument('--target', type=int, default=0, help='target')
     parser.add_argument('--prefix', type=str, default='mu', help='prefix for the log files')
     parser.add_argument('--load', action="store_true", help='load existing model if present (not yet implemented)')
+    parser.add_argument('--seed', type=int, help='random seed')
     args = parser.parse_args()
 
-    main(args.target, args.dim, args.prefix)
+    main(args.target, args.dim, args.prefix, args.seed)
 
 
