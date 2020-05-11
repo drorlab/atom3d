@@ -2,6 +2,8 @@
 import pandas as pd
 
 import atom3d.util.scop as scop
+import atom3d.util.sequence as seq
+import atom3d.util.shard as sh
 
 
 PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
@@ -146,6 +148,32 @@ def form_scop_filter(level, allowed=[], excluded=[]):
         else:
             to_keep = pd.Series([True] * len(df), index=df['structure'])
         return df[to_keep.values]
+    return filter_fn
+
+
+def form_seq_filter_against(sharded, cutoff):
+    """
+    Remove pairs with too much sequence identity to a chain in sharded.
+
+    We consider each chain in the pair separately, and remove if any of them
+    matches any chain in sharded.
+    """
+    blast_db_path = f'{sharded:}.db'
+    all_chain_sequences = []
+    for shard in sh.iter_shards(sharded):
+        all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
+    seq.write_to_blast_db(all_chain_sequences, blast_db_path)
+
+    def filter_fn(df):
+        all_chain_sequences = seq.get_all_chain_sequences_df(df)
+        to_keep = {}
+        for structure_name, cs in all_chain_sequences:
+            hits = seq.find_similar(cs, blast_db_path, cutoff, 1)
+            ensemble = structure_name[0]
+            to_keep[ensemble] = (len(hits) == 0)
+        to_keep = pd.Series(to_keep)[df['ensemble']]
+        return df[to_keep.values]
+
     return filter_fn
 
 
