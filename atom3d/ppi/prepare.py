@@ -1,4 +1,4 @@
-"""Code for pruning DIPS pairs."""
+"""Code for preparing a pairs dataset (filtering and splitting)."""
 import click
 import numpy as np
 import pandas as pd
