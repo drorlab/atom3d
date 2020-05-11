@@ -147,18 +147,15 @@ def get_all_chain_sequences(pdb_dataset):
 def get_all_chain_sequences_df(df):
     """Return list of tuples of (struct_name, chain_sequences) for sharded."""
     all_chain_sequences = []
+    # Keep only CA of standard residues
+    df = df[df['name'] == 'CA'].drop_duplicates()
+    df = df[df['resname'].apply(lambda x: poly.is_aa(x, standard=True))]
+    df['resname'] = df['resname'].apply(poly.three_to_one)
     for s, structure in df.groupby(
             ['ensemble', 'subunit', 'structure']):
         chain_sequences = []
         for c, chain in structure.groupby(['model', 'chain']):
-            residues = chain[chain['name'] == 'CA']
-            residues = residues.drop_duplicates()
-            residues = residues[residues['resname'].apply(
-                lambda x: poly.is_aa(x, standard=True))]
-            if len(residues) == 0:
-                continue
-            seq = residues['resname'].apply(poly.three_to_one).tolist()
-            seq = ''.join(seq)
+            seq = ''.join(chain['resname'])
             chain_sequences.append((c, seq))
         all_chain_sequences.append((s, chain_sequences))
     return all_chain_sequences
