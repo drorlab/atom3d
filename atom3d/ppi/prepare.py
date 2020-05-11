@@ -6,6 +6,7 @@ import pandas as pd
 import atom3d.ppi.neighbors as nb
 import atom3d.util.file as fi
 import atom3d.util.filters as filters
+import atom3d.util.log as log
 import atom3d.util.scop as scop
 import atom3d.util.sequence as seq
 import atom3d.util.shard as sh
@@ -13,12 +14,17 @@ import atom3d.util.shard_ops as sho
 import atom3d.util.splits as splits
 
 
+logger = log.getLogger('prepare')
+
+
 def split(input_sharded, output_root):
     """Split by sequence identity."""
     all_chain_sequences = []
+    logger.info('Loading chain sequences')
     for shard in sh.iter_shards(input_sharded):
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
 
+    logger.info('Splitting by cluster')
     train, val, test = splits.cluster_split(all_chain_sequences, 0.3)
 
     # Will just look up ensembles.
@@ -32,6 +38,7 @@ def split(input_sharded, output_root):
     val_sharded = f'{prefix:}_val@{num_shards:}'
     test_sharded = f'{prefix:}_test@{num_shards:}'
 
+    logger.info('Writing sets')
     train_filter_fn = filters.form_filter_against_list(train, 'ensemble')
     val_filter_fn = filters.form_filter_against_list(val, 'ensemble')
     test_filter_fn = filters.form_filter_against_list(test, 'ensemble')
