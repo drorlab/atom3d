@@ -231,3 +231,16 @@ def identity_filter(df):
 
 def compose(f, g):
     return lambda x: f(g(x))
+
+
+def form_filter_against_list(against, column):
+    """Filter against list for column of dataframe."""
+
+    def filter_fn(df):
+        to_keep = {}
+        for e, ensemble in df.groupby([column]):
+            to_keep[e] = e in against
+        to_keep = pd.Series(to_keep)[df[column]]
+        return df[to_keep.values]
+
+    return filter_fn
