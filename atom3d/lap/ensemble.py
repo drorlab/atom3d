@@ -25,5 +25,4 @@ def lap_ensembler(pdb_files):
             inactive.split('_')[2] + '_inactive': pdbs[inactive],
         }
 
-    import pdb; pdb.set_trace()
     return ensembles
