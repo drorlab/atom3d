@@ -55,7 +55,7 @@ def random_split(dataset_size, train_split=None, vali_split=0.1,
 
     # Initialize the indices
     all_indices = np.arange(dataset_size, dtype=int)
-    logger.info('Splitting dataset with', len(all_indices), 'entries.')
+    logger.info(f'Splitting dataset with {len(all_indices):} entries.')
 
     # Delete all indices that shall be excluded
     if exclude is None:
