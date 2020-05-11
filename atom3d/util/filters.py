@@ -147,3 +147,11 @@ def form_scop_filter(level, allowed=[], excluded=[]):
             to_keep = pd.Series([True] * len(df), index=df['structure'])
         return df[to_keep.values]
     return filter_fn
+
+
+def identity_filter(df):
+    return df
+
+
+def compose(f, g):
+    return lambda x: f(g(x))
