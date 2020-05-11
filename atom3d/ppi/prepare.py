@@ -156,7 +156,7 @@ def filter_pairs(input_sharded, output_sharded, bsa, against):
             form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
 
     sho.filter_sharded(input_sharded, output_sharded, filter_fn)
-    split(input_sharded, output_sharded)
+    split(output_sharded, output_sharded)
 
 
 if __name__ == "__main__":
