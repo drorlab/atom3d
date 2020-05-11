@@ -1,3 +1,4 @@
+"""Code for pruning DIPS pairs."""
 import click
 import numpy as np
 import pandas as pd
@@ -6,8 +7,38 @@ import atom3d.ppi.neighbors as nb
 import atom3d.util.file as fi
 import atom3d.util.filters as filters
 import atom3d.util.scop as scop
+import atom3d.util.sequence as seq
 import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
+import atom3d.util.splits as splits
+
+
+def split(input_sharded, output_root):
+    """Split by sequence identity."""
+    all_chain_sequences = []
+    for shard in sh.iter_shards(input_sharded):
+        all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
+
+    train, val, test = splits.cluster_split(all_chain_sequences, 0.3)
+
+    # Will just look up ensembles.
+    train = [x[0] for x in train]
+    val = [x[0] for x in val]
+    test = [x[0] for x in test]
+
+    prefix = sh._get_prefix(output_root)
+    num_shards = sh.get_num_shards(output_root)
+    train_sharded = f'{prefix:}_train@{num_shards:}'
+    val_sharded = f'{prefix:}_val@{num_shards:}'
+    test_sharded = f'{prefix:}_test@{num_shards:}'
+
+    train_filter_fn = filters.form_filter_against_list(train, 'ensemble')
+    val_filter_fn = filters.form_filter_against_list(val, 'ensemble')
+    test_filter_fn = filters.form_filter_against_list(test, 'ensemble')
+
+    sho.filter_sharded(input_sharded, train_sharded, train_filter_fn)
+    sho.filter_sharded(input_sharded, val_sharded, val_filter_fn)
+    sho.filter_sharded(input_sharded, test_sharded, test_filter_fn)
 
 
 def form_scop_pair_filter_against(sharded, level):
@@ -108,15 +139,17 @@ def filter_pairs(input_sharded, output_sharded, bsa, against):
         filters.form_resolution_filter(3.5), filter_fn)
     filter_fn = filters.compose(
         filters.form_source_filter(allowed=['diffraction', 'EM']), filter_fn)
-    filter_fn = filters.compose(
-        filters.form_seq_filter_against(against, 0.2), filter_fn)
-    filter_fn = filters.compose(
-        form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
+    if against is not None:
+        filter_fn = filters.compose(
+            filters.form_seq_filter_against(against, 0.3), filter_fn)
+        filter_fn = filters.compose(
+            form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
     if bsa is not None:
         filter_fn = filters.compose(
             form_bsa_filter(bsa, 500), filter_fn)
 
     sho.filter_sharded(input_sharded, output_sharded, filter_fn)
+    split(input_sharded, output_sharded)
 
 
 if __name__ == "__main__":
