@@ -183,7 +183,7 @@ def create_cluster_split(all_chain_sequences, clusterings, cutoff, split_size,
     split = set()
     idx = 0
     while len(split) < split_size:
-        (rand_id, rand_cs) = all_chain_sequences[idx]
+        (rand_id, _) = all_chain_sequences[idx]
         split.add(rand_id)
         hits = seq.find_cluster_members(rand_id, clusterings)
         # ensure that at least min_fam_in_split families in each split
