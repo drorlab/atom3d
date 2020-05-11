@@ -1,24 +1,44 @@
 """Code for preparing a lap dataset (filtering and splitting)."""
 import click
+import pandas as pd
 
+import atom3d.util.log as log
 import atom3d.util.filters as filters
 import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
 import atom3d.util.splits as splits
 
 
-def split(input_sharded, output_root):
-    """Split randomly."""
+logger = log.getLogger('lap_prepare')
+
+
+def split(input_sharded, output_root, info_csv):
+    """Split randomly, balancing inactives and actives across sets."""
+    info = pd.read_csv(info_csv)
+    info['ensemble'] = info.apply(
+        lambda x: x['ligand'] + '__' + x['active_struc'].split('_')[2] + '__' +
+        x['inactive_struc'].split('_')[2], axis=1)
+    info = info.set_index('ensemble')
+    # Remove duplicate ensembles.
+    info = info[~info.index.duplicated()]
 
     ensembles = sh.get_names(input_sharded)
-    num_total = len(ensembles)
+    in_use = info.loc[ensembles]
+    active = in_use[in_use['label'] == 'A']
+    inactive = in_use[in_use['label'] == 'I']
 
-    indices_test, indices_val, indices_train = splits.random_split(num_total)
+    a_test, a_val, a_train = splits.random_split(len(active))
+    i_test, i_val, i_train = splits.random_split(len(inactive))
 
-    # Will just look up ensembles.
-    train = [ensembles[i] for i in indices_train]
-    val = [ensembles[i] for i in indices_val]
-    test = [ensembles[i] for i in indices_test]
+    train = active.iloc[a_train].index.tolist() + \
+        inactive.iloc[i_train].index.tolist()
+    val = active.iloc[a_val].index.tolist() + \
+        inactive.iloc[i_val].index.tolist()
+    test = active.iloc[a_test].index.tolist() + \
+        inactive.iloc[i_test].index.tolist()
+
+    logger.info(f'{len(train):} train examples, {len(val):} val examples, '
+                f'{len(test):} test examples.')
 
     prefix = sh._get_prefix(output_root)
     num_shards = sh.get_num_shards(output_root)
@@ -38,8 +58,9 @@ def split(input_sharded, output_root):
 @click.command(help='Prepare lap dataset')
 @click.argument('input_sharded', type=click.Path())
 @click.argument('output_sharded', type=click.Path())
-def prepare(input_sharded, output_sharded):
-    split(input_sharded, output_sharded)
+@click.argument('info_csv', type=click.Path(exists=True))
+def prepare(input_sharded, output_sharded, info_csv):
+    split(input_sharded, output_sharded, info_csv)
 
 
 if __name__ == "__main__":

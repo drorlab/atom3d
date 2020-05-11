@@ -18,10 +18,12 @@ def lap_ensembler(pdb_files):
         lig = entry['ligand']
         active = entry['active_struc']
         inactive = entry['inactive_struc']
-        name = lig + '__' + active + '__' + inactive
+        name = lig + '__' + active.split('_')[2] + '__' + \
+            inactive.split('_')[2]
         ensembles[name] = {
-            'active': pdbs[active],
-            'inactive': pdbs[inactive],
+            active.split('_')[2] + '_active': pdbs[active],
+            inactive.split('_')[2] + '_inactive': pdbs[inactive],
         }
 
+    import pdb; pdb.set_trace()
     return ensembles
