@@ -6,6 +6,7 @@ from Bio import SeqIO
 from Bio.Blast.Applications import NcbiblastpCommandline
 import Bio.PDB.Polypeptide as poly
 import dotenv as de
+import numpy as np
 import tqdm
 
 import atom3d.util.datatypes as dt
@@ -70,7 +71,7 @@ def get_pdb_clusters(id_level, pdb_ids=None):
             pdbs = line.strip().split()
             pdbs = [p[:4].lower() for p in pdbs]
             for pdb in pdbs:
-                if pdb_ids is not None and pdb not in pdb_ids:
+                if pdb_ids is not None and not np.isin(pdb, pdb_ids).any():
                     continue
                 if pdb not in pdb2cluster:
                     pdb2cluster[pdb] = set()

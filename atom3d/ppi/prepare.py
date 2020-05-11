@@ -139,14 +139,14 @@ def filter_pairs(input_sharded, output_sharded, bsa, against):
         filters.form_resolution_filter(3.5), filter_fn)
     filter_fn = filters.compose(
         filters.form_source_filter(allowed=['diffraction', 'EM']), filter_fn)
+    if bsa is not None:
+        filter_fn = filters.compose(
+            form_bsa_filter(bsa, 500), filter_fn)
     if against is not None:
         filter_fn = filters.compose(
             filters.form_seq_filter_against(against, 0.3), filter_fn)
         filter_fn = filters.compose(
             form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
-    if bsa is not None:
-        filter_fn = filters.compose(
-            form_bsa_filter(bsa, 500), filter_fn)
 
     sho.filter_sharded(input_sharded, output_sharded, filter_fn)
     split(input_sharded, output_sharded)
