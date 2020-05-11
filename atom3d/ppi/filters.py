@@ -10,7 +10,7 @@ import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
 
 
-def form_scop_filter_against(sharded, level):
+def form_scop_pair_filter_against(sharded, level):
     """Remove pairs that have matching scop classes in both subunits."""
 
     scop_index = scop.get_scop_index()[level]
@@ -111,7 +111,7 @@ def filter_pairs(input_sharded, output_sharded, bsa, against):
     filter_fn = filters.compose(
         filters.form_seq_filter_against(against, 0.2), filter_fn)
     filter_fn = filters.compose(
-        form_scop_filter_against(against, 'superfamily'), filter_fn)
+        form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
     if bsa is not None:
         filter_fn = filters.compose(
             form_bsa_filter(bsa, 500), filter_fn)

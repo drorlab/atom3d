@@ -8,7 +8,7 @@ PDB_CHAIN_SCOP2B_SF_UNIPROT_FILE = 'metadata/pdb_chain_scop2b_sf_uniprot.csv'
 
 
 def get_scop_index():
-    """Get index mapping from PDB code and chian to SCOP classification."""
+    """Get index mapping from PDB code and chain to SCOP classification."""
 
     # Load core SCOP database.  Mapping from domains to classification.
     scop = pd.read_csv(
