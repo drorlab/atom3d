@@ -18,6 +18,14 @@ conda activate atom3d
 make requirements
 ```
 
+To setup environment configuration (e.g., to point to blast executables):
+
+```
+make env
+```
+
+Then fill in appropriate values .env
+
 ## Sample usage
 
 To split a PDB for the protein interface prediction (ppi) dataset:
