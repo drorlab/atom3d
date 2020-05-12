@@ -335,7 +335,7 @@ def get_bonds_matrix(mol):
 
     return bonds_matrix
 
-def mol_to_df(mol, addHs=True):
+def mol_to_df(mol, addHs=True, structure=None, model=None):
     """
     Convert Mol object to dataframe format (with PDB columns)
     """
@@ -345,8 +345,8 @@ def mol_to_df(mol, addHs=True):
     conf = mol.GetConformer()
     for i, a in enumerate(mol.GetAtoms()):
         position = conf.GetAtomPosition(i)
-        df['structure'].append(None)
-        df['model'].append(None)
+        df['structure'].append(structure)
+        df['model'].append(model)
         df['chain'].append('LIG')
         df['hetero'].append('')
         df['insertion_code'].append('')
