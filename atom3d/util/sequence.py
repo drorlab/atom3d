@@ -4,20 +4,33 @@ import subprocess
 
 from Bio import SeqIO
 from Bio.Blast.Applications import NcbiblastpCommandline
+import Bio.PDB.Polypeptide as poly
+import dotenv as de
+import numpy as np
 import tqdm
 
 import atom3d.util.datatypes as dt
+import atom3d.util.log as log
 
 
-def find_similar(chain_sequences, blast_db, cutoff, dataset_size):
+project_root = os.path.abspath(os.path.join(__file__, '../../..'))
+de.load_dotenv(os.path.join(project_root, '.env'))
+logger = log.getLogger('sequence')
+
+
+def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
     """Find all other pdbs that have sequence identity greater than cutoff."""
+
+    if 'BLAST_BIN' not in os.environ:
+        raise RuntimeError('Need to set BLAST_BIN in .env to use blastp')
+
     sim = set()
     for chain, s in chain_sequences:
         blastp_cline = NcbiblastpCommandline(
             db=blast_db,
             outfmt="10 nident sacc",
-            num_alignments=dataset_size,
-            cmd='/usr/local/ncbi/blast/bin/blastp')
+            num_alignments=num_alignments,
+            cmd=os.path.join(os.environ['BLAST_BIN'], 'blastp'))
         out, err = blastp_cline(stdin=s)
 
         for res in out.split():
@@ -45,7 +58,7 @@ def get_pdb_clusters(id_level, pdb_ids=None):
         raise Exception(
             'invalid invalid identity cutoff. '
             'possible values = 30,40,50,70,90,95,100')
-    print('getting clusters from PDB...')
+    logger.info('getting clusters from PDB...')
     subprocess.call(
         'wget ftp://resources.rcsb.org/sequence/clusters/bc-{}.out'.format(
             id_level),
@@ -58,7 +71,7 @@ def get_pdb_clusters(id_level, pdb_ids=None):
             pdbs = line.strip().split()
             pdbs = [p[:4].lower() for p in pdbs]
             for pdb in pdbs:
-                if pdb_ids is not None and pdb not in pdb_ids:
+                if pdb_ids is not None and not np.isin(pdb, pdb_ids).any():
                     continue
                 if pdb not in pdb2cluster:
                     pdb2cluster[pdb] = set()
@@ -88,39 +101,40 @@ def find_cluster_members(pdb, clusterings):
 ####################################
 
 def write_to_blast_db(all_chain_sequences, blast_db):
-    """Write provided pdb dataset to blast db, for use with BLAST.
+    """Write provided chain sequences to blast db, for use with BLAST.
 
     Inputs:
-    - all_chain_sequences: list of (pdb_id, chain_sequences)
+    - all_chain_sequences: list of (structure name, chain_sequences)
     """
-    print('writing chain sequences to BLAST db')
+    logger.info(f'writing {len(all_chain_sequences):} chain sequences '
+                f'to BLAST db {blast_db:}')
+
+    if 'BLAST_BIN' not in os.environ:
+        raise RuntimeError('Need to set BLAST_BIN in .env to use makeblastdb')
+
     flat_map = {}
-    for cs in all_chain_sequences:
-        for (chain, seq) in cs:
-            flat_map[chain] = seq
+    for (structure_name, cs) in all_chain_sequences:
+        for (chain_name, seq) in cs:
+            name = '__'.join([str(x) for x in structure_name + chain_name])
+            flat_map[name] = seq
 
     write_fasta(flat_map, blast_db)
 
-    subprocess.check_output(
-        'makeblastdb -in ' +
-        blast_db +
-        ' -dbtype prot',
-        shell=True)
+    cmd = os.path.join(os.environ['BLAST_BIN'], 'makeblastdb')
+    subprocess.check_output(f'{cmd:} -in {blast_db:} -dbtype prot', shell=True)
 
 
 def get_chain_sequences(pdb_file):
     """
-    Returns list of chain sequences from PDB file
+    Return list of chain sequences from PDB file.
+
+    Takes the form of list of (chain name, sequence string).
     """
 #     fname = os.path.join(path, pdb, pdb + '_protein.pdb')
     chain_seqs = []
     for seq in SeqIO.parse(pdb_file, 'pdb-atom'):
-        try:
-            pdb_id = seq.idcode
-        except BaseException:
-            pdb_id = os.path.basename(pdb_file).rstrip('.pdb')
-        chain = pdb_id + '_' + seq.annotations['chain']
-        chain_seqs.append((chain, str(seq.seq)))
+        chain = seq.annotations['chain']
+        chain_seqs.append(((chain,), str(seq.seq)))
     return chain_seqs
 
 
@@ -128,6 +142,23 @@ def get_all_chain_sequences(pdb_dataset):
     """Return list of tuples of (pdb_code, chain_sequences) for PDB dataset."""
     return [(dt.get_pdb_code(p), get_chain_sequences(p))
             for p in tqdm.tqdm(pdb_dataset)]
+
+
+def get_all_chain_sequences_df(df):
+    """Return list of tuples of (struct_name, chain_sequences) for sharded."""
+    all_chain_sequences = []
+    # Keep only CA of standard residues
+    df = df[df['name'] == 'CA'].drop_duplicates()
+    df = df[df['resname'].apply(lambda x: poly.is_aa(x, standard=True))]
+    df['resname'] = df['resname'].apply(poly.three_to_one)
+    for s, structure in df.groupby(
+            ['ensemble', 'subunit', 'structure']):
+        chain_sequences = []
+        for c, chain in structure.groupby(['model', 'chain']):
+            seq = ''.join(chain['resname'])
+            chain_sequences.append((c, seq))
+        all_chain_sequences.append((s, chain_sequences))
+    return all_chain_sequences
 
 
 def write_fasta(chain_sequences, outfile):

@@ -3,9 +3,12 @@ import sys
 
 import numpy as np
 
+import atom3d.util.file as fi
+import atom3d.util.log as log
 import atom3d.util.sequence as seq
 
 sys.path.append('../..')
+logger = log.getLogger('splits')
 
 
 def read_split_file(split_file):
@@ -52,16 +55,16 @@ def random_split(dataset_size, train_split=None, vali_split=0.1,
 
     # Initialize the indices
     all_indices = np.arange(dataset_size, dtype=int)
-    print('Splitting dataset with', len(all_indices), 'entries.')
+    logger.info(f'Splitting dataset with {len(all_indices):} entries.')
 
     # Delete all indices that shall be excluded
     if exclude is None:
         indices = all_indices
     else:
-        print('Excluding', len(exclude), 'entries.')
+        logger.info('Excluding', len(exclude), 'entries.')
         to_keep = np.invert(np.isin(all_indices, exclude))
         indices = all_indices[to_keep]
-        print('Remaining', len(indices), 'entries.')
+        logger.info('Remaining', len(indices), 'entries.')
     num_indices = len(indices)
 
     # Calculate the numbers of elements per split
@@ -147,28 +150,45 @@ def cluster_split(all_chain_sequences, cutoff, val_split=0.1,
     if random_seed is not None:
         np.random.seed(random_seed)
 
-    n = len(all_chain_sequences)
+    pdb_codes = \
+        np.unique([fi.get_pdb_code(x[0]) for (x, _) in all_chain_sequences])
+    n_orig = len(pdb_codes)
+    clusterings = seq.get_pdb_clusters(cutoff, pdb_codes)
+
+    # If code not present in clustering, we don't use.
+    all_chain_sequences = \
+        [(x, cs) for (x, cs) in all_chain_sequences
+         if fi.get_pdb_code(x[0]) in clusterings[0]]
+    pdb_codes = \
+        np.unique([fi.get_pdb_code(x[0]) for (x, _) in all_chain_sequences])
+    n = len(pdb_codes)
+
+    logger.info(
+        f'Removing {n_orig - n:} / {n_orig:} '
+        f'sequences due to not finding in clustering.')
+
     test_size = n * test_split
     val_size = n * val_split
     max_hit_size_test = test_size / min_fam_in_split
     max_hit_size_val = val_size / min_fam_in_split
 
     np.random.shuffle(all_chain_sequences)
-    pdb_ids = [p for (p, _) in all_chain_sequences]
 
-    clusterings = seq.get_pdb_clusters(cutoff, pdb_ids)
-
-    print('generating validation set...')
+    logger.info('generating validation set...')
     val_set, all_chain_sequences = create_cluster_split(
         all_chain_sequences, clusterings, cutoff, val_size, min_fam_in_split)
-    print('generating test set...')
+    logger.info('generating test set...')
     test_set, all_chain_sequences = create_cluster_split(
         all_chain_sequences, clusterings, cutoff, test_size, min_fam_in_split)
-    train_set = set([p for (p, _) in all_chain_sequences])
+    train_set = all_chain_sequences
 
-    print('train size', len(train_set))
-    print('val size', len(val_set))
-    print('test size', len(test_set))
+    train_set = [x[0] for x in train_set]
+    val_set = [x[0] for x in val_set]
+    test_set = [x[0] for x in test_set]
+
+    logger.info(f'train size {len(train_set):}')
+    logger.info(f'val size {len(val_set):}')
+    logger.info(f'test size {len(test_set):}')
 
     return train_set, val_set, test_set
 
@@ -179,13 +199,14 @@ def create_cluster_split(all_chain_sequences, clusterings, cutoff, split_size,
     Create a split while retaining diversity specified by min_fam_in_split.
     Returns split and removes any pdbs in this split from the remaining dataset
     """
-    pdb_ids = [p for (p, _) in all_chain_sequences]
+    pdb_ids = np.array(
+        [fi.get_pdb_code(p[0]) for (p, _) in all_chain_sequences])
     split = set()
     idx = 0
     while len(split) < split_size:
-        (rand_id, rand_cs) = all_chain_sequences[idx]
-        split.add(rand_id)
-        hits = seq.find_cluster_members(rand_id, clusterings)
+        (rand_id, _) = all_chain_sequences[idx]
+        pdb_code = fi.get_pdb_code(rand_id[0])
+        hits = seq.find_cluster_members(pdb_code, clusterings)
         # ensure that at least min_fam_in_split families in each split
         if len(hits) > split_size / min_fam_in_split:
             idx += 1
@@ -193,12 +214,13 @@ def create_cluster_split(all_chain_sequences, clusterings, cutoff, split_size,
         split = split.union(hits)
         idx += 1
 
-    for hit in split:
-        loc = pdb_ids.index(hit)
-        all_chain_sequences.pop(loc)
-        pdb_ids.pop(loc)
+    matches = np.array([i for i, x in enumerate(pdb_ids) if x in split])
+    selected_chain_sequences = \
+        [x for i, x in enumerate(all_chain_sequences) if i in matches]
+    remaining_chain_sequences = \
+        [x for i, x in enumerate(all_chain_sequences) if i not in matches]
 
-    return split, all_chain_sequences
+    return selected_chain_sequences, remaining_chain_sequences
 
 
 ####################################
@@ -240,7 +262,9 @@ def identity_split(
     if random_seed is not None:
         np.random.seed(random_seed)
 
-    n = len(all_chain_sequences)
+    pdb_codes = \
+        np.unique([fi.get_pdb_code(x[0]) for (x, _) in all_chain_sequences])
+    n = len(pdb_codes)
     test_size = n * test_split
     val_size = n * val_split
     max_hit_size_test = test_size / min_fam_in_split
@@ -248,17 +272,21 @@ def identity_split(
 
     np.random.shuffle(all_chain_sequences)
 
-    print('generating validation set...')
+    logger.info('generating validation set...')
     val_set, all_chain_sequences = create_identity_split(
         all_chain_sequences, cutoff, val_size, min_fam_in_split)
-    print('generating test set...')
+    logger.info('generating test set...')
     test_set, all_chain_sequences = create_identity_split(
         all_chain_sequences, cutoff, test_size, min_fam_in_split)
-    train_set = set([p for (p, _) in all_chain_sequences])
+    train_set = all_chain_sequences
 
-    print('train size', len(train_set))
-    print('val size', len(val_set))
-    print('test size', len(test_set))
+    train_set = [x[0] for x in train_set]
+    val_set = [x[0] for x in val_set]
+    test_set = [x[0] for x in test_set]
+
+    logger.info(f'train size {len(train_set):}')
+    logger.info(f'val size {len(val_set):}')
+    logger.info(f'test size {len(test_set):}')
 
     return train_set, val_set, test_set
 
@@ -270,7 +298,8 @@ def create_identity_split(all_chain_sequences, cutoff, split_size,
     Returns split and removes any pdbs in this split from the remaining dataset
     """
     dataset_size = len(all_chain_sequences)
-    pdb_ids = [p for (p, _) in all_chain_sequences]
+    pdb_ids = np.array(
+        [fi.get_pdb_code(p[0]) for (p, _) in all_chain_sequences])
     split = set()
     idx = 0
     while len(split) < split_size:
@@ -284,9 +313,10 @@ def create_identity_split(all_chain_sequences, cutoff, split_size,
         split = split.union(hits)
         idx += 1
 
-    for hit in split:
-        loc = pdb_ids.index(hit)
-        all_chain_sequences.pop(loc)
-        pdb_ids.pop(loc)
+    matches = np.array([i for i, x in enumerate(pdb_ids) if x in split])
+    selected_chain_sequences = \
+        [x for i, x in enumerate(all_chain_sequences) if i in matches]
+    remaining_chain_sequences = \
+        [x for i, x in enumerate(all_chain_sequences) if i not in matches]
 
-    return split, all_chain_sequences
+    return selected_chain_sequences, remaining_chain_sequences

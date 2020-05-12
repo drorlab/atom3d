@@ -1,7 +1,11 @@
 """Common filtering functions."""
+import numpy as np
 import pandas as pd
 
+import atom3d.util.file as fi
 import atom3d.util.scop as scop
+import atom3d.util.sequence as seq
+import atom3d.util.shard as sh
 
 
 PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
@@ -146,4 +150,104 @@ def form_scop_filter(level, allowed=[], excluded=[]):
         else:
             to_keep = pd.Series([True] * len(df), index=df['structure'])
         return df[to_keep.values]
+    return filter_fn
+
+
+def form_seq_filter_against(sharded, cutoff):
+    """
+    Remove structures with too much sequence identity to a chain in sharded.
+
+    We consider each chain in each structure separately, and remove the
+    structure if any of them matches any chain in sharded.
+    """
+    blast_db_path = f'{sharded:}.db'
+    all_chain_sequences = []
+    for shard in sh.iter_shards(sharded):
+        all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
+    seq.write_to_blast_db(all_chain_sequences, blast_db_path)
+
+    def filter_fn(df):
+        all_chain_sequences = seq.get_all_chain_sequences_df(df)
+        to_keep = {}
+        for structure_name, cs in all_chain_sequences:
+            hits = seq.find_similar(cs, blast_db_path, cutoff, 1)
+            ensemble = structure_name[0]
+            to_keep[ensemble] = (len(hits) == 0)
+        to_keep = pd.Series(to_keep)[df['ensemble']]
+        return df[to_keep.values]
+
+    return filter_fn
+
+
+def form_scop_filter_against(sharded, level, conservative):
+    """
+    Remove structures with matching scop class to a chain in sharded.
+
+    We consider each chain in each structure separately, and remove the
+    structure if any of them matches any chain in sharded.
+
+    This is done at the specified scop level, which can be one of type, class,
+    fold, superfamily, or family.
+
+    Conservative indicates what we should do about pdbs that do not have any
+    scop class associated with them.  True means we throw out, False means we
+    keep.
+    """
+    scop_index = scop.get_scop_index()[level]
+
+    scop_against = []
+    for shard in sh.iter_shards(sharded):
+        for (e, su, st), structure in shard.groupby(
+                ['ensemble', 'subunit', 'structure']):
+            pc = fi.get_pdb_code(st).lower()
+            for (m, c), _ in structure.groupby(['model', 'chain']):
+                if (pc, c) in scop_index:
+                    scop_against.append(scop_index.loc[(pc, c)].values)
+    scop_against = np.unique(np.concatenate(scop_against))
+
+    def filter_fn(df):
+        to_keep = {}
+        for (e, su, st), structure in df.groupby(
+                ['ensemble', 'subunit', 'structure']):
+            pc = fi.get_pdb_code(st).lower()
+            for (m, c), _ in structure.groupby(['model', 'chain']):
+                if (pc, c) in scop_index:
+                    scop_found = scop_index.loc[(pc, c)].values
+                    if np.isin(scop_found, scop_against).any():
+                        to_keep[(st, m, c)] = False
+                    else:
+                        to_keep[(st, m, c)] = True
+                else:
+                    to_keep[(st, m, c)] = not conservative
+        to_keep = \
+            pd.Series(to_keep)[pd.Index(df[['structure', 'model', 'chain']])]
+        return df[to_keep.values]
+    return filter_fn
+
+
+def identity_filter(df):
+    return df
+
+
+def compose(f, g):
+
+    def filter_fn(df):
+        df = g(df)
+        if len(df) > 0:
+            return f(df)
+        else:
+            return df
+    return filter_fn
+
+
+def form_filter_against_list(against, column):
+    """Filter against list for column of dataframe."""
+
+    def filter_fn(df):
+        to_keep = {}
+        for e, ensemble in df.groupby([column]):
+            to_keep[e] = e in against
+        to_keep = pd.Series(to_keep)[df[column]]
+        return df[to_keep.values]
+
     return filter_fn

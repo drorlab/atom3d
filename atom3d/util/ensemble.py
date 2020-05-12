@@ -1,6 +1,7 @@
 """Ensembling operations for shards."""
 import pandas as pd
 
+import atom3d.lap.ensemble as lape
 import atom3d.ppi.db5 as db5
 import atom3d.psp.casp as casp
 import atom3d.util.datatypes as dt
@@ -16,6 +17,7 @@ def identity_ensembler(pdb_files):
 ensemblers = {
     'db5': db5.db5_ensembler,
     'casp': casp.casp_ensembler,
+    'lap': lape.lap_ensembler,
     'none': identity_ensembler,
 }
 

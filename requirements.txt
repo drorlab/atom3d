@@ -5,7 +5,7 @@ easy-parallel
 h5py
 numpy
 pandas
-python-dotenv
+python-dotenv>=0.5.1
 scipy
 sklearn
 tables

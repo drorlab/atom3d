@@ -22,10 +22,12 @@ def filter_sharded(input_sharded, output_sharded, filter_fn):
     # We will just map to tmp, then reshard.
     tmp_sharded = sh._get_prefix(output_sharded) + f'_tmp@{input_num_shards:}'
 
+    logging.info(f'Filtering {input_sharded:} to {output_sharded:}')
     # Apply filter.
     for shard_num in tqdm.trange(input_num_shards):
         df = sh.read_shard(input_sharded, shard_num)
-        df = filter_fn(df)
+        if len(df) > 0:
+            df = filter_fn(df)
         sh._write_shard(tmp_sharded, shard_num, df)
 
     num_input_structures = sh.get_num_structures(input_sharded)
