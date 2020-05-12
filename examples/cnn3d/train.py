@@ -78,7 +78,7 @@ def train_model(sess, args):
     logging.debug('Create input placeholder...')
     feature_placeholder = tf.placeholder(
         tf.float32,
-        [None, model.GRID_SIZE, model.GRID_SIZE, model.GRID_SIZE, model.NB_TYPE],
+        [None, model.GRID_SIZE, model.GRID_SIZE, model.GRID_SIZE, None],
         name='main_input')
     label_placeholder = tf.placeholder(tf.float32, [1], 'label')
     training_placeholder = tf.placeholder(tf.bool, shape=[], name='is_training')
@@ -106,7 +106,7 @@ def train_model(sess, args):
         # Loop over all batches (one batch is all feature for 1 protein)
         with tqdm.tqdm(total=num_iters, desc=progress_format.format(0)) as t:
             for i in range(num_iters):
-                struct_, feature_, label_ = next(generator)
+                target_, decoy_, num_res_, feature_, label_ = next(generator)
                 _, pred, loss = sess.run(
                     [train_op, predict_op, loss_op],
                     feed_dict={feature_placeholder: feature_,
@@ -114,7 +114,7 @@ def train_model(sess, args):
                                training_placeholder: (mode == 'train')})
                 epoch_loss += (np.mean(loss) - epoch_loss) / (i + 1)
 
-                structs.append(struct_)
+                structs.append('{:}/{:}'.format(target_, decoy_))
                 losses.append(loss)
                 preds.append(pred)
                 labels.append(label_)
@@ -135,30 +135,29 @@ def train_model(sess, args):
     train_generator = feature_psp.subgrid_dataset_generator(
         args.train_sharded, args.scores_dir, args.score_type, args.nb_type, args.
         grid_size, args.shuffle, args.random_seed, repeat=args.num_epochs,
-        num_iters=args.num_iters_train, max_res=args.max_res)
+        max_targets=args.max_targets_train, max_decoys=args.max_decoys_train,
+        res_count=args.res_count, min_res=args.min_res)
 
     val_generator = feature_psp.subgrid_dataset_generator(
         args.val_sharded, args.scores_dir, args.score_type, args.nb_type,
         args.grid_size, args.shuffle, args.random_seed,
-        repeat=args.num_epochs, num_iters=args.num_iters_val,
-        max_res=args.max_res)
+        repeat=args.num_epochs, max_targets=args.max_targets_val,
+        max_decoys=args.max_decoys_val,
+        res_count=args.res_count, min_res=args.min_res)
 
-    train_total_structs = sh.get_num_structures(args.train_sharded)
-    val_total_structs = sh.get_num_structures(args.val_sharded)
 
-    if args.num_iters_train == None:
-        train_num_structs = train_total_structs
+    if args.max_targets_train == None:
+        train_num_structs = sh.get_num_structures(args.train_sharded)
     else:
-        train_num_structs = args.num_iters_train
-    if args.num_iters_val == None:
-        val_num_structs = val_total_structs
+        train_num_structs = args.max_targets_train * args.max_decoys_train
+    if args.max_targets_val == None:
+        val_num_structs = sh.get_num_structures(args.val_sharded)
     else:
-        val_num_structs = args.num_iters_val
+        val_num_structs = args.max_targets_val * args.max_decoys_val
 
     logging.info("Start training with {:} structs for train and {:} structs for val per epoch".format(
         train_num_structs, val_num_structs))
-    logging.info("Total train: {:} structs , total val: {:} structs".format(
-        train_total_structs, val_total_structs))
+
 
     def _save():
         ckpt = saver.save(sess, os.path.join(args.output_dir, 'model-ckpt'),
@@ -212,16 +211,18 @@ def train_model(sess, args):
     test_generator = feature_psp.subgrid_dataset_generator(
         args.test_sharded, args.scores_dir, args.score_type, args.nb_type,
         args.grid_size, shuffle=False, random_seed=None, repeat=None,
-        num_iters=args.num_iters_test, max_res=args.max_res)
+        max_targets=args.max_targets_test,
+        max_decoys=args.max_decoys_test,
+        res_count=args.res_count, min_res=args.min_res)
 
-    test_total_structs = sh.get_num_structures(args.test_sharded)
-    if args.num_iters_test == None:
-        test_num_structs = test_total_structs
+
+    if args.max_targets_test == None:
+        test_num_structs = sh.get_num_structures(args.test_sharded)
     else:
-        test_num_structs = args.num_iters_test
+        test_num_structs = args.max_targets_test * args.max_decoys_test
 
-    logging.info("Start testing with {:} structs out of {:} structs".format(
-        test_num_structs, test_total_structs))
+    logging.info("Start testing with {:} structs".format(test_num_structs))
+
 
     test_structs, test_preds, test_labels, test_losses, test_loss = __loop(
         test_generator, 'test', num_iters=test_num_structs)
@@ -262,24 +263,31 @@ def create_train_parser():
         default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/labels/scores')
     parser.add_argument(
         '--train_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/train_decoy_20@100')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/train_decoy_50@250')
     parser.add_argument(
         '--val_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/val_decoy_20@10')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/val_decoy_50@25')
     parser.add_argument(
         '--test_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/test_decoy_20@20')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_20@20')
     parser.add_argument(
         '--output_dir', type=str,
         default='/scratch/users/psuriana/atom3d/model')
 
     # Training parameters
-    parser.add_argument('--max_res', type=int, default=300)
-    parser.add_argument('--num_iters_train', type=int, default=100)
-    parser.add_argument('--num_iters_val', type=int, default=100)
-    parser.add_argument('--num_iters_test', type=int, default=None)
+    parser.add_argument('--min_res', type=int, default=150)
+    parser.add_argument('--res_count', type=int, default=150)
+
+    parser.add_argument('--max_targets_train', type=int, default=None)
+    parser.add_argument('--max_targets_val', type=int, default=None)
+    parser.add_argument('--max_targets_test', type=int, default=None)
+
+    parser.add_argument('--max_decoys_train', type=int, default=None)
+    parser.add_argument('--max_decoys_val', type=int, default=None)
+    parser.add_argument('--max_decoys_test', type=int, default=None)
+
     parser.add_argument('--learning_rate', type=float, default=0.0001)
-    parser.add_argument('--num_epochs', type=int, default=50)
+    parser.add_argument('--num_epochs', type=int, default=5)
 
     parser.add_argument('--shuffle', action='store_true', default=False)
     parser.add_argument('--early_stopping', action='store_true', default=False)

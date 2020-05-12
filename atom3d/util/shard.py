@@ -104,9 +104,17 @@ def get_num_shards(sharded):
     return int(sharded.split('@')[-1])
 
 
+def get_num_ensembles(sharded):
+    """Get number of ensembles in sharded dataset."""
+    return get_names(sharded).shape[0]
+
+
 def get_num_structures(sharded):
     """Get number of structures in sharded dataset."""
-    return get_names(sharded).shape[0]
+    num_structs = 0
+    for df in iter_shards(sharded):
+        num_structs += df.groupby(['ensemble', 'subunit']).ngroups
+    return num_structs
 
 
 def move(source_sharded, dest_sharded):

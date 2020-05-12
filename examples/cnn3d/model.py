@@ -26,10 +26,6 @@ def _bias_variable(name, shape):
 def scoring_model(num_retype, maps, is_training, batch_norm=True,
                   validation='softplus', final_activation='sigmoid'):
 
-    '''prev_layer = tf.reshape(
-        maps, [-1, NB_TYPE, GRID_SIZE, GRID_SIZE, GRID_SIZE])
-    prev_layer = tf.transpose(prev_layer, perm=[0, 2, 3, 4, 1])'''
-
     prev_layer = maps
 
     retyper = _weight_variable("retype"+"_"+str(num_retype), [NB_TYPE, num_retype])
@@ -127,7 +123,7 @@ def scoring_model(num_retype, maps, is_training, batch_norm=True,
     NB_DIMOUT = 4*4*4*CONV3_OUT
     flat0 = tf.reshape(prev_layer,[-1,NB_DIMOUT])
 
-    LINEAR1_OUT = 64
+    LINEAR1_OUT = 160
 
     weightsLinear = _weight_variable("weights_L1"+"_"+str(num_retype),
                                      [NB_DIMOUT, LINEAR1_OUT])
@@ -148,6 +144,7 @@ def scoring_model(num_retype, maps, is_training, batch_norm=True,
         flat1 = tf.nn.softplus(prev_layer, name="softplus3")
     else:
         flat1 = tf.nn.elu(prev_layer, name="elu1")
+
 
     weightsLinear2 = _weight_variable("weights_L2"+"_"+str(num_retype),
                                       [LINEAR1_OUT, 1])

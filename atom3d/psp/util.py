@@ -4,6 +4,7 @@ import collections as col
 
 
 def get_target_name(filename):
+    filename = str(filename)
     _, ext = os.path.splitext(filename)
     if ext in ['.dat', '.ss2']:
         return os.path.splitext(os.path.basename(filename))[0]
@@ -14,6 +15,7 @@ def get_target_name(filename):
 
 
 def get_decoy_name(filename):
+    filename = str(filename)
     _, ext = os.path.splitext(filename)
     if ext not in ['.pdb', '.mmcif', '.dat', '.ss2']:
         return os.path.basename(filename)
