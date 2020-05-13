@@ -11,6 +11,7 @@ import tqdm
 
 import atom3d.util.datatypes as dt
 import atom3d.util.log as log
+import atom3d.util.file as fi
 
 
 project_root = os.path.abspath(os.path.join(__file__, '../../..'))
@@ -53,7 +54,7 @@ def get_pdb_clusters(id_level, pdb_ids=None):
     Downloads pre-calculated clusters from PDB at given cutoff.
     Returns dictionaries mapping PDB IDs to cluster IDs and vice versa.
     """
-    id_level = int(id_level * 100)
+    id_level = int(id_level)
     if id_level not in [30, 40, 50, 70, 90, 95, 100]:
         raise Exception(
             'invalid invalid identity cutoff. '
@@ -140,7 +141,7 @@ def get_chain_sequences(pdb_file):
 
 def get_all_chain_sequences(pdb_dataset):
     """Return list of tuples of (pdb_code, chain_sequences) for PDB dataset."""
-    return [(dt.get_pdb_code(p), get_chain_sequences(p))
+    return [(fi.get_pdb_code(p), get_chain_sequences(p))
             for p in tqdm.tqdm(pdb_dataset)]
 
 
