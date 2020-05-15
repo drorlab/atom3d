@@ -7,8 +7,10 @@ import time
 import logging
 from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import datetime
+import argparse
 
 import torch
 import torch.nn.functional as F
@@ -18,20 +20,22 @@ from torch_geometric.nn import GCNConv, GINConv, global_add_pool
 
 from pdbbind_dataloader import pdbbind_dataloader
 
-np.random.seed(42)
-torch.manual_seed(42)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 class GCN(torch.nn.Module):
     def __init__(self, num_features, hidden_dim):
         super(GCN, self).__init__()
-        self.conv1 = GINConv(num_features, hidden_dim)
+        self.conv1 = GCNConv(num_features, hidden_dim)
         self.bn1 = torch.nn.BatchNorm1d(hidden_dim)
-        self.conv2 = GINConv(hidden_dim, hidden_dim)
+        self.conv2 = GCNConv(hidden_dim, hidden_dim)
         self.bn2 = torch.nn.BatchNorm1d(hidden_dim)
-        self.conv3 = GINConv(hidden_dim, hidden_dim)
+        self.conv3 = GCNConv(hidden_dim, hidden_dim)
         self.bn3 = torch.nn.BatchNorm1d(hidden_dim)
+        self.conv4 = GCNConv(hidden_dim, hidden_dim)
+        self.bn4 = torch.nn.BatchNorm1d(hidden_dim)
+        self.conv5 = GCNConv(hidden_dim, hidden_dim)
+        self.bn5 = torch.nn.BatchNorm1d(hidden_dim)
         self.fc1 = Linear(hidden_dim, hidden_dim)
         self.fc2 = Linear(hidden_dim, 1)
 
@@ -44,7 +48,13 @@ class GCN(torch.nn.Module):
         x = F.relu(x)
         x = self.bn2(x)
         x = self.conv3(x, edge_index, edge_weight)
+        x = F.relu(x)
         x = self.bn3(x)
+        x = self.conv4(x, edge_index, edge_weight)
+        x = self.bn4(x)
+        x = F.relu(x)
+        x = self.conv5(x, edge_index, edge_weight)
+        x = self.bn5(x)
         x = global_add_pool(x, batch)
         x = F.relu(x)
         x = F.relu(self.fc1(x))
@@ -99,9 +109,9 @@ class GIN(torch.nn.Module):
 def train(epoch, arch, model, loader, optimizer, device):
     model.train()
 
-    if epoch == 51:
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = 0.5 * param_group['lr']
+    # if epoch == 51:
+    #     for param_group in optimizer.param_groups:
+    #         param_group['lr'] = 0.5 * param_group['lr']
 
     loss_all = 0
     total = 0
@@ -154,57 +164,54 @@ def test(arch, model, loader, device):
 
 def plot_corr(y_true, y_pred, plot_dir):
     plt.clf()
-    plt.scatter(y_true, y_pred)
-    plt.xlabel('Actual')
-    plt.ylabel('Predicted')
+    sns.scatterplot(y_true, y_pred)
+    plt.xlabel('Actual -log(K)')
+    plt.ylabel('Predicted -log(K)')
     plt.savefig(plot_dir)
 
 def save_weights(model, weight_dir):
     torch.save(model.state_dict(), weight_dir)
 
 
-def main(fold=0, split='random', architecture='GIN', base_dir='../../data/pdbbind/', log_dir=None):
+def train_pdbbind(split, architecture, base_dir, device, log_dir, seed=None, test_mode=False):
     logger = logging.getLogger('pdbbind_log')
     # logger.basicConfig(filename=os.path.join(log_dir, f'train_{split}_cv{fold}.log'),level=logging.INFO)
-
-    if log_dir is None:
-        now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        log_dir = os.path.join(base_dir, 'logs', now)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
 
     num_epochs = 100
     batch_size = 32
     hidden_dim = 64
     learning_rate = 1e-4
     split_dir = os.path.join(os.getcwd(), base_dir, 'splits')
-    train_split = os.path.join(split_dir, 'core_split', f'train_{split}_cv{fold}.txt')
-    val_split = os.path.join(split_dir, 'core_split', f'val_{split}_cv{fold}.txt')
+    train_split = os.path.join(split_dir, 'core_split', f'train_{split}.txt')
+    val_split = os.path.join(split_dir, 'core_split', f'val_{split}.txt')
+    test_split = os.path.join(split_dir, 'core_split', f'test.txt')
     train_loader = pdbbind_dataloader(batch_size, split_file=train_split)
     val_loader = pdbbind_dataloader(batch_size, split_file=val_split)
+    test_loader = pdbbind_dataloader(batch_size, split_file=test_split)
 
     if not os.path.exists(os.path.join(log_dir, 'params.txt')):
         with open(os.path.join(log_dir, 'params.txt'), 'w') as f:
-            f.write(f'Split method: {split}')
-            f.write(f'Model: {architecture}')
-            f.write(f'Epochs: {num_epochs}')
-            f.write(f'Batch size: {batch_size}')
-            f.write(f'Hidden dim: {hidden_dim}')
+            f.write(f'Split method: {split}\n')
+            f.write(f'Model: {architecture}\n')
+            f.write(f'Epochs: {num_epochs}\n')
+            f.write(f'Batch size: {batch_size}\n')
+            f.write(f'Hidden dim: {hidden_dim}\n')
             f.write(f'Learning rate: {learning_rate}')
-
-    best_val_loss = 999
-    best_rp = 0
-    best_rs = 0
 
     for data in train_loader:
         num_features = data.num_features
         break
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if architecture == 'GCN':
         model = GCN(num_features, hidden_dim=hidden_dim).to(device)
     elif architecture == 'GIN':
-        model = GIN(num_features, hidden_dim=hidden_dim).to(device)
+        model = GIN(num_features, hidden_dim=hidden_dim).to(device) 
+
+    best_val_loss = 999
+    best_rp = 0
+    best_rs = 0
+
+
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     for epoch in range(1, num_epochs+1):
@@ -212,20 +219,63 @@ def main(fold=0, split='random', architecture='GIN', base_dir='../../data/pdbbin
         train_loss = train(epoch, architecture, model, train_loader, optimizer, device)
         val_loss, r_p, r_s, y_true, y_pred = test(architecture, model, val_loader, device)
         if val_loss < best_val_loss:
-            save_weights(model, os.path.join(log_dir, f'best_weights_{split}_fold{fold}.pt'))
-            plot_corr(y_true, y_pred, os.path.join(log_dir, f'corr_{split}_cv{fold}.png'))
+            save_weights(model, os.path.join(log_dir, f'best_weights_{split}.pt'))
+            plot_corr(y_true, y_pred, os.path.join(log_dir, f'corr_{split}.png'))
             best_val_loss = val_loss
             best_rp = r_p
             best_rs = r_s
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
         print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Pearson R: {:.7f}, Spearman R: {:.7f}'.format(train_loss, val_loss, r_p, r_s))
-        logger.info('{}\t{:03d}\t{:.7f}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(fold, epoch, train_loss, val_loss, r_p, r_s))
+        logger.info('{:03d}\t{:.7f}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(epoch, train_loss, val_loss, r_p, r_s))
+
+    if test:
+        test_file = os.path.join(log_dir, f'test_results_{split}.txt')
+        model.load_state_dict(torch.load(os.path.join(log_dir, f'best_weights_{split}.pt')))
+        rmse, pearson, spearman, y_true, y_pred = test(architecture, model, test_loader, device)
+        plot_corr(y_true, y_pred, os.path.join(log_dir, f'corr_{split}_test.png'))
+        print('Test RMSE: {:.7f}, Pearson R: {:.7f}, Spearman R: {:.7f}'.format(rmse, pearson, spearman))
+        with open(test_file, 'a+') as out:
+            out.write('{}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(seed, rmse, pearson, spearman))
+
+
 
     return best_val_loss, best_rp, best_rs
 
 
 if __name__=="__main__":
-    # logger = logging.getLogger('pdbbind_log')
-    # logging.basicConfig(filename=os.path.join(log_dir, f'train_{args.split_method}_cv_results.log'),level=logging.INFO)
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, default='train')
+    parser.add_argument('--split', type=str, default='random')
+    parser.add_argument('--architecture', type=str, default='GCN')
+    parser.add_argument('--log_dir', type=str, default=None)
+    args = parser.parse_args()
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    base_dir = '../../data/pdbbind'
+    log_dir = args.log_dir
+
+
+    if args.mode == 'train':
+        if log_dir is None:
+            now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+            log_dir = os.path.join(base_dir, 'logs', now)
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+        train_pdbbind(args.split, args.architecture, base_dir, device, log_dir)
+    elif args.mode == 'test':
+        for seed in np.random.randint(0, 1000, size=3):
+            print('seed:', seed)
+            log_dir = os.path.join(base_dir, 'logs', f'test_{args.split}_{seed}')
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            train_pdbbind(args.split, args.architecture, base_dir, device, log_dir, seed, test_mode=True)
+
+
+
+
+
+
+

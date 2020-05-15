@@ -83,10 +83,11 @@ def pdbbind_dataloader(batch_size, data_dir='../../data/pdbbind', split_file=Non
     Assumes pre-computed split in 'split_file', which is used to index Dataset object
     TODO: implement on-the-fly splitting using split functions
     """
-    if split_file is not None:
-        indices = sp.read_split_file(split_file)
-
     dataset = GraphPDBBind(root=data_dir)
+    if split_file is None:
+        return DataLoader(dataset, batch_size, shuffle=True)
+    indices = sp.read_split_file(split_file)
+
     # if split specifies pdb ids, convert to indices
     if isinstance(indices[0], str):
         indices = [dataset.pdb_to_idx(x) for x in indices if dataset.pdb_to_idx(x)]
