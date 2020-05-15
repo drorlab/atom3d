@@ -1,4 +1,3 @@
-import click
 import os
 import subprocess
 import tqdm
@@ -10,14 +9,35 @@ import pandas as pd
 import dotenv as de
 de.load_dotenv(de.find_dotenv())
 
-import atom3d.psp.util as psp_util
 import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
 
-import examples.cnn3d.load_data as load_data
+import examples.cnn3d.subgrid_gen as subgrid_gen
+import examples.cnn3d.util as util
 
 
-def read_score_labels(scores_dir, targets):
+grid_config = util.dotdict({
+    # Mapping from elements to position in channel dimension.
+    'element_mapping': {
+        'C': 0,
+        'O': 1,
+        'N': 2,
+        'S': 3,
+    },
+    # Radius of the grids to generate, in angstroms.
+    'radius': 50.0,
+    # Resolution of each voxel, in angstroms.
+    'resolution': 1.0,
+    # Number of directions to apply for data augmentation.
+    'num_directions': 20,
+    # Number of rolls to apply for data augmentation.
+    'num_rolls': 20,
+    # Random seed
+    'random_seed': 131313,
+})
+
+
+def read_scores(scores_dir, targets):
     """
     Return a pandas DataFrame containing scores of all decoys for all targets
     in <targets>. Search in <scores_dir> for the label files.
@@ -31,76 +51,31 @@ def read_score_labels(scores_dir, targets):
     return scores_df
 
 
-def pdb_to_subgrid_dataset(pdb_filename, grid_size=24):
+def df_to_feature(struct_df, grid_config):
+    pos = struct_df[['x', 'y', 'z']].astype(np.float32)
+    center = util.get_center(pos)
+
+    rot_mat = subgrid_gen.gen_rot_matrix(grid_config)
+    grid = subgrid_gen.get_grid(
+        struct_df, center, config=grid_config, rot_mat=rot_mat)
+    return grid
+
+
+def dataset_generator(sharded, scores_dir, grid_config, score_type='gdt_ts',
+                      shuffle=True, repeat=None, max_targets=None,
+                      max_decoys=None, max_dist_threshold=150.0):
     """
-    Map protein to subgrid feature.
-    """
-    map_filename = os.path.join(os.environ['TEMP_PATH'],
-                                'map_' + str(os.getpid()) + '_pred.bin')
-    try:
-        subprocess.check_output(
-            "{:} --mode map -i {:} --native -m {:} -v 0.8 -o {:}".format(
-                os.environ['MAP_GENERATOR_PATH'], pdb_filename,
-                grid_size, map_filename),
-            universal_newlines=True,
-            shell=True)
-    except:
-        warnings.warn('# Mapping failed, ignoring protein {:}'.format(pdb_filename))
-        return None
-    dataset = load_data.read_data_set(map_filename)
-    os.remove(map_filename)
-    return dataset
-
-
-def df_to_subgrid_dataset(df, struct_name='', grid_size=24):
-    """
-    Given pandas DataFrame as input, convert it into pdb temporarily to generate
-    the subgrid mapping (+ metadata) for each residue in the structure.
-    """
-    if struct_name == '' or struct_name is None:
-        struct_name = str(os.getpid()) + '.pdb'
-
-    pdb_filename = os.path.join(os.environ['TEMP_PATH'],
-                                'pred_'+ struct_name.replace('/','__'))
-    dt.write_pdb(pdb_filename, dt.df_to_bp(df))
-    dataset = pdb_to_subgrid_dataset(pdb_filename, grid_size=grid_size)
-    os.remove(pdb_filename)
-    return dataset
-
-
-def df_to_subgrid_feature(df, struct_name, grid_size):
-    """
-    Convert structure to subgrid mapping.
-    """
-    subgrid = df_to_subgrid_dataset(df, struct_name, grid_size)
-    assert subgrid != None, "Failed to generate subgrid map for %s" % struct_name
-    return subgrid.maps
-
-
-def reshape_subgrid_map_channel_last(array, nb_type, grid_size):
-    array = np.reshape(array, [-1, nb_type, grid_size, grid_size, grid_size])
-    array = np.transpose(array, (0, 2, 3, 4, 1))
-    return array
-
-
-def subgrid_dataset_generator(sharded, scores_dir, score_type='gdt_ts',
-                              nb_type=169, grid_size=24,
-                              shuffle=True, random_seed=None, repeat=None,
-                              max_targets=None, max_decoys=None,
-                              res_count=None, min_res=100):
-    """
-    Generator that convert sharded HDF data structure to subgrid feature and
-    also return the score labels. Skip target that has residue less than
-    <min_res> if specified.
+    Generator that convert sharded HDF dataset to grid features and
+    also return the score labels. Skip structure with max distance above
+    <max_dist_threshold> if specified.
     """
     all_target_names = sh.get_names(sharded)
-    scores_df = read_score_labels(scores_dir, all_target_names)
+    scores_df = read_scores(scores_dir, all_target_names)
 
-    np.random.seed(random_seed)
+    np.random.seed(grid_config.random_seed)
     if repeat == None:
         repeat = 1
     for epoch in range(repeat):
-        #print('\nEpoch {:}'.format(epoch))
         if shuffle:
             p = np.random.permutation(len(all_target_names))
             all_target_names = all_target_names[p]
@@ -108,81 +83,77 @@ def subgrid_dataset_generator(sharded, scores_dir, score_type='gdt_ts',
 
         for i, target_name in enumerate(target_names):
             target_df = sh.read_ensemble(sharded, target_name)
-            if (min_res is not None) and (target_df.residue.max() < min_res):
-                print('Skipping target {:} since max res {:} < {:}'.format(
-                    target_name, target_df.residue.max(), min_res))
-                continue
 
             decoy_names = target_df.subunit.unique()
             if shuffle:
                 p = np.random.permutation(len(decoy_names))
                 decoy_names = decoy_names[p]
-            if max_decoys is not  None:
+            if max_decoys is not None:
                 decoy_names = decoy_names[:max_decoys]
 
             for j, decoy_name in enumerate(decoy_names):
                 struct_df = target_df[target_df.subunit == decoy_name]
-                num_res = len(struct_df.residue.unique())
 
-                if (min_res is not None) and (num_res < min_res):
-                    print('Skipping decoy {:}/{:} since num res {:} < {:}'.format(
-                        target_name, decoy_name, num_res, min_res))
-                    continue
+                # Skip if max distance higher than threshold
+                '''if max_dist_threshold is not None:
+                    pos = struct_df[['x', 'y', 'z']].astype(np.float32)
+                    max_dist = util.get_max_distance_from_center(
+                        pos, util.get_center(pos))
+                    if max_dist > max_dist_threshold:
+                        print('Skipping decoy {:}/{:} since max dist {:.2f} > {:.2f}'.format(
+                            target_name, decoy_name, max_dist, max_dist_threshold))
+                        continue'''
 
-                feature = df_to_subgrid_feature(
-                    struct_df, '{:}/{:}'.format(target_name, decoy_name),
-                    grid_size)
-                assert(len(feature) == num_res)
+                feature = df_to_feature(struct_df, grid_config)
                 score = scores_df[(scores_df.target == target_name) & \
                                   (scores_df.decoy == decoy_name)][score_type].values
-
-                if num_res < min_res:
-                    print("ERROR {:}/{:}".format(target_name, decoy_name))
-                    import pdb; pdb.set_trace()
-                    assert False
-                if (res_count is not None) and (num_res > res_count):
-                    index = np.random.choice(
-                        np.arange(num_res), res_count, replace=False)
-                    index = np.sort(index)
-                    feature = feature[index]
-
-                #feature = np.reshape(feature, [-1, grid_size, grid_size, grid_size])
-                #feature = np.transpose(feature, (1, 2, 3, 0))
-                feature = reshape_subgrid_map_channel_last(feature, nb_type, grid_size)
 
                 #print('Target {:} ({:}/{:}): decoy {:} ({:}/{:}) -> feature {:}, score {:}'.format(
                 #    target_name, i+1, len(target_names), decoy_name, j+1,
                 #    len(decoy_names), feature.shape, score.shape))
 
-                yield target_name, decoy_name, num_res, feature, score
+                yield '{:}/{:}.pdb'.format(target_name, decoy_name), feature, score
 
 
-def get_num_residues(sharded):
-    """Get number of residues of all structures in the dataset."""
-    num_residues = []
+def get_data_stats(sharded):
+    """
+    Get the furthest distance from the protein's center and max residue ID for
+    every protein in the sharded dataset.
+    """
+    data = []
     for shard_df in sh.iter_shards(sharded):
-        for key, struct_df in shard_df.groupby(['ensemble', 'subunit']):
-            print('{:} -> {:} res'.format(key, struct_df.residue.max()))
-            num_residues.append(struct_df.residue.max())
-    return num_residues
+        for (target, decoy), struct_df in shard_df.groupby(['ensemble', 'subunit']):
+            pos = struct_df[['x', 'y', 'z']].astype(np.float32)
+            max_dist = subgrid_gen.get_max_distance_from_center(
+                pos, subgrid_gen.get_center(pos))
+            max_res = struct_df.residue.max()
+            data.append((target, decoy, max_dist, max_res))
+            #print('{:}/{:} -> max dist: {:.2f}, max res: {:}'.format(
+            #    target, decoy, max_dist, max_res))
+    df = pd.DataFrame(data, columns=['target', 'decoy', 'max_dist', 'max_res'])
+    df = df.sort_values(by=['max_dist', 'max_res'],
+                        ascending=[False, False]).reset_index(drop=True)
+    print(df.describe())
+
+    print(df[df.max_dist < 90].shape[0]*100.0/df.shape[0])
+    print(df[df.max_dist < 90].target.unique().shape[0]*100.0/float(df.target.unique().shape[0]))
+    return df
 
 
 if __name__ == "__main__":
-    sharded = '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/train_decoy_50@250'
-    #sharded = '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/val_decoy_50@25'
-    #sharded = '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_20@20'
+    #sharded='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/hdf/casp_scwrl@709'
+    #sharded = '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/train_decoy_50@250'
+    sharded = '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/val_decoy_50@25'
+    #sharded = '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85'
     scores_dir = '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/labels/scores'
 
-    #num_residues = get_num_residues(sharded)
-    #print('\nMAX residues: {:}'.format(np.max(num_residues)))
-    #print('MIN residues: {:}'.format(np.min(num_residues)))
+    #data_stats_df = get_data_stats(sharded)
 
-    print('Testing feature generator')
-    gen = subgrid_dataset_generator(
-        sharded, scores_dir, score_type='gdt_ts', nb_type=169, grid_size=24,
-        shuffle=True, random_seed=13, repeat=1,
-        max_targets=10, max_decoys=10, res_count=150, min_res=150)
+    print('Testing PSP feature generator')
+    gen = dataset_generator(
+        sharded, scores_dir, grid_config, score_type='gdt_ts', shuffle=True,
+        repeat=1, max_targets=10, max_decoys=10, max_dist_threshold=150.0)
 
-    for i, (target_name, decoy_name, num_res, feature, score) in enumerate(gen):
-        print('Generating feature {:} {:}/{:} -> res {:}, feature {:}, score {:}'.format(
-            i, target_name, decoy_name, num_res, feature.shape, score.shape))
+    for i, (struct_name, feature, score) in enumerate(gen):
+        print('Generating feature {:} {:} -> feature {:}, score {:}'.format(
+            i, struct_name, feature.shape, score.shape))

@@ -8,7 +8,7 @@ def get_target_name(filename):
     _, ext = os.path.splitext(filename)
     if ext in ['.dat', '.ss2']:
         return os.path.splitext(os.path.basename(filename))[0]
-    elif ext in ['.pdb', '.mmcif']:
+    elif ext in ['.pdb', '.mmcif', b'.pdb']:
         return os.path.dirname(filename).split('/')[-1]
     else:
         raise ValueError("Unrecognized filetype {:}".format(filename))
@@ -17,7 +17,7 @@ def get_target_name(filename):
 def get_decoy_name(filename):
     filename = str(filename)
     _, ext = os.path.splitext(filename)
-    if ext not in ['.pdb', '.mmcif', '.dat', '.ss2']:
+    if ext not in ['.pdb', '.mmcif', '.dat', '.ss2', b'.pdb']:
         return os.path.basename(filename)
     else:
         return os.path.splitext(os.path.basename(filename))[0]
