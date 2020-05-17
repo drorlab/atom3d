@@ -40,7 +40,7 @@ def filter_sharded(input_sharded, output_sharded, filter_fn):
 
 
 def reshard(input_sharded, output_sharded):
-    """Reshard dataset."""
+    """Rebalance dataset."""
     dirname = os.path.dirname(output_sharded.path)
     if not os.path.exists(dirname) and dirname != '':
         os.makedirs(dirname, exist_ok=True)
@@ -81,3 +81,15 @@ def reshard(input_sharded, output_sharded):
 
             if (next_output_shard_num == output_num_shards):
                 break
+
+
+def rekey(input_sharded, output_sharded):
+    """Rekey dataset."""
+    dirname = os.path.dirname(output_sharded.path)
+    if not os.path.exists(dirname) and dirname != '':
+        os.makedirs(dirname, exist_ok=True)
+
+    input_num_shards = input_sharded.get_num_shards()
+    for shard_num in tqdm.trange(input_num_shards):
+        df = input_sharded.read_shard(shard_num)
+        output_sharded._write_shard(shard_num, df)

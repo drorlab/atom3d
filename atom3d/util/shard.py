@@ -221,8 +221,6 @@ class Sharded(object):
 
     def _write_shard(self, shard_num, df):
         """Write to a single shard of a sharded dataset."""
-        path = self._get_shard(shard_num)
-        df.to_hdf(path, f'structures')
 
         if len(self._keys) == 1:
             metadata = pd.DataFrame(
