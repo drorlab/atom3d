@@ -25,8 +25,8 @@ index_columns = ['structure', 'model', 'chain', 'residue']
               'alpha-carbons, heavy is based on any heavy atom.')
 def get_neighbors_main(sharded_path, ensemble, output_labels, cutoff,
                        cutoff_type):
-    sharded = sh.Sharded(sharded_path)
-    ensemble = sharded.read_ensemble(ensemble)
+    sharded = sh.load_sharded(sharded_path)
+    ensemble = sharded.read_keyed(ensemble)
 
     neighbors = neighbors_from_ensemble(ensemble, cutoff, cutoff_type)
     # Write label file.

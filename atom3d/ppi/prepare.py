@@ -32,12 +32,12 @@ def split(input_sharded, output_root):
     val = [x[0] for x in val]
     test = [x[0] for x in test]
 
-    root_sharded = sh.Sharded(output_root)
-    prefix = root_sharded._get_prefix()
-    num_shards = root_sharded.get_num_shards(output_root)
-    train_sharded = sh.Sharded(f'{prefix:}_train@{num_shards:}')
-    val_sharded = sh.Sharded(f'{prefix:}_val@{num_shards:}')
-    test_sharded = sh.Sharded(f'{prefix:}_test@{num_shards:}')
+    keys = input_sharded.get_keys()
+    prefix = sh.get_prefix(output_root)
+    num_shards = sh.get_num_shards(output_root)
+    train_sharded = sh.Sharded(f'{prefix:}_train@{num_shards:}', keys)
+    val_sharded = sh.Sharded(f'{prefix:}_val@{num_shards:}', keys)
+    test_sharded = sh.Sharded(f'{prefix:}_test@{num_shards:}', keys)
 
     logger.info('Writing sets')
     train_filter_fn = filters.form_filter_against_list(train, 'ensemble')
@@ -135,8 +135,8 @@ def form_bsa_filter(bsa_path, min_area):
 @click.option('--against', default=None,
               help='Sharded dataset to filter against (for SCOP and seq)')
 def filter_pairs(input_sharded_path, output_sharded_path, bsa, against):
-    input_sharded = sh.Sharded(input_sharded_path)
-    output_sharded = sh.Sharded(output_sharded_path)
+    input_sharded = sh.load_sharded(input_sharded_path)
+    output_sharded = sh.Sharded(output_sharded_path, input_sharded.get_keys())
     # We form the combined filter by starting with the identity filter and
     # composing with further filters.
     filter_fn = filters.identity_filter

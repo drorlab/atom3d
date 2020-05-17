@@ -40,12 +40,12 @@ def split(input_sharded, output_root, info_csv):
     logger.info(f'{len(train):} train examples, {len(val):} val examples, '
                 f'{len(test):} test examples.')
 
-    root_sharded = sh.Sharded(output_root)
-    prefix = root_sharded._get_prefix()
-    num_shards = root_sharded.get_num_shards(output_root)
-    train_sharded = sh.Sharded(f'{prefix:}_train@{num_shards:}')
-    val_sharded = sh.Sharded(f'{prefix:}_val@{num_shards:}')
-    test_sharded = sh.Sharded(f'{prefix:}_test@{num_shards:}')
+    keys = input_sharded.get_keys()
+    prefix = sh.get_prefix(output_root)
+    num_shards = sh.get_num_shards(output_root)
+    train_sharded = sh.Sharded(f'{prefix:}_train@{num_shards:}', keys)
+    val_sharded = sh.Sharded(f'{prefix:}_val@{num_shards:}', keys)
+    test_sharded = sh.Sharded(f'{prefix:}_test@{num_shards:}', keys)
 
     train_filter_fn = filters.form_filter_against_list(train, 'ensemble')
     val_filter_fn = filters.form_filter_against_list(val, 'ensemble')
@@ -61,8 +61,8 @@ def split(input_sharded, output_root, info_csv):
 @click.argument('output_sharded_path', type=click.Path())
 @click.argument('info_csv', type=click.Path(exists=True))
 def prepare(input_sharded_path, output_sharded_path, info_csv):
-    input_sharded = sh.Sharded(input_sharded_path)
-    output_sharded = sh.Sharded(output_sharded_path)
+    input_sharded = sh.load_sharded(input_sharded_path)
+    output_sharded = sh.Sharded(output_sharded_path, input_sharded.get_keys())
     split(input_sharded, output_sharded, info_csv)
 
 

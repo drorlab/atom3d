@@ -40,7 +40,7 @@ def shard_dataset(input_dir, sharded_path, filetype, ensembler):
 
 
 def create_from_ensembles(ensembles, path):
-    sharded = Sharded(path)
+    sharded = Sharded(path, ['ensemble'])
 
     num_shards = sharded.get_num_shards()
 
@@ -69,11 +69,49 @@ def create_from_ensembles(ensembles, path):
         sharded._write_shard(shard_num, df)
 
 
+def load_sharded(sharded_path):
+    """Load a fully written sharded dataset."""
+    keys = get_keys(sharded_path)
+    sharded = Sharded(sharded_path, keys)
+    if not sharded.is_written():
+        raise RuntimeError(
+            f'Sharded loaded from {sharded_path:} not fully written.')
+    return sharded
+
+
+def get_keys(sharded_path):
+    """Return keys used for sharded dataset at path."""
+    sharded = Sharded(sharded_path, None)
+    metadata_path = sharded._get_metadata()
+    metadata = pd.read_hdf(metadata_path, f'metadata')
+    keys = metadata.columns.tolist()
+    keys.remove('shard_num')
+    keys.remove('start')
+    keys.remove('stop')
+    return keys
+
+
 class Sharded(object):
     """Sharded pandas dataframe representation."""
 
-    def __init__(self, path):
+    def __init__(self, path, keys):
         self.path = path
+        self._keys = keys
+
+    def is_written(self):
+        """Check if metadata files and all data files are there."""
+        metadata_path = self._get_metadata()
+        if not os.path.exists(metadata_path):
+            return False
+        num_shards = self.get_num_shards()
+        for i in range(num_shards):
+            shard = self._get_shard(i)
+            if not os.path.exists(shard):
+                return False
+        return True
+
+    def get_keys(self):
+        return self._keys
 
     def iter_shards(self):
         """Iterate through shards."""
@@ -86,11 +124,11 @@ class Sharded(object):
         shard = self._get_shard(shard_num)
         return pd.read_hdf(shard, 'structures')
 
-    def read_ensemble(self, name):
-        """Read ensemble from sharded dataset."""
+    def read_keyed(self, name):
+        """Read keyed entry from sharded dataset."""
         metadata_path = self._get_metadata()
         metadata = pd.read_hdf(metadata_path, f'metadata')
-        entry = metadata[metadata['ensemble'] == name]
+        entry = metadata[metadata[self._keys] == name]
         if len(entry) != 1:
             raise RuntimeError('Need exactly one matchin in structure lookup')
         entry = entry.iloc[0]
@@ -101,20 +139,16 @@ class Sharded(object):
         return df.reset_index(drop=True)
 
     def get_names(self):
-        """Get ensemble names in sharded dataset."""
+        """Get keyed names in sharded dataset."""
         metadata_path = self._get_metadata()
         metadata = pd.read_hdf(metadata_path, f'metadata')
-        return metadata['ensemble']
+        return metadata[self._keys]
 
-    def get_num_shards(self):
-        """Get number of shards in sharded dataset."""
-        return int(self.path.split('@')[-1])
-
-    def get_num_ensembles(self):
-        """Get number of ensembles in sharded dataset."""
+    def get_num_keyed(self):
+        """Get number of keyed examples in sharded dataset."""
         return self.get_names().shape[0]
 
-    def get_num_structures(self, keys=['ensemble', 'subunit']):
+    def get_num_structures(self, keys=None):
         """Get number of structures in sharded dataset."""
         num_structs = 0
         for df in self.iter_shards():
@@ -131,7 +165,7 @@ class Sharded(object):
         """Copy sharded dataset."""
         num_shards = self.get_num_shards()
 
-        dest_sharded = Sharded(dest_path)
+        dest_sharded = Sharded(dest_path, self._keys)
 
         for i in range(num_shards):
             source_shard = self._get_shard(i)
@@ -166,17 +200,21 @@ class Sharded(object):
         with pd.HDFStore(shard, mode='r') as f:
             return key in [x[1:] for x in f.keys()]
 
-    def _get_prefix(self):
+    def get_num_shards(self):
+        """Get number of shards in sharded dataset."""
+        return get_num_shards(self.path)
+
+    def get_prefix(self):
         return '@'.join(self.path.split('@')[:-1])
 
     def _get_shard(self, shard_num):
         num_shards = self.get_num_shards()
-        prefix = self._get_prefix()
+        prefix = get_prefix(self.path)
         return f'{prefix:}_{shard_num:04d}_{num_shards:}.h5'
 
     def _get_metadata(self):
         num_shards = self.get_num_shards()
-        prefix = self._get_prefix()
+        prefix = get_prefix(self.path)
         return f'{prefix:}_meta_{num_shards:}.h5'
 
     def _write_shard(self, shard_num, df):
@@ -184,10 +222,16 @@ class Sharded(object):
         path = self._get_shard(shard_num)
         df.to_hdf(path, f'structures')
 
-        metadata = pd.DataFrame(
-            [(shard_num, x, y.index[0], y.index[0] + len(y))
-             for x, y in dt.split_df(df, 'ensemble')],
-            columns=['shard_num', 'ensemble', 'start', 'stop'])
+        if len(self._keys) == 1:
+            metadata = pd.DataFrame(
+                [(shard_num, y.index[0], y.index[0] + len(y)) + (x,)
+                 for x, y in dt.split_df(df, self._keys)],
+                columns=['shard_num', 'start', 'stop'] + self._keys)
+        else:
+            metadata = pd.DataFrame(
+                [(shard_num, y.index[0], y.index[0] + len(y)) + x
+                 for x, y in dt.split_df(df, self._keys)],
+                columns=['shard_num', 'start', 'stop'] + self._keys)
 
         path = self._get_shard(shard_num)
         df.to_hdf(path, f'structures')
@@ -198,10 +242,19 @@ class Sharded(object):
             if os.path.exists(metadata_path):
                 metadata = pd.concat((pd.read_hdf(metadata_path, f'metadata'),
                                       metadata)).reset_index(drop=True)
-                if metadata['ensemble'].duplicated().any():
+                if metadata[self._keys].duplicated().any():
                     raise RuntimeError('Writing duplicate to sharded')
 
             metadata.to_hdf(metadata_path, f'metadata', mode='w')
+
+
+def get_prefix(path):
+    return '@'.join(path.split('@')[:-1])
+
+
+def get_num_shards(path):
+    """Get number of shards in sharded dataset."""
+    return int(path.split('@')[-1])
 
 
 def _get_shard_ranges(num_structures, num_shards):

@@ -20,8 +20,8 @@ def filter_sharded(input_sharded, output_sharded, filter_fn):
     input_num_shards = input_sharded.get_num_shards()
 
     # We will just map to tmp, then reshard.
-    tmp_path = output_sharded._get_prefix() + f'_tmp@{input_num_shards:}'
-    tmp_sharded = sh.Sharded(tmp_path)
+    tmp_path = output_sharded.get_prefix() + f'_tmp@{input_num_shards:}'
+    tmp_sharded = sh.Sharded(tmp_path, input_sharded.get_keys())
 
     logging.info(f'Filtering {input_sharded.path:} to {output_sharded.path:}')
     # Apply filter.
@@ -39,13 +39,13 @@ def filter_sharded(input_sharded, output_sharded, filter_fn):
     tmp_sharded.delete_files()
 
 
-def reshard(input_sharded, output_sharded, key):
+def reshard(input_sharded, output_sharded):
     """Reshard dataset."""
     dirname = os.path.dirname(output_sharded.path)
     if not os.path.exists(dirname) and dirname != '':
         os.makedirs(dirname, exist_ok=True)
 
-    num_structures = input_sharded.get_num_structures(key)
+    num_structures = input_sharded.get_num_keyed()
     output_num_shards = output_sharded.get_num_shards()
     input_num_shards = input_sharded.get_num_shards()
 
@@ -59,7 +59,8 @@ def reshard(input_sharded, output_sharded, key):
         if len(to_consume) == 0 and (next_input_shard_num != input_num_shards):
             # Read next shard if need more examples.
             df = input_sharded.read_shard(next_input_shard_num)
-            to_consume = [y for (_, y) in dt.split_df(df)]
+            to_consume = [y for (_, y) in
+                          dt.split_df(df, input_sharded.get_keys())]
             next_input_shard_num += 1
 
         if len(to_consume) != 0:
