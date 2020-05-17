@@ -1,6 +1,7 @@
 """Other operations for sharded datasets."""
 import logging
 import os
+import random
 
 import tqdm
 
@@ -8,7 +9,8 @@ import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
 
 
-def filter_sharded(input_sharded, output_sharded, filter_fn):
+def filter_sharded(input_sharded, output_sharded, filter_fn,
+                   shuffle_buffer=None):
     """Filter sharded dataset to new sharded dataset, using provided filter."""
     logging.basicConfig(format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
@@ -35,12 +37,17 @@ def filter_sharded(input_sharded, output_sharded, filter_fn):
     num_output_structures = tmp_sharded.get_num_keyed()
     logging.info(f'After filtering, have {num_output_structures:} / '
                  f'{num_input_structures:} left.')
-    reshard(tmp_sharded, output_sharded)
+    reshard(tmp_sharded, output_sharded, shuffle_buffer)
     tmp_sharded.delete_files()
 
 
-def reshard(input_sharded, output_sharded):
-    """Rebalance dataset."""
+def reshard(input_sharded, output_sharded, shuffle_buffer=None):
+    """
+    Rebalance dataset, optionally shuffling.
+
+    If shuffle_buffer is not None, then we perform a streaming shuffle across
+    shuffle_buffer number of output shards.
+    """
     dirname = os.path.dirname(output_sharded.path)
     if not os.path.exists(dirname) and dirname != '':
         os.makedirs(dirname, exist_ok=True)
@@ -52,15 +59,24 @@ def reshard(input_sharded, output_sharded):
     shard_ranges = sh._get_shard_ranges(num_structures, output_num_shards)
     shard_sizes = shard_ranges[:, 1] - shard_ranges[:, 0]
 
+    if shuffle_buffer is not None:
+        buffer_size = shuffle_buffer * shard_sizes[0]
+    else:
+        buffer_size = 1
+
     t = tqdm.trange(output_num_shards)
     next_output_shard_num, next_input_shard_num = 0, 0
     to_write, to_consume = [], []
     while True:
-        if len(to_consume) == 0 and (next_input_shard_num != input_num_shards):
+        while len(to_consume) < buffer_size and \
+                (next_input_shard_num != input_num_shards):
             # Read next shard if need more examples.
             df = input_sharded.read_shard(next_input_shard_num)
-            to_consume = [y for (_, y) in
-                          dt.split_df(df, input_sharded.get_keys())]
+            to_consume += [y for (_, y) in
+                           dt.split_df(df, input_sharded.get_keys())]
+
+            if shuffle_buffer is not None:
+                random.shuffle(to_consume)
             next_input_shard_num += 1
 
         if len(to_consume) != 0:
@@ -83,7 +99,7 @@ def reshard(input_sharded, output_sharded):
                 break
 
 
-def rekey(input_sharded, output_sharded):
+def rekey(input_sharded, output_sharded, shuffle_buffer=None):
     """Rekey dataset."""
     dirname = os.path.dirname(output_sharded.path)
     if not os.path.exists(dirname) and dirname != '':
@@ -103,5 +119,5 @@ def rekey(input_sharded, output_sharded):
     num_output_structures = tmp_sharded.get_num_keyed()
     logging.info(f'After rekey-ing, have {num_output_structures:} keyed, '
                  f'from {num_input_structures:} originally.')
-    reshard(tmp_sharded, output_sharded)
+    reshard(tmp_sharded, output_sharded, shuffle_buffer)
     tmp_sharded.delete_files()
