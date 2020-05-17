@@ -150,7 +150,7 @@ class Sharded(object):
         """Get number of keyed examples in sharded dataset."""
         return self.get_names().shape[0]
 
-    def get_num_structures(self, keys=None):
+    def get_num_structures(self, keys):
         """Get number of structures in sharded dataset."""
         num_structs = 0
         for df in self.iter_shards():

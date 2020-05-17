@@ -31,8 +31,8 @@ def filter_sharded(input_sharded, output_sharded, filter_fn):
             df = filter_fn(df)
         tmp_sharded._write_shard(shard_num, df)
 
-    num_input_structures = input_sharded.get_num_structures()
-    num_output_structures = tmp_sharded.get_num_structures()
+    num_input_structures = input_sharded.get_num_keyed()
+    num_output_structures = tmp_sharded.get_num_keyed()
     logging.info(f'After filtering, have {num_output_structures:} / '
                  f'{num_input_structures:} left.')
     reshard(tmp_sharded, output_sharded)
@@ -90,6 +90,18 @@ def rekey(input_sharded, output_sharded):
         os.makedirs(dirname, exist_ok=True)
 
     input_num_shards = input_sharded.get_num_shards()
+
+    # We will just map to tmp, then reshard.
+    tmp_path = output_sharded.get_prefix() + f'_tmp@{input_num_shards:}'
+    tmp_sharded = sh.Sharded(tmp_path, output_sharded.get_keys())
+
     for shard_num in tqdm.trange(input_num_shards):
         df = input_sharded.read_shard(shard_num)
-        output_sharded._write_shard(shard_num, df)
+        tmp_sharded._write_shard(shard_num, df)
+
+    num_input_structures = input_sharded.get_num_keyed()
+    num_output_structures = tmp_sharded.get_num_keyed()
+    logging.info(f'After rekey-ing, have {num_output_structures:} keyed, '
+                 f'from {num_input_structures:} originally.')
+    reshard(tmp_sharded, output_sharded)
+    tmp_sharded.delete_files()
