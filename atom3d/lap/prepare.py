@@ -12,7 +12,7 @@ import atom3d.util.splits as splits
 logger = log.getLogger('lap_prepare')
 
 
-def split(input_sharded, output_root, info_csv):
+def split(input_sharded, output_root, info_csv, shuffle_buffer):
     """Split randomly, balancing inactives and actives across sets."""
     if input_sharded.get_keys() != ['ensemble']:
         raise RuntimeError('Can only apply to sharded by ensemble.')
@@ -25,7 +25,7 @@ def split(input_sharded, output_root, info_csv):
     # Remove duplicate ensembles.
     info = info[~info.index.duplicated()]
 
-    ensembles = input_sharded.get_names()
+    ensembles = input_sharded.get_names()['ensemble']
     in_use = info.loc[ensembles]
     active = in_use[in_use['label'] == 'A']
     inactive = in_use[in_use['label'] == 'I']
@@ -54,18 +54,24 @@ def split(input_sharded, output_root, info_csv):
     val_filter_fn = filters.form_filter_against_list(val, 'ensemble')
     test_filter_fn = filters.form_filter_against_list(test, 'ensemble')
 
-    sho.filter_sharded(input_sharded, train_sharded, train_filter_fn)
-    sho.filter_sharded(input_sharded, val_sharded, val_filter_fn)
-    sho.filter_sharded(input_sharded, test_sharded, test_filter_fn)
+    sho.filter_sharded(
+        input_sharded, train_sharded, train_filter_fn, shuffle_buffer)
+    sho.filter_sharded(
+        input_sharded, val_sharded, val_filter_fn, shuffle_buffer)
+    sho.filter_sharded(
+        input_sharded, test_sharded, test_filter_fn, shuffle_buffer)
 
 
 @click.command(help='Prepare lap dataset')
 @click.argument('input_sharded_path', type=click.Path())
 @click.argument('output_root', type=click.Path())
 @click.argument('info_csv', type=click.Path(exists=True))
-def prepare(input_sharded_path, output_root, info_csv):
+@click.option('--shuffle_buffer', type=int, default=5,
+              help='How many shards to use in streaming shuffle. 0 means will '
+              'not shuffle.')
+def prepare(input_sharded_path, output_root, info_csv, shuffle_buffer):
     input_sharded = sh.load_sharded(input_sharded_path)
-    split(input_sharded, output_root, info_csv)
+    split(input_sharded, output_root, info_csv, shuffle_buffer)
 
 
 if __name__ == "__main__":

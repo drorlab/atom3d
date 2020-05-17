@@ -17,7 +17,7 @@ import atom3d.util.splits as splits
 logger = log.getLogger('prepare')
 
 
-def split(input_sharded, output_root):
+def split(input_sharded, output_root, shuffle_buffer):
     """Split by sequence identity."""
     if input_sharded.get_keys() != ['ensemble']:
         raise RuntimeError('Can only apply to sharded by ensemble.')
@@ -49,9 +49,12 @@ def split(input_sharded, output_root):
     val_filter_fn = filters.form_filter_against_list(val, 'ensemble')
     test_filter_fn = filters.form_filter_against_list(test, 'ensemble')
 
-    sho.filter_sharded(input_sharded, train_sharded, train_filter_fn)
-    sho.filter_sharded(input_sharded, val_sharded, val_filter_fn)
-    sho.filter_sharded(input_sharded, test_sharded, test_filter_fn)
+    sho.filter_sharded(
+        input_sharded, train_sharded, train_filter_fn, shuffle_buffer)
+    sho.filter_sharded(
+        input_sharded, val_sharded, val_filter_fn, shuffle_buffer)
+    sho.filter_sharded(
+        input_sharded, test_sharded, test_filter_fn, shuffle_buffer)
 
 
 def form_scop_pair_filter_against(sharded, level):
@@ -139,7 +142,11 @@ def form_bsa_filter(bsa_path, min_area):
               help='File to use for bsa filtering.')
 @click.option('--against', default=None,
               help='Sharded dataset to filter against (for SCOP and seq)')
-def filter_pairs(input_sharded_path, output_root, bsa, against):
+@click.option('--shuffle_buffer', type=int, default=10,
+              help='How many shards to use in streaming shuffle. 0 means will '
+              'not shuffle.')
+def filter_pairs(input_sharded_path, output_root, bsa, against,
+                 shuffle_buffer):
     input_sharded = sh.load_sharded(input_sharded_path)
     keys = input_sharded.get_keys()
     if keys != ['ensemble']:
@@ -167,7 +174,7 @@ def filter_pairs(input_sharded_path, output_root, bsa, against):
             form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
 
     sho.filter_sharded(input_sharded, output_sharded, filter_fn)
-    split(output_sharded, output_root)
+    split(output_sharded, output_root, shuffle_buffer)
 
 
 if __name__ == "__main__":

@@ -9,8 +9,7 @@ import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
 
 
-def filter_sharded(input_sharded, output_sharded, filter_fn,
-                   shuffle_buffer=None):
+def filter_sharded(input_sharded, output_sharded, filter_fn, shuffle_buffer=0):
     """Filter sharded dataset to new sharded dataset, using provided filter."""
     logging.basicConfig(format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
@@ -41,11 +40,11 @@ def filter_sharded(input_sharded, output_sharded, filter_fn,
     tmp_sharded.delete_files()
 
 
-def reshard(input_sharded, output_sharded, shuffle_buffer=None):
+def reshard(input_sharded, output_sharded, shuffle_buffer=0):
     """
     Rebalance dataset, optionally shuffling.
 
-    If shuffle_buffer is not None, then we perform a streaming shuffle across
+    If shuffle_buffer is not 0, then we perform a streaming shuffle across
     shuffle_buffer number of output shards.
     """
     dirname = os.path.dirname(output_sharded.path)
@@ -59,7 +58,7 @@ def reshard(input_sharded, output_sharded, shuffle_buffer=None):
     shard_ranges = sh._get_shard_ranges(num_structures, output_num_shards)
     shard_sizes = shard_ranges[:, 1] - shard_ranges[:, 0]
 
-    if shuffle_buffer is not None:
+    if shuffle_buffer != 0:
         buffer_size = shuffle_buffer * shard_sizes[0]
     else:
         buffer_size = 1
@@ -99,7 +98,7 @@ def reshard(input_sharded, output_sharded, shuffle_buffer=None):
                 break
 
 
-def rekey(input_sharded, output_sharded, shuffle_buffer=None):
+def rekey(input_sharded, output_sharded, shuffle_buffer=0):
     """Rekey dataset."""
     dirname = os.path.dirname(output_sharded.path)
     if not os.path.exists(dirname) and dirname != '':
