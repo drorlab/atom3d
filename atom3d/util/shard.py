@@ -83,6 +83,8 @@ def get_keys(sharded_path):
     """Return keys used for sharded dataset at path."""
     sharded = Sharded(sharded_path, None)
     metadata_path = sharded._get_metadata()
+    if not os.path.exists(metadata_path):
+        raise RuntimeError(f'Metadata for {sharded_path:} does not exist')
     metadata = pd.read_hdf(metadata_path, f'metadata')
     keys = metadata.columns.tolist()
     keys.remove('shard_num')

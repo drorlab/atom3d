@@ -14,6 +14,9 @@ logger = log.getLogger('lap_prepare')
 
 def split(input_sharded, output_root, info_csv):
     """Split randomly, balancing inactives and actives across sets."""
+    if input_sharded.get_keys() != ['ensemble']:
+        raise RuntimeError('Can only apply to sharded by ensemble.')
+
     info = pd.read_csv(info_csv)
     info['ensemble'] = info.apply(
         lambda x: x['ligand'] + '__' + x['active_struc'].split('_')[2] + '__' +
@@ -58,12 +61,11 @@ def split(input_sharded, output_root, info_csv):
 
 @click.command(help='Prepare lap dataset')
 @click.argument('input_sharded_path', type=click.Path())
-@click.argument('output_sharded_path', type=click.Path())
+@click.argument('output_root', type=click.Path())
 @click.argument('info_csv', type=click.Path(exists=True))
-def prepare(input_sharded_path, output_sharded_path, info_csv):
+def prepare(input_sharded_path, output_root, info_csv):
     input_sharded = sh.load_sharded(input_sharded_path)
-    output_sharded = sh.Sharded(output_sharded_path, input_sharded.get_keys())
-    split(input_sharded, output_sharded, info_csv)
+    split(input_sharded, output_root, info_csv)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,9 @@ logger = log.getLogger('prepare')
 
 def split(input_sharded, output_root):
     """Split by sequence identity."""
+    if input_sharded.get_keys() != ['ensemble']:
+        raise RuntimeError('Can only apply to sharded by ensemble.')
+
     all_chain_sequences = []
     logger.info('Loading chain sequences')
     for shard in input_sharded.iter_shards():
@@ -33,6 +36,8 @@ def split(input_sharded, output_root):
     test = [x[0] for x in test]
 
     keys = input_sharded.get_keys()
+    if keys != ['ensemble']:
+        raise RuntimeError('Can only apply to sharded by ensemble.')
     prefix = sh.get_prefix(output_root)
     num_shards = sh.get_num_shards(output_root)
     train_sharded = sh.Sharded(f'{prefix:}_train@{num_shards:}', keys)
@@ -129,14 +134,17 @@ def form_bsa_filter(bsa_path, min_area):
 
 @click.command(help='Filter pair dataset')
 @click.argument('input_sharded_path', type=click.Path())
-@click.argument('output_sharded_path', type=click.Path())
+@click.argument('output_root', type=click.Path())
 @click.option('-b', '--bsa', default=None,
               help='File to use for bsa filtering.')
 @click.option('--against', default=None,
               help='Sharded dataset to filter against (for SCOP and seq)')
-def filter_pairs(input_sharded_path, output_sharded_path, bsa, against):
+def filter_pairs(input_sharded_path, output_root, bsa, against):
     input_sharded = sh.load_sharded(input_sharded_path)
-    output_sharded = sh.Sharded(output_sharded_path, input_sharded.get_keys())
+    keys = input_sharded.get_keys()
+    if keys != ['ensemble']:
+        raise RuntimeError('Can only apply to sharded by ensemble.')
+    output_sharded = sh.Sharded(output_root, keys)
     # We form the combined filter by starting with the identity filter and
     # composing with further filters.
     filter_fn = filters.identity_filter
@@ -159,7 +167,7 @@ def filter_pairs(input_sharded_path, output_sharded_path, bsa, against):
             form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
 
     sho.filter_sharded(input_sharded, output_sharded, filter_fn)
-    split(output_sharded, output_sharded)
+    split(output_sharded, output_root)
 
 
 if __name__ == "__main__":
