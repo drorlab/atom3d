@@ -140,12 +140,12 @@ def form_bsa_filter(bsa_path, min_area):
 @click.argument('output_root', type=click.Path())
 @click.option('-b', '--bsa', default=None,
               help='File to use for bsa filtering.')
-@click.option('--against', default=None,
+@click.option('--against_path', default=None,
               help='Sharded dataset to filter against (for SCOP and seq)')
 @click.option('--shuffle_buffer', type=int, default=10,
               help='How many shards to use in streaming shuffle. 0 means will '
               'not shuffle.')
-def filter_pairs(input_sharded_path, output_root, bsa, against,
+def filter_pairs(input_sharded_path, output_root, bsa, against_path,
                  shuffle_buffer):
     input_sharded = sh.load_sharded(input_sharded_path)
     keys = input_sharded.get_keys()
@@ -167,7 +167,8 @@ def filter_pairs(input_sharded_path, output_root, bsa, against,
     if bsa is not None:
         filter_fn = filters.compose(
             form_bsa_filter(bsa, 500), filter_fn)
-    if against is not None:
+    if against_path is not None:
+        against = sh.load_sharded(against_path)
         filter_fn = filters.compose(
             filters.form_seq_filter_against(against, 0.3), filter_fn)
         filter_fn = filters.compose(
