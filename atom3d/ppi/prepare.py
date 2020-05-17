@@ -28,7 +28,7 @@ def split(input_sharded, output_root, shuffle_buffer):
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
 
     logger.info('Splitting by cluster')
-    train, val, test = splits.cluster_split(all_chain_sequences, 0.3)
+    train, val, test = splits.cluster_split(all_chain_sequences, 30)
 
     # Will just look up ensembles.
     train = [x[0] for x in train]
