@@ -13,7 +13,7 @@ index_columns = ['structure', 'model', 'chain', 'residue']
 
 
 @click.command(help='Find neighbors for entry in sharded.')
-@click.argument('sharded', type=click.Path())
+@click.argument('sharded_path', type=click.Path())
 @click.argument('ensemble')
 @click.argument('output_labels', type=click.Path())
 @click.option('-c', '--cutoff', type=int, default=8,
@@ -23,8 +23,10 @@ index_columns = ['structure', 'model', 'chain', 'residue']
               type=click.Choice(['heavy', 'CA'], case_sensitive=False),
               help='How to compute distance between residues: CA is based on '
               'alpha-carbons, heavy is based on any heavy atom.')
-def get_neighbors_main(sharded, ensemble, output_labels, cutoff, cutoff_type):
-    ensemble = sh.read_ensemble(sharded, ensemble)
+def get_neighbors_main(sharded_path, ensemble, output_labels, cutoff,
+                       cutoff_type):
+    sharded = sh.Sharded(sharded_path)
+    ensemble = sharded.read_ensemble(ensemble)
 
     neighbors = neighbors_from_ensemble(ensemble, cutoff, cutoff_type)
     # Write label file.

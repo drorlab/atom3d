@@ -11,10 +11,11 @@ freesasa.setVerbosity(freesasa.nowarnings)
 
 
 @click.command(help='Find buried surface area (bsa) for entry in sharded.')
-@click.argument('sharded', type=click.Path())
+@click.argument('sharded_path', type=click.Path())
 @click.argument('ensemble')
-def compute_all_bsa_main(sharded, ensemble):
-    ensemble = sh.read_ensemble(sharded, ensemble)
+def compute_all_bsa_main(sharded_path, ensemble):
+    sharded = sh.Sharded(sharded_path)
+    ensemble = sharded.read_ensemble(ensemble)
     _, (bdf0, bdf1, udf0, udf1) = nb.get_subunits(ensemble)
     print(compute_bsa(bdf0, bdf1))
 

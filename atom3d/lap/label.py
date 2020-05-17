@@ -11,19 +11,20 @@ logger = log.getLogger('lap_label')
 
 
 @click.command(help='Label LAP pairs with inactive/active label.')
-@click.argument('sharded', type=click.Path())
+@click.argument('sharded_path', type=click.Path())
 @click.argument('info_csv', type=click.Path(exists=True))
 @click.option('-n', '--num_threads', default=8,
               help='Number of threads to use for parallel processing.')
 @click.option('--overwrite/--no-overwrite', default=False,
               help='Overwrite existing labels.')
-def gen_labels_sharded(sharded, info_csv, num_threads, overwrite):
-    num_shards = sh.get_num_shards(sharded)
+def gen_labels_sharded(sharded_path, info_csv, num_threads, overwrite):
+    sharded = sh.Sharded(sharded_path)
+    num_shards = sharded.get_num_shards()
 
     requested_shards = list(range(num_shards))
     if not overwrite:
         produced_shards = [x for x in requested_shards
-                           if sh.has(sharded, x, 'neighbors')]
+                           if sharded.has(x, 'labels')]
     else:
         produced_shards = []
 
@@ -41,7 +42,7 @@ def gen_labels_sharded(sharded, info_csv, num_threads, overwrite):
 
 def _gen_labels_shard(sharded, shard_num, info_csv):
     logger.info(f'Processing shard {shard_num:}')
-    shard = sh.read_shard(sharded, shard_num)
+    shard = sharded.read_shard(shard_num)
     info = pd.read_csv(info_csv)
     info['ensemble'] = info.apply(
         lambda x: x['ligand'] + '__' + x['active_struc'].split('_')[2] + '__' +
@@ -54,7 +55,7 @@ def _gen_labels_shard(sharded, shard_num, info_csv):
     for e, ensemble in shard.groupby('ensemble'):
         all_labels.append(info.loc[e][['label', 'ensemble']])
     all_labels = pd.concat(all_labels, axis=1).T.reset_index(drop=True)
-    sh.add_to_shard(sharded, shard_num, all_labels, 'labels')
+    sharded.add_to_shard(shard_num, all_labels, 'labels')
     logger.info(f'Done processing shard {shard_num:}')
 
 

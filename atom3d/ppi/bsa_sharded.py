@@ -19,12 +19,13 @@ db_sem = mp.Semaphore()
 
 
 @click.command(help='Generate Buried Surface Area database for sharded.')
-@click.argument('sharded', type=click.Path())
+@click.argument('sharded_path', type=click.Path())
 @click.argument('output_bsa', type=click.Path())
 @click.option('-n', '--num_threads', default=8,
               help='Number of threads to use for parallel processing.')
-def bsa_db(sharded, output_bsa, num_threads):
-    num_shards = sh.get_num_shards(sharded)
+def bsa_db(sharded_path, output_bsa, num_threads):
+    sharded = sh.Sharded(sharded_path)
+    num_shards = sharded.get_num_shards()
 
     dirname = os.path.dirname(output_bsa)
     if dirname != '':
@@ -41,7 +42,7 @@ def _bsa_db(sharded, shard_num, output_bsa):
     logger.info(f'Processing shard {shard_num:}')
     start_time = timeit.default_timer()
     start_time_reading = timeit.default_timer()
-    shard = sh.read_shard(sharded, shard_num)
+    shard = sharded.read_shard(shard_num)
     elapsed_reading = timeit.default_timer() - start_time_reading
 
     start_time_waiting = timeit.default_timer()

@@ -13,8 +13,8 @@ logger = log.getLogger('shard_pairs')
 
 
 @click.command(help='Generate interacting pairs from sharded dataset')
-@click.argument('input_sharded', type=click.Path())
-@click.argument('output_sharded', type=click.Path())
+@click.argument('input_path', type=click.Path())
+@click.argument('output_path', type=click.Path())
 @click.option('-c', '--cutoff', type=int, default=8,
               help='Maximum distance (in angstroms), for two residues to be '
               'considered neighbors.')
@@ -24,11 +24,14 @@ logger = log.getLogger('shard_pairs')
               'alpha-carbons, heavy is based on any heavy atom.')
 @click.option('-n', '--num_threads', default=8,
               help='Number of threads to use for parallel processing.')
-def shard_pairs(input_sharded, output_sharded, cutoff, cutoff_type,
+def shard_pairs(input_path, output_path, cutoff, cutoff_type,
                 num_threads):
-    input_num_shards = sh.get_num_shards(input_sharded)
+    input_sharded = sh.Sharded(input_path)
+    output_sharded = sh.Sharded(output_path)
+    input_num_shards = input_sharded.get_num_shards()
 
-    tmp_sharded = sh._get_prefix(output_sharded) + f'_tmp@{input_num_shards:}'
+    tmp_path = output_sharded._get_prefix() + f'_tmp@{input_num_shards:}'
+    tmp_sharded = sh.Sharded(tmp_path)
 
     logger.info(f'Using {num_threads:} threads')
 
@@ -38,13 +41,13 @@ def shard_pairs(input_sharded, output_sharded, cutoff, cutoff_type,
     par.submit_jobs(_shard_pairs, inputs, num_threads)
 
     sho.reshard(tmp_sharded, output_sharded)
-    sh.delete(tmp_sharded)
+    tmp_sharded.delete_files()
 
 
 def _shard_pairs(input_sharded, output_sharded, shard_num, cutoff,
                  cutoff_type):
     logger.info(f'Processing shard {shard_num:}')
-    shard = sh.read_shard(input_sharded, shard_num)
+    shard = input_sharded.read_shard(shard_num)
     num_structures = len(shard['ensemble'].unique())
 
     pairs = []
@@ -70,7 +73,7 @@ def _shard_pairs(input_sharded, output_sharded, shard_num, cutoff,
                     pairs.append(pair)
     pairs = pd.concat(pairs).reset_index(drop=True)
     num_pairs = len(pairs['ensemble'].unique())
-    sh._write_shard(output_sharded, shard_num, pairs)
+    output_sharded._write_shard(shard_num, pairs)
     logger.info(f'Done processing shard {shard_num:}, generated {num_pairs:} '
                 f'pairs from {num_structures:} structures.')
 
