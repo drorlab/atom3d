@@ -159,7 +159,7 @@ def form_seq_filter_against(sharded, cutoff):
     We consider each chain in each structure separately, and remove the
     structure if any of them matches any chain in sharded.
     """
-    blast_db_path = f'{sharded:}.db'
+    blast_db_path = f'{sharded.path:}.db'
     all_chain_sequences = []
     for shard in sharded.iter_shards():
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
