@@ -14,7 +14,7 @@ freesasa.setVerbosity(freesasa.nowarnings)
 @click.argument('sharded_path', type=click.Path())
 @click.argument('ensemble')
 def compute_all_bsa_main(sharded_path, ensemble):
-    sharded = sh.Sharded(sharded_path)
+    sharded = sh.load_sharded(sharded_path)
     ensemble = sharded.read_ensemble(ensemble)
     _, (bdf0, bdf1, udf0, udf1) = nb.get_subunits(ensemble)
     print(compute_bsa(bdf0, bdf1))

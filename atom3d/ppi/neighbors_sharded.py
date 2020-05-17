@@ -29,8 +29,8 @@ logger = log.getLogger('genLabels')
               help='Overwrite existing neighbors.')
 def get_neighbors_sharded(sharded_path, cutoff, cutoff_type, num_threads,
                           overwrite):
-    sharded = sh.Sharded(sharded_path)
-    num_shards = sharded.get_num_shards()
+    sharded = sh.load_sharded(sharded_path)
+    num_shards = sh.get_num_shards(sharded_path)
 
     requested_shards = list(range(num_shards))
     if not overwrite:
