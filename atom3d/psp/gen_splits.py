@@ -113,13 +113,14 @@ def generate_train_val_targets_tests(structures_df, targets_train, targets_val,
     return sets
 
 
-def create_sharded_dataset(files, sharded):
-    num_shards = sh.get_num_shards(sharded)
+def create_sharded_dataset(files, sharded_path):
+    sharded = sh.Sharded(sharded_path)
+    num_shards = sharded.get_num_shards()
 
     ensembles = en.ensemblers['casp'](files)
 
     # Check if already partly written.  If so, resume from there.
-    metadata_path = sh._get_metadata(sharded)
+    metadata_path = sharded._get_metadata()
     if os.path.exists(metadata_path):
         metadata = pd.read_hdf(metadata_path, f'metadata')
         num_written = len(metadata['shard_num'].unique())
@@ -140,7 +141,7 @@ def create_sharded_dataset(files, sharded):
             dfs.append(df)
         df = dt.merge_dfs(dfs)
 
-        sh._write_shard(sharded, shard_num, df)
+        sharded._write_shard(shard_num, df)
 
 
 def create_parser():

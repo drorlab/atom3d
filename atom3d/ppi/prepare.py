@@ -19,9 +19,12 @@ logger = log.getLogger('prepare')
 
 def split(input_sharded, output_root):
     """Split by sequence identity."""
+    if input_sharded.get_keys() != ['ensemble']:
+        raise RuntimeError('Can only apply to sharded by ensemble.')
+
     all_chain_sequences = []
     logger.info('Loading chain sequences')
-    for shard in sh.iter_shards(input_sharded):
+    for shard in input_sharded.iter_shards():
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
 
     logger.info('Splitting by cluster')
@@ -32,11 +35,14 @@ def split(input_sharded, output_root):
     val = [x[0] for x in val]
     test = [x[0] for x in test]
 
-    prefix = sh._get_prefix(output_root)
+    keys = input_sharded.get_keys()
+    if keys != ['ensemble']:
+        raise RuntimeError('Can only apply to sharded by ensemble.')
+    prefix = sh.get_prefix(output_root)
     num_shards = sh.get_num_shards(output_root)
-    train_sharded = f'{prefix:}_train@{num_shards:}'
-    val_sharded = f'{prefix:}_val@{num_shards:}'
-    test_sharded = f'{prefix:}_test@{num_shards:}'
+    train_sharded = sh.Sharded(f'{prefix:}_train@{num_shards:}', keys)
+    val_sharded = sh.Sharded(f'{prefix:}_val@{num_shards:}', keys)
+    test_sharded = sh.Sharded(f'{prefix:}_test@{num_shards:}', keys)
 
     logger.info('Writing sets')
     train_filter_fn = filters.form_filter_against_list(train, 'ensemble')
@@ -54,7 +60,7 @@ def form_scop_pair_filter_against(sharded, level):
     scop_index = scop.get_scop_index()[level]
 
     scop_pairs = []
-    for shard in sh.iter_shards(sharded):
+    for shard in sharded.iter_shards():
         for e, ensemble in shard.groupby(['ensemble']):
             names, (bdf0, bdf1, udf0, udf1) = nb.get_subunits(ensemble)
             chains0 = bdf0[['structure', 'chain']].drop_duplicates()
@@ -127,13 +133,18 @@ def form_bsa_filter(bsa_path, min_area):
 
 
 @click.command(help='Filter pair dataset')
-@click.argument('input_sharded', type=click.Path())
-@click.argument('output_sharded', type=click.Path())
+@click.argument('input_sharded_path', type=click.Path())
+@click.argument('output_root', type=click.Path())
 @click.option('-b', '--bsa', default=None,
               help='File to use for bsa filtering.')
 @click.option('--against', default=None,
               help='Sharded dataset to filter against (for SCOP and seq)')
-def filter_pairs(input_sharded, output_sharded, bsa, against):
+def filter_pairs(input_sharded_path, output_root, bsa, against):
+    input_sharded = sh.load_sharded(input_sharded_path)
+    keys = input_sharded.get_keys()
+    if keys != ['ensemble']:
+        raise RuntimeError('Can only apply to sharded by ensemble.')
+    output_sharded = sh.Sharded(output_root, keys)
     # We form the combined filter by starting with the identity filter and
     # composing with further filters.
     filter_fn = filters.identity_filter
@@ -156,7 +167,7 @@ def filter_pairs(input_sharded, output_sharded, bsa, against):
             form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
 
     sho.filter_sharded(input_sharded, output_sharded, filter_fn)
-    split(output_sharded, output_sharded)
+    split(output_sharded, output_root)
 
 
 if __name__ == "__main__":

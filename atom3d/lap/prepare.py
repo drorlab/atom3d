@@ -14,6 +14,9 @@ logger = log.getLogger('lap_prepare')
 
 def split(input_sharded, output_root, info_csv):
     """Split randomly, balancing inactives and actives across sets."""
+    if input_sharded.get_keys() != ['ensemble']:
+        raise RuntimeError('Can only apply to sharded by ensemble.')
+
     info = pd.read_csv(info_csv)
     info['ensemble'] = info.apply(
         lambda x: x['ligand'] + '__' + x['active_struc'].split('_')[2] + '__' +
@@ -22,7 +25,7 @@ def split(input_sharded, output_root, info_csv):
     # Remove duplicate ensembles.
     info = info[~info.index.duplicated()]
 
-    ensembles = sh.get_names(input_sharded)
+    ensembles = input_sharded.get_names()
     in_use = info.loc[ensembles]
     active = in_use[in_use['label'] == 'A']
     inactive = in_use[in_use['label'] == 'I']
@@ -40,11 +43,12 @@ def split(input_sharded, output_root, info_csv):
     logger.info(f'{len(train):} train examples, {len(val):} val examples, '
                 f'{len(test):} test examples.')
 
-    prefix = sh._get_prefix(output_root)
+    keys = input_sharded.get_keys()
+    prefix = sh.get_prefix(output_root)
     num_shards = sh.get_num_shards(output_root)
-    train_sharded = f'{prefix:}_train@{num_shards:}'
-    val_sharded = f'{prefix:}_val@{num_shards:}'
-    test_sharded = f'{prefix:}_test@{num_shards:}'
+    train_sharded = sh.Sharded(f'{prefix:}_train@{num_shards:}', keys)
+    val_sharded = sh.Sharded(f'{prefix:}_val@{num_shards:}', keys)
+    test_sharded = sh.Sharded(f'{prefix:}_test@{num_shards:}', keys)
 
     train_filter_fn = filters.form_filter_against_list(train, 'ensemble')
     val_filter_fn = filters.form_filter_against_list(val, 'ensemble')
@@ -56,11 +60,12 @@ def split(input_sharded, output_root, info_csv):
 
 
 @click.command(help='Prepare lap dataset')
-@click.argument('input_sharded', type=click.Path())
-@click.argument('output_sharded', type=click.Path())
+@click.argument('input_sharded_path', type=click.Path())
+@click.argument('output_root', type=click.Path())
 @click.argument('info_csv', type=click.Path(exists=True))
-def prepare(input_sharded, output_sharded, info_csv):
-    split(input_sharded, output_sharded, info_csv)
+def prepare(input_sharded_path, output_root, info_csv):
+    input_sharded = sh.load_sharded(input_sharded_path)
+    split(input_sharded, output_root, info_csv)
 
 
 if __name__ == "__main__":
