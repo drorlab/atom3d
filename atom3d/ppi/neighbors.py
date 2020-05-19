@@ -9,7 +9,8 @@ import scipy.spatial as spa
 import atom3d.util.shard as sh
 
 
-index_columns = ['structure', 'model', 'chain', 'residue']
+index_columns = \
+    ['ensemble', 'subunit', 'structure', 'model', 'chain', 'residue']
 
 
 @click.command(help='Find neighbors for entry in sharded.')
@@ -71,8 +72,10 @@ def remove_unmatching(neighbors, df0, df1):
         pd.concat([df0, df1]))
     to_drop = []
     for i, neighbor in neighbors.iterrows():
-        res0 = tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
-        res1 = tuple(neighbor[['structure1', 'model1', 'chain1', 'residue1']])
+        res0 = tuple(neighbor[['ensemble0', 'subunit0', 'structure0', 'model0',
+                               'chain0', 'residue0']])
+        res1 = tuple(neighbor[['ensemble1', 'subunit1', 'structure1', 'model1',
+                               'chain1', 'residue1']])
         if res0 not in res_to_idx or res1 not in res_to_idx:
             to_drop.append(i)
     logging.info(
@@ -103,8 +106,10 @@ def get_negatives(neighbors, df0, df1):
     idx_to_res1, res_to_idx1 = _get_idx_to_res_mapping(df1)
     all_pairs = np.zeros((len(idx_to_res0.index), len(idx_to_res1.index)))
     for i, neighbor in neighbors.iterrows():
-        res0 = tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
-        res1 = tuple(neighbor[['structure1', 'model1', 'chain1', 'residue1']])
+        res0 = tuple(neighbor[['ensemble0', 'subunit0', 'structure0', 'model0',
+                               'chain0', 'residue0']])
+        res1 = tuple(neighbor[['ensemble1', 'subunit1', 'structure1', 'model1',
+                               'chain1', 'residue1']])
         idx0 = res_to_idx0[res0]
         idx1 = res_to_idx1[res1]
         all_pairs[idx0, idx1] = 1
