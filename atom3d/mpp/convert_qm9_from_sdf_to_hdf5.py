@@ -45,7 +45,8 @@ class MoleculesDataset():
             
             self.index.append(im+1)
             self.data.append([ col[im] for col in self.raw_data])
-            self.mol_dfs.append(dt.mol_to_df(m,addHs=False))
+            new_mol_df = dt.mol_to_df(m,addHs=False,structure=df['mol_id'][im])
+            self.mol_dfs.append(new_mol_df)
 
         return
     
@@ -90,11 +91,11 @@ class MoleculesDataset():
 
         # Save labels in a csv file
         out_data = pd.DataFrame([self.data[idx] for idx in indices], columns=self.data_keys)
-        out_data.to_csv(filename+'.csv',index=False)
+        out_data.to_csv(filename+'.csv', index=False)
 
         # Save structures as a python data frame in an hdf5 file 
         combined = pd.concat([self.mol_dfs[idx] for idx in indices])
-        combined.to_hdf(filename+'.h5', 'structures')
+        combined.to_hdf(filename+'.h5', 'structures', mode='w')
  
         return
 
