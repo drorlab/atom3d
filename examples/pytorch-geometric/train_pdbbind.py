@@ -206,6 +206,7 @@ def train_pdbbind(split, architecture, base_dir, device, log_dir, seed=None, tes
         model = GCN(num_features, hidden_dim=hidden_dim).to(device)
     elif architecture == 'GIN':
         model = GIN(num_features, hidden_dim=hidden_dim).to(device) 
+    model.to(device)
 
     best_val_loss = 999
     best_rp = 0
@@ -264,7 +265,7 @@ if __name__=="__main__":
                 os.makedirs(log_dir)
         train_pdbbind(args.split, args.architecture, base_dir, device, log_dir)
     elif args.mode == 'test':
-        for seed in np.random.randint(0, 1000, size=3):
+        for seed in np.random.randint(0, 1000, size=5):
             print('seed:', seed)
             log_dir = os.path.join(base_dir, 'logs', f'test_{args.split}_{seed}')
             if not os.path.exists(log_dir):
@@ -272,6 +273,11 @@ if __name__=="__main__":
             np.random.seed(seed)
             torch.manual_seed(seed)
             train_pdbbind(args.split, args.architecture, base_dir, device, log_dir, seed, test_mode=True)
+    # elif args.mode == 'cv':
+    #     log_dir = os.path.join(base_dir, 'logs', f'superfam_cv')
+    #     if not os.path.exists(log_dir):
+    #         os.makedirs(log_dir)
+    #     train_cv_pdbbind(args.architecture, base_dir, device, log_dir)
 
 
 

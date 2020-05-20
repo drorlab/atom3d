@@ -2,9 +2,9 @@
 import pandas as pd
 
 
-SCOP_CLA_LATEST_FILE = 'metadata/scop-cla-latest.txt'
-PDB_CHAIN_SCOP2_UNIPROT_FILE = 'metadata/pdb_chain_scop2_uniprot.csv'
-PDB_CHAIN_SCOP2B_SF_UNIPROT_FILE = 'metadata/pdb_chain_scop2b_sf_uniprot.csv'
+SCOP_CLA_LATEST_FILE = '../../metadata/scop-cla-latest.txt'
+PDB_CHAIN_SCOP2_UNIPROT_FILE = '../../metadata/pdb_chain_scop2_uniprot.csv'
+PDB_CHAIN_SCOP2B_SF_UNIPROT_FILE = '../../metadata/pdb_chain_scop2b_sf_uniprot.csv'
 
 
 def get_scop_index():

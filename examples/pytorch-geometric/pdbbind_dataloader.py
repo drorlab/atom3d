@@ -27,6 +27,7 @@ class GraphPDBBind(Dataset):
         super(GraphPDBBind, self).__init__(root, transform, pre_transform)
 
         self.pdb_idx_dict = self.get_idx_mapping()
+        self.idx_pdb_dict = {v:k for k,v in self.pdb_idx_dict.items()}
 
     @property
     def raw_file_names(self):
@@ -64,6 +65,7 @@ class GraphPDBBind(Dataset):
                 prot_graph = graph.prot_df_to_graph(dt.bp_to_df(dt.read_any(raw_path, name=pdb_code)))
                 node_feats, edge_index, edge_feats, pos = graph.combine_graphs(prot_graph, mol_graph, edges_between=True)
                 data = Data(node_feats, edge_index, edge_feats, y=y, pos=pos)
+                data.pdb = pdb_code
                 torch.save(data, os.path.join(self.processed_dir, 'data_{}.pt'.format(i)))
                 i += 1
             else:
@@ -91,6 +93,7 @@ def pdbbind_dataloader(batch_size, data_dir='../../data/pdbbind', split_file=Non
     # if split specifies pdb ids, convert to indices
     if isinstance(indices[0], str):
         indices = [dataset.pdb_to_idx(x) for x in indices if dataset.pdb_to_idx(x)]
+        pdb_codes = [x for x in indices if dataset.pdb_to_idx(x)]
     return DataLoader(dataset.index_select(indices), batch_size, shuffle=True)
 
 if __name__=="__main__":

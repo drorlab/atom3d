@@ -2,12 +2,12 @@
 import sys
 
 import numpy as np
+sys.path.append('../..')
 
 import atom3d.util.file as fi
 import atom3d.util.log as log
 import atom3d.util.sequence as seq
 
-sys.path.append('../..')
 logger = log.getLogger('splits')
 
 
