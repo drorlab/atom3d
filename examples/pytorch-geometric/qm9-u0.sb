@@ -16,5 +16,5 @@ source /home/users/mvoegele/miniconda3/etc/profile.d/conda.sh
 conda activate /oak/stanford/groups/rondror/users/mvoegele/envs/geometric
 
 
-python train_qm9.py --target 7 --prefix qm9-u0  
+python train_qm9.py --target 7 --prefix qm9-u0 --load 
 
