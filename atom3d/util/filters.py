@@ -5,7 +5,6 @@ import pandas as pd
 import atom3d.util.file as fi
 import atom3d.util.scop as scop
 import atom3d.util.sequence as seq
-import atom3d.util.shard as sh
 
 
 PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
@@ -160,9 +159,9 @@ def form_seq_filter_against(sharded, cutoff):
     We consider each chain in each structure separately, and remove the
     structure if any of them matches any chain in sharded.
     """
-    blast_db_path = f'{sharded:}.db'
+    blast_db_path = f'{sharded.path:}.db'
     all_chain_sequences = []
-    for shard in sh.iter_shards(sharded):
+    for shard in sharded.iter_shards():
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
     seq.write_to_blast_db(all_chain_sequences, blast_db_path)
 
@@ -196,7 +195,7 @@ def form_scop_filter_against(sharded, level, conservative):
     scop_index = scop.get_scop_index()[level]
 
     scop_against = []
-    for shard in sh.iter_shards(sharded):
+    for shard in sharded.iter_shards():
         for (e, su, st), structure in shard.groupby(
                 ['ensemble', 'subunit', 'structure']):
             pc = fi.get_pdb_code(st).lower()

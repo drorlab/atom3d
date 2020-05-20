@@ -202,7 +202,7 @@ def df_to_bps(df_in):
     return all_structures
 
 
-def split_df(df, key='ensemble'):
+def split_df(df, key):
     return [(x, y) for x, y in df.groupby(key)]
 
 
