@@ -5,14 +5,14 @@
 #SBATCH --output=./runs/resdel-%j.out
 #SBATCH --error=./runs/resdel-%j.err
 #SBATCH --partition=rbaltman,owners
-#SBATCH --gres gpu:2
+#SBATCH --gres gpu:1
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=aderry@stanford.edu
-#SBATCH --job-name=resdel
+#SBATCH --job-name=resdel-gnn
 
 module load gcc/8.1.0
 module load cuda/10.0
 source /oak/stanford/groups/rbaltman/aderry/miniconda3/etc/profile.d/conda.sh
 conda activate /oak/stanford/groups/rbaltman/aderry/miniconda3/envs/geometric
 
-python -u train_resdel.py 
+python -u train_resdel_gnn.py 

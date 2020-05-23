@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 import sys
-sys.path.append('..')
-from util import datatypes as dt
-from util import file as fi
+sys.path.append('../..')
+import atom3d.util.datatypes as dt
+import atom3d. util.file as fi
 import torch
 import torch.nn.functional as F
 from scipy.spatial import KDTree
-from rdkit import Chem
+#from rdkit import Chem
 
 
 # PDB atom names -- these include co-crystallized metals with >5 occurrences in PDBBind

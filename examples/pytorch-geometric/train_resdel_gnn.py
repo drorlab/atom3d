@@ -16,10 +16,15 @@ sys.path.append('../..')
 import torch
 import torch.nn as nn
 from torch.utils import data
+from torch_geometric.data import Data, Batch
+from torch_geometric.nn import GCNConv, global_add_pool, DataParallel
+from torch.nn import Sequential, Linear, ReLU
+import torch.nn.functional as F
+
 
 # import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
-import examples.cnn3d.feature_resdel as feat
+import resdel_dataloader as dl
 
 
 class ResDel_Dataset(data.IterableDataset):
@@ -36,70 +41,89 @@ class ResDel_Dataset(data.IterableDataset):
     def __iter__(self):
         worker_info = torch.utils.data.get_worker_info()
         if worker_info is None:  # single-process data loading, return the full iterator
-            gen = feat.dataset_generator(self.sharded, range(self.num_shards))
+            gen = dl.dataset_generator(self.sharded, range(self.num_shards))
         else:  # in a worker process
             # split workload
             per_worker = int(math.ceil(self.num_shards / float(worker_info.num_workers)))
             worker_id = worker_info.id
             iter_start = worker_id * per_worker
             iter_end = min(iter_start + per_worker, self.num_shards)
-            gen = feat.dataset_generator(self.sharded, range(self.num_shards)[iter_start:iter_end])
+            gen = dl.dataset_generator(self.sharded, range(self.num_shards)[iter_start:iter_end])
         return gen
 
-class cnn_3d_new(nn.Module):
 
-    def __init__(self, nic, noc=20, nf=64, momentum=0.01):
-        super(cnn_3d_new, self).__init__()
+class Collater(object):
+    def __init__(self, follow_batch):
+        self.follow_batch = follow_batch
 
-        # if input channel dim is 1 -- indicates we want to learn embeddings
-        self.nic = nic
+    def collate(self, batch):
+        elem = batch[0]
+        if isinstance(elem, Data):
+            return Batch.from_data_list(batch, self.follow_batch)
 
-        self.model= nn.Sequential(
-                     # 20  
-                    nn.Conv3d(nic, nf, 4, 2, 1, bias=False),
-                    nn.BatchNorm3d(nf, momentum=momentum),
-                    nn.LeakyReLU(0.2, inplace=True),
-                    nn.Dropout(0.1),
+        raise TypeError('DataLoader found invalid type: {}'.format(type(elem)))
 
-                    # 10 -- consider downsampling earlier in order to speed up training 
-                    nn.Conv3d(nf, nf * 2, 3, 1, 1, bias=False),
-                    nn.BatchNorm3d(nf * 2, momentum=momentum),
-                    nn.LeakyReLU(0.2, inplace=True),
-                    nn.Dropout(0.1),
-                    # 10 
-                    nn.Conv3d(nf * 2, nf * 4, 4, 2, 1, bias=False),
-                    nn.BatchNorm3d(nf * 4, momentum=momentum),
-                    nn.LeakyReLU(0.2, inplace=True),
-                    nn.Dropout(0.1),
+    def __call__(self, batch):
+        return self.collate(batch)
 
-                    # 5
-                    nn.Conv3d(nf * 4, nf * 8, 3, 1, 1, bias=False),
-                    nn.BatchNorm3d(nf * 8, momentum=momentum),
-                    nn.LeakyReLU(0.2, inplace=True),
-                    nn.Dropout(0.1),
+class DataLoader(data.DataLoader):
+    r"""Data loader which merges data objects from a
+    :class:`torch_geometric.data.dataset` to a mini-batch.
 
-                    # 5 
-                    nn.Conv3d(nf * 8, nf * 16, 3, 1, 1, bias=False),
-                    nn.BatchNorm3d(nf * 16, momentum=momentum),
-                    nn.LeakyReLU(0.2, inplace=True),
-                    nn.Dropout(0.1),
+    Args:
+        dataset (Dataset): The dataset from which to load the data.
+        batch_size (int, optional): How many samples per batch to load.
+            (default: :obj:`1`)
+        shuffle (bool, optional): If set to :obj:`True`, the data will be
+            reshuffled at every epoch. (default: :obj:`False`)
+        follow_batch (list or tuple, optional): Creates assignment batch
+            vectors for each key in the list. (default: :obj:`[]`)
+    """
 
-                    # 5
-                    nn.Conv3d(nf * 16, noc, 5, 1, 0, bias=False),
-
-                    # 1
-                )
+    def __init__(self, dataset, batch_size=1, shuffle=False, follow_batch=[],
+                 **kwargs):
+        super(DataLoader,
+              self).__init__(dataset, batch_size, shuffle,
+                             collate_fn=Collater(follow_batch), **kwargs)
 
 
-    def forward(self, input):
-        bs = input.size()[0]
-        # if input channel dim is 1 -- indicates we want to learn embeddings
-        if self.nic == 1: 
-            input = self.embed(input)
-            input = input.transpose(1, 5)[..., 0]
+class GCN(torch.nn.Module):
+    def __init__(self, num_features, hidden_dim):
+        super(GCN, self).__init__()
+        self.conv1 = GCNConv(num_features, hidden_dim)
+        self.bn1 = torch.nn.BatchNorm1d(hidden_dim)
+        self.conv2 = GCNConv(hidden_dim, hidden_dim)
+        self.bn2 = torch.nn.BatchNorm1d(hidden_dim)
+        self.conv3 = GCNConv(hidden_dim, hidden_dim)
+        self.bn3 = torch.nn.BatchNorm1d(hidden_dim)
+        self.conv4 = GCNConv(hidden_dim, hidden_dim)
+        self.bn4 = torch.nn.BatchNorm1d(hidden_dim)
+        self.conv5 = GCNConv(hidden_dim, hidden_dim)
+        self.bn5 = torch.nn.BatchNorm1d(hidden_dim)
+        self.fc1 = Linear(hidden_dim, hidden_dim)
+        self.fc2 = Linear(hidden_dim, 20)
 
-        output = self.model(input)
-        return output.view(bs, -1)
+
+    def forward(self, x, edge_index, edge_weight, batch):
+        x = self.conv1(x, edge_index, edge_weight)
+        x = F.relu(x)
+        x = self.bn1(x)
+        x = self.conv2(x, edge_index, edge_weight)
+        x = F.relu(x)
+        x = self.bn2(x)
+        x = self.conv3(x, edge_index, edge_weight)
+        x = F.relu(x)
+        x = self.bn3(x)
+        x = self.conv4(x, edge_index, edge_weight)
+        x = self.bn4(x)
+        x = F.relu(x)
+        x = self.conv5(x, edge_index, edge_weight)
+        x = self.bn5(x)
+        x = global_add_pool(x, batch)
+        x = F.relu(x)
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, p=0.25, training=self.training)
+        return self.fc2(x)
 
 
 def get_acc(logits, label, cm=None):
@@ -130,15 +154,12 @@ def test(model, loader, criterion, device):
     losses = []
     avg_acc = []
     avg_top_k_acc = []
-    for i, (X,y) in tqdm(enumerate(loader)):
-        if i % 1000 == 0:
-            print(f'iter {i}, avg acc {np.mean(avg_acc)}')
-        X = X.to(device)
-        y = y.to(device)
-        out = model(X)
-        loss = criterion(out, y)
-        acc = get_acc(out, y)
-        top_k_acc = get_top_k_acc(out, y, k=3)
+    for i, graph in enumerate(loader):
+        graph = graph.to(device)
+        out = model(graph.x, graph.edge_index, graph.edge_attr.view(-1), graph.batch)
+        loss = criterion(out, graph.y)
+        acc = get_acc(out, graph.y)
+        top_k_acc = get_top_k_acc(out, graph.y, k=3)
         losses.append(loss.item())
         avg_acc.append(acc)
         avg_top_k_acc.append(top_k_acc)
@@ -146,9 +167,7 @@ def test(model, loader, criterion, device):
     return np.mean(losses), np.mean(avg_acc), np.mean(avg_top_k_acc)
 
 
-
-
-def train(data_dir, device, log_dir, checkpoint=None, seed=None, test_mode=False):
+def train(data_dir, device, log_dir, seed=None, test_mode=False):
     # logger = logging.getLogger('resdel_log')
     # logging.basicConfig(filename=os.path.join(log_dir, f'train_resdel.log'),level=logging.INFO)
 
@@ -157,7 +176,6 @@ def train(data_dir, device, log_dir, checkpoint=None, seed=None, test_mode=False
     in_channels = 5
     learning_rate = 1e-4
     reg = 5e-6
-    shuffle=True
     
     if not os.path.exists(os.path.join(log_dir, 'params.txt')):
         with open(os.path.join(log_dir, 'log.txt'), 'w') as f:
@@ -166,75 +184,50 @@ def train(data_dir, device, log_dir, checkpoint=None, seed=None, test_mode=False
             f.write(f'Learning rate: {learning_rate}\n')
 
     train_set = ResDel_Dataset(os.path.join(data_dir, 'train_pdbs@1000/train_pdbs@1000'))
-    train_loader = data.DataLoader(train_set, batch_size=batch_size, num_workers=4)
+    train_loader = DataLoader(train_set, batch_size=batch_size)#, num_workers=4)
     val_set = ResDel_Dataset(os.path.join(data_dir, 'val_pdbs@100/val_pdbs@100'))
-    val_loader = data.DataLoader(val_set, batch_size=batch_size, num_workers=4)
+    val_loader = DataLoader(val_set, batch_size=batch_size)#, num_workers=4)
 
-    model = cnn_3d_new(nic=in_channels)
+    for graph in train_loader:
+        num_features = graph.num_features
+        break
 
+    model = GCN(num_features, hidden_dim=64)
     model.to(device)
-    if torch.cuda.device_count() > 1:
-        print('using', torch.cuda.device_count(), 'GPUs')
-        parallel = True
-        model = nn.DataParallel(model)
-
-    if checkpoint:
-        model.load_state_dict(torch.load(checkpoint, map_location=device))
-        print('loaded pretrained model')
-
+    # if torch.cuda.device_count() > 1:
+    #     print('using', torch.cuda.device_count(), 'GPUs')
+    #     parallel = True
+    #     model = DataParallel(model)
+    model.train()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate*torch.cuda.device_count(), weight_decay=reg)
-    # optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate*torch.cuda.device_count(), weight_decay=reg)
-
     criterion = nn.CrossEntropyLoss()
     criterion.to(device)
-
-    if test_mode:
-        model.eval()
-        test_set = ResDel_Dataset(os.path.join(data_dir, 'test_pdbs@100/test_pdbs@100'))
-        test_loader = data.DataLoader(val_set, batch_size=batch_size, num_workers=4)
-        test_loss, test_acc, test_top_k_acc = test(model, test_loader, criterion, device)
-        print('Test loss: {:7f}, Test Accuracy {:.4f}, Top 3 Accuracy {:4f}'.format(test_loss, test_acc, test_top_k_acc))
-        return
-
 
     best_val_loss = 999
     best_val_idx = 0
     validation_frequency = 10000
     print_frequency = 100
 
-    model.train()
-
     for epoch in range(1, epochs+1):
         print(f'EPOCH {epoch}\n------------')
 
         start = time.time()
 
-        for it, (X,y) in enumerate(train_loader):
-            X = X.to(device)
-            y = y.to(device)
-
-            if shuffle:
-                p = np.random.permutation(batch_size)
-                X = X[p]
-                y = y[p]
-
+        for it, graph in enumerate(train_loader):
+            graph = graph.to(device)
             optimizer.zero_grad()
-            out = model(X)
-            train_loss = criterion(out, y)
+            out = model(graph.x, graph.edge_index, graph.edge_attr.view(-1), graph.batch)
+            train_loss = criterion(out, graph.y)
             train_loss.backward()
             optimizer.step()
 
-            # elapsed = time.time() - start
-            # print(f'Epoch {epoch}, iter {it}, train loss {train_loss}, avg it/sec {print_frequency / elapsed}')
-            # start = time.time()
 
-
-            if it % print_frequency == 0:
+            if it % print_frequency == 0 and it > 0:
                 elapsed = time.time() - start
                 print(f'Epoch {epoch}, iter {it}, train loss {train_loss}, avg it/sec {print_frequency / elapsed}')
                 start = time.time()
-            if (it % validation_frequency == 0) and it > 0: 
+            if it % validation_frequency == 0 and it > 0: 
                 print('validating...')
                 curr_val_loss, val_acc, val_top_k_acc = test(model, val_loader, criterion, device)
                 # logger.info('{:03d}\t{}\t{:.7f}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(epoch, it, train_loss, curr_val_loss, val_acc, val_top_k_acc))
@@ -275,25 +268,16 @@ if __name__=='__main__':
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--data_dir', type=str, default='/oak/stanford/groups/rbaltman/aderry/atom3d/data/residue_deletion')
     parser.add_argument('--log_dir', type=str, default=None)
-    parser.add_argument('--checkpoint', type=str, default=None)
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     log_dir = args.log_dir
 
-    if log_dir is None:
-        now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        log_dir = os.path.join(args.data_dir, 'cnn3d', 'logs', now)
-    else:
-        log_dir = os.path.join(args.data_dir, 'cnn3d', 'logs', log_dir)
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
 
-    if args.checkpoint is None:
-        checkpoint = os.path.join(args.data_dir, 'CNN_3D_epoch_005_5000_weights.pt')
     if args.mode == 'train':
-        train(args.data_dir, device, log_dir, checkpoint)
-
-    if args.mode == 'test':
-        train(args.data_dir, device, log_dir, test_mode=True)
-
+        if log_dir is None:
+            now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+            log_dir = os.path.join(args.data_dir, 'gnn', 'logs', now)
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+        train(args.data_dir, device, log_dir)
