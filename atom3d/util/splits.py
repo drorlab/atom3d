@@ -263,12 +263,13 @@ def identity_split(
         np.random.seed(random_seed)
 
     pdb_codes = \
-        np.unique([fi.get_pdb_code(x[0]) for (x, _) in all_chain_sequences])
+        np.unique([fi.get_pdb_code(x) for (x, _) in all_chain_sequences])
     n = len(pdb_codes)
     test_size = n * test_split
     val_size = n * val_split
     max_hit_size_test = test_size / min_fam_in_split
     max_hit_size_val = val_size / min_fam_in_split
+    print(all_chain_sequences[0])
 
     np.random.shuffle(all_chain_sequences)
 
@@ -299,7 +300,7 @@ def create_identity_split(all_chain_sequences, cutoff, split_size,
     """
     dataset_size = len(all_chain_sequences)
     pdb_ids = np.array(
-        [fi.get_pdb_code(p[0]) for (p, _) in all_chain_sequences])
+        [fi.get_pdb_code(p) for (p, _) in all_chain_sequences])
     split = set()
     idx = 0
     while len(split) < split_size:
