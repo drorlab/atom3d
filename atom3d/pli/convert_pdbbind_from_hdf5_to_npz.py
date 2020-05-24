@@ -60,19 +60,26 @@ def load_data(labels_filename, struct_filename, split_filename):
 class MoleculesDataset():
     """Internal data set, including coordinates."""
 
-    def __init__(self, labels_filename, struct_filename, split_filename, name='molecules'):
+    def __init__(self, labels_filename, struct_filename, split_filename, name='molecules', drop_hydrogen=False):
         """Initializes a data set.
         
         Args:
-            labels_filename (str): CSV file with label data.
             struct_filename (str): HDF5 file with coordinates.
+            labels_filename (str): CSV file with label data.
             split_filename (str): Text file with PDB codes.
             name (str, opt.): Name of the dataset. Default: 'molecules'.
         
         """
-       
-        pdb_codes, struct_df, labels_df = load_data(labels_filename, struct_filename, split_filename)
-
+        
+        # Read PDB codes for the respective split
+        all_pdb_codes = read_split(split_filename)
+        # Read the labels
+        labels_df = read_labels(labels_filename, all_pdb_codes)
+        # Some PDB codes might not have labels, so we need to prune them
+        pdb_codes = labels_df.pdb.unique()   
+        # Read the structures for the pruned PDB codes
+        struct_df = read_structures(struct_filename, pdb_codes)
+    
         pte = Chem.GetPeriodicTable()
 
         self.num_atoms = []
@@ -87,14 +94,20 @@ class MoleculesDataset():
             new_struct = struct_df[struct_df.ensemble==code]
             new_labels = labels_df[labels_df.pdb==code]
             new_values = [ new_labels[col].item() for col in self.data_keys ]
-            new_atnums = [ pte.GetAtomicNumber(e.title()) for e in new_struct.element ]
+            new_atnums = np.array([ pte.GetAtomicNumber(e.title()) for e in new_struct.element ])
             conf_coord = dt.get_coordinates_from_df(new_struct)
+            heavy_atom = np.array(new_atnums)!=1
 
-            self.num_atoms.append(len(new_struct))
             self.index.append(code)
-            self.charges.append(new_atnums)
-            self.positions.append(conf_coord)
             self.data.append(new_values) 
+            if drop_hydrogen:
+                self.charges.append(new_atnums[heavy_atom])
+                self.positions.append(conf_coord[heavy_atom])
+                self.num_atoms.append(len(new_atnums[heavy_atom]))
+            else:
+                self.charges.append(new_atnums)
+                self.positions.append(conf_coord)
+                self.num_atoms.append(len(new_atnums))
     
         return
     
@@ -181,7 +194,7 @@ class MoleculesDataset():
 
 # --- CONVERSION ---
 
-def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=None):
+def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=None, droph=False):
     """Converts a data set given as hdf5 to npz train/validation/test sets.
         
     Args:
@@ -197,14 +210,14 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=Non
     csv_file = in_dir_name+'/pdbbind_refined_set_labels.csv'
     hdf_file = in_dir_name+'/pdbbind_3dcnn.h5'
 
-    split_tr = split_dir_name+'/core_split/train_random.txt'
-    split_va = split_dir_name+'/core_split/val_random.txt'
-    split_te = split_dir_name+'/core_split/test.txt'
+    split_tr = split_dir_name+'/train.txt'
+    split_va = split_dir_name+'/val.txt'
+    split_te = split_dir_name+'/test.txt'
 
     # Create the internal data sets
-    ds_tr = MoleculesDataset(csv_file, hdf_file, split_tr)
-    ds_va = MoleculesDataset(csv_file, hdf_file, split_va)
-    ds_te = MoleculesDataset(csv_file, hdf_file, split_te)
+    ds_tr = MoleculesDataset(csv_file, hdf_file, split_tr, drop_hydrogen=droph)
+    ds_va = MoleculesDataset(csv_file, hdf_file, split_va, drop_hydrogen=droph)
+    ds_te = MoleculesDataset(csv_file, hdf_file, split_te, drop_hydrogen=droph)
 
     print('Training: %i molecules. Validation: %i molecules. Test: %i molecules.'%(len(ds_tr),len(ds_va),len(ds_te)))
     
@@ -218,9 +231,9 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=Non
     te_file_name = out_dir_name+'/test.npz'
     va_file_name = out_dir_name+'/valid.npz'
     tr_file_name = out_dir_name+'/train.npz'
-    ds_tr.write_compressed(te_file_name, datatypes=datatypes )
+    ds_te.write_compressed(te_file_name, datatypes=datatypes )
     ds_va.write_compressed(va_file_name, datatypes=datatypes )
-    ds_te.write_compressed(tr_file_name, datatypes=datatypes )
+    ds_tr.write_compressed(tr_file_name, datatypes=datatypes )
         
     return ds_tr, ds_va, ds_te
 
@@ -234,10 +247,11 @@ if __name__ == "__main__":
     parser.add_argument('in_dir', type=str, help='directory with the raw data')
     parser.add_argument('out_dir', type=str, help='directory to write npz files')
     parser.add_argument('-i', dest='idx_dir', type=str, default=None, help='directory from which to read split indices') 
+    parser.add_argument('--drop_h', dest='drop_h', action='store_true', help='drop hydrogen atoms')
     args = parser.parse_args()
     
     cormorant_datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
 
-    ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir, args.idx_dir, datatypes=cormorant_datatypes)
+    ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir, args.idx_dir, datatypes=cormorant_datatypes, droph=args.drop_h)
 
 
