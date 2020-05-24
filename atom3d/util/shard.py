@@ -243,7 +243,7 @@ class Sharded(object):
                 metadata = pd.concat((pd.read_hdf(metadata_path, f'metadata'),
                                       metadata)).reset_index(drop=True)
                 if metadata[self._keys].duplicated().any():
-                    raise RuntimeError('Writing duplicate to sharded')
+                    raise RuntimeError(f'Writing duplicate to sharded {path:}')
 
             metadata.to_hdf(metadata_path, f'metadata', mode='w')
 
