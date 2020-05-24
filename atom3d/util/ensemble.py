@@ -1,5 +1,7 @@
 """Ensembling operations for shards."""
 import pandas as pd
+import sys
+sys.path.append('../..')
 
 import atom3d.lap.ensemble as lape
 import atom3d.ppi.db5 as db5

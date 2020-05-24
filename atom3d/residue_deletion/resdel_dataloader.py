@@ -2,12 +2,11 @@ import torch
 import numpy as np
 import pandas as pd
 import sys
-sys.path.append('../../atom3d')
-from util import datatypes as dt
-from util import file as fi
-from util import splits as sp
-from protein_ligand.get_labels import get_label
-from util import graph
+sys.path.append('../..')
+from atom3d.util import datatypes as dt
+from atom3d.util import file as fi
+from atom3d.util import splits as sp
+from atom3d.util import graph
 import os
 import torch
 from torch_geometric.data import Dataset, Data, DataLoader
@@ -18,13 +17,13 @@ import pdb
 
 # loader for pytorch-geometric
 
-class GraphPDBBind(Dataset):
+class GraphResDel(Dataset):
     """
-    PDBBind dataset in pytorch-geometric format. 
+    Residue Deletion dataset in pytorch-geometric format. 
     Ref: https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/data/dataset.html#Dataset
     """
     def __init__(self, root, transform=None, pre_transform=None):
-        super(GraphPDBBind, self).__init__(root, transform, pre_transform)
+        super(GraphResDel, self).__init__(root, transform, pre_transform)
 
         self.pdb_idx_dict = self.get_idx_mapping()
         self.idx_pdb_dict = {v:k for k,v in self.pdb_idx_dict.items()}
@@ -35,7 +34,7 @@ class GraphPDBBind(Dataset):
 
     @property
     def processed_file_names(self):
-        num_samples = len(self.raw_file_names) // 3 # each example has protein/pocket/ligand files
+        num_samples = len(self.raw_file_names)
         return [f'data_{i}.pt' for i in range(num_samples)]
 
     def get_idx_mapping(self):
@@ -79,16 +78,11 @@ class GraphPDBBind(Dataset):
         return data
 
 
-def pdbbind_dataloader(batch_size, data_dir='../../data/pdbbind', split_file=None):
+def resdel_dataloader(batch_size, data_dir='../../data/residue_deletion', split=None):
     """
-    Creates dataloader for PDBBind dataset with specified split. 
-    Assumes pre-computed split in 'split_file', which is used to index Dataset object
-    TODO: implement on-the-fly splitting using split functions
+    Creates dataloader for PDBBind dataset with specified split (train/test/val). 
     """
-    dataset = GraphPDBBind(root=data_dir)
-    if split_file is None:
-        return DataLoader(dataset, batch_size, shuffle=True)
-    indices = sp.read_split_file(split_file)
+    dataset = GraphResDel(root=os.path.join(data_dir, split))
 
     # if split specifies pdb ids, convert to indices
     if isinstance(indices[0], str):
@@ -97,7 +91,4 @@ def pdbbind_dataloader(batch_size, data_dir='../../data/pdbbind', split_file=Non
     return DataLoader(dataset.index_select(indices), batch_size, shuffle=True)
 
 if __name__=="__main__":
-    dataset = GraphPDBBind(root='../../data/pdbbind')
-
-
-
+    dataset = GraphResDel(root='../../data/residue_deletion')
