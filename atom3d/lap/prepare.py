@@ -13,7 +13,7 @@ logger = log.getLogger('lap_prepare')
 
 
 def split(input_sharded, output_root, info_csv, shuffle_buffer):
-    """Split randomly, balancing inactives and actives across sets."""
+    """Split by protein."""
     if input_sharded.get_keys() != ['ensemble']:
         raise RuntimeError('Can only apply to sharded by ensemble.')
 
@@ -30,15 +30,16 @@ def split(input_sharded, output_root, info_csv, shuffle_buffer):
     active = in_use[in_use['label'] == 'A']
     inactive = in_use[in_use['label'] == 'I']
 
-    a_test, a_val, a_train = splits.random_split(len(active))
-    i_test, i_val, i_train = splits.random_split(len(inactive))
+    # Split by protein.
+    proteins = info['protein'].unique()
+    i_test, i_val, i_train = splits.random_split(len(proteins), 0.6, 0.2, 0.2)
+    p_train = proteins[i_train]
+    p_val = proteins[i_val]
+    p_test = proteins[i_test]
 
-    train = active.iloc[a_train].index.tolist() + \
-        inactive.iloc[i_train].index.tolist()
-    val = active.iloc[a_val].index.tolist() + \
-        inactive.iloc[i_val].index.tolist()
-    test = active.iloc[a_test].index.tolist() + \
-        inactive.iloc[i_test].index.tolist()
+    train = info[info['protein'].isin(p_train)].index.tolist()
+    val = info[info['protein'].isin(p_val)].index.tolist()
+    test = info[info['protein'].isin(p_test)].index.tolist()
 
     logger.info(f'{len(train):} train examples, {len(val):} val examples, '
                 f'{len(test):} test examples.')
