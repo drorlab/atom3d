@@ -2,12 +2,12 @@ import torch
 import numpy as np
 import pandas as pd
 import sys
-sys.path.append('../../atom3d')
-from util import datatypes as dt
-from util import file as fi
-from util import splits as sp
-from protein_ligand.get_labels import get_label
-from util import graph
+sys.path.append('../..')
+from atom3d.util import datatypes as dt
+from atom3d.util import file as fi
+from atom3d.util import splits as sp
+from atom3d.protein_ligand.get_labels import get_label
+from atom3d.util import graph
 import os
 import torch
 from torch_geometric.data import Dataset, Data, DataLoader

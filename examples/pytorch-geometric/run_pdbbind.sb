@@ -2,6 +2,8 @@
 
 #SBATCH --time=48:00:00
 #SBATCH --mem=32G
+#SBATCH --output=./runs/pdbbind-%j.out
+#SBATCH --error=./runs/pdbbind-%j.err
 #SBATCH --partition=rbaltman
 #SBATCH --gres gpu:1
 #SBATCH --mail-type=END,FAIL
@@ -13,4 +15,4 @@ module load cuda/10.0
 source /oak/stanford/groups/rbaltman/aderry/miniconda3/etc/profile.d/conda.sh
 conda activate /oak/stanford/groups/rbaltman/aderry/miniconda3/envs/geometric
 
-python train_pdbbind.py --mode test
+python train_pdbbind.py --mode test --split $1

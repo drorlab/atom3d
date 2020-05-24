@@ -182,9 +182,9 @@ def train_pdbbind(split, architecture, base_dir, device, log_dir, seed=None, tes
     hidden_dim = 64
     learning_rate = 1e-4
     split_dir = os.path.join(os.getcwd(), base_dir, 'splits')
-    train_split = os.path.join(split_dir, 'cluster_split', f'train_{split}.txt')
-    val_split = os.path.join(split_dir, 'cluster_split', f'val_{split}.txt')
-    test_split = os.path.join(split_dir, 'cluster_split', f'test_{split}.txt')
+    train_split = os.path.join(split_dir, f'train_{split}.txt')
+    val_split = os.path.join(split_dir, f'val_{split}.txt')
+    test_split = os.path.join(split_dir,f'test_{split}.txt')
     train_loader = pdbbind_dataloader(batch_size, split_file=train_split)
     val_loader = pdbbind_dataloader(batch_size, split_file=val_split)
     test_loader = pdbbind_dataloader(batch_size, split_file=test_split)
