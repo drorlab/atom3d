@@ -154,7 +154,7 @@ def get_chain_sequences(pdb_file):
 
 def get_all_chain_sequences(pdb_dataset):
     """Return list of tuples of (pdb_code, chain_sequences) for PDB dataset."""
-    return [(fi.get_pdb_code(p), get_chain_sequences(p))
+    return [((fi.get_pdb_code(p),), get_chain_sequences(p))
             for p in tqdm.tqdm(pdb_dataset)]
 
 
