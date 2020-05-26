@@ -293,7 +293,7 @@ if __name__ == "__main__":
     parser.add_argument('out_dir', type=str, help='directory to write npz files')
     parser.add_argument('-i', dest='idx_dir', type=str, default=None, help='directory from which to read split indices') 
     parser.add_argument('--drop_h', dest='drop_h', action='store_true', help='drop hydrogen atoms')
-    parser.add_argument('--cutoff', type=float, default=None, help='cut off the protein beyond this distance around the ligand [Angstrom]'
+    parser.add_argument('--cutoff', dest='cutoff', type=float, default=None, help='cut off the protein beyond this distance around the ligand [Angstrom]')
     args = parser.parse_args()
     
     cormorant_datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
