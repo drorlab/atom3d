@@ -1,12 +1,14 @@
 """Methods to extract protein interface labels pair."""
-import logging
-
 import click
 import numpy as np
 import pandas as pd
 import scipy.spatial as spa
 
 import atom3d.util.shard as sh
+import atom3d.util.log as log
+
+
+logger = log.getLogger('neighbors')
 
 
 index_columns = \
@@ -38,6 +40,15 @@ def neighbors_from_ensemble(ensemble, cutoff, cutoff_type):
     _, (bdf0, bdf1, udf0, udf1) = get_subunits(ensemble)
     neighbors = get_neighbors(bdf0, bdf1, cutoff, cutoff_type)
     if udf0 is not None and udf1 is not None:
+        # Map to unbound.
+        neighbors['subunit0'] = neighbors['subunit0'].apply(
+            lambda x: x.replace('bound', 'unbound'))
+        neighbors['subunit1'] = neighbors['subunit1'].apply(
+            lambda x: x.replace('bound', 'unbound'))
+        neighbors['structure0'] = neighbors['structure0'].apply(
+            lambda x: x.replace('_b_', '_u_'))
+        neighbors['structure1'] = neighbors['structure1'].apply(
+            lambda x: x.replace('_b_', '_u_'))
         neighbors = remove_unmatching(neighbors, udf0, udf1)
 
     return neighbors
@@ -78,7 +89,7 @@ def remove_unmatching(neighbors, df0, df1):
                                'chain1', 'residue1']])
         if res0 not in res_to_idx or res1 not in res_to_idx:
             to_drop.append(i)
-    logging.info(
+    logger.info(
         f'Removing {len(to_drop):} / {len(neighbors):} due to no matching '
         f'residue in unbound.')
     neighbors = neighbors.drop(to_drop).reset_index(drop=True)
