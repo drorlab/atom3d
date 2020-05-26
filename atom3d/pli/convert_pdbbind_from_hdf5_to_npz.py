@@ -2,6 +2,8 @@ import os, sys
 import pickle
 import pandas as pd
 import numpy as np
+import scipy as sp
+import scipy.spatial
 import argparse
 
 sys.path.append('../..')
@@ -12,6 +14,7 @@ from rdkit import Chem
 
 
 ### --- HELPER FUNCTIONS ---
+
 
 def read_labels(labels_filename, pdbcodes):
     """
@@ -32,6 +35,7 @@ def read_split(split_filename):
         pdbcodes = [t.strip() for t in f.readlines()]
     return pdbcodes
 
+
 def read_structures(struct_filename, pdbcodes):
     """
     Return a pandas DataFrame containing all structures.
@@ -40,6 +44,7 @@ def read_structures(struct_filename, pdbcodes):
     data_df = pd.read_hdf(struct_filename, 'structures')
     data_df = data_df[data_df.ensemble.isin(pdbcodes)]
     return data_df
+
 
 def load_data(labels_filename, struct_filename, split_filename):
     
@@ -55,12 +60,42 @@ def load_data(labels_filename, struct_filename, split_filename):
     return pdb_codes, struct_df, labels_df
 
 
+def select_binding_pocket(df,dist=6):
+    """
+    Selects a region of protein coordinates within a certain distance from the ligand. 
+    
+    Args:
+        prot_coords: protein coordinates
+        lig_coords:  ligand coordinates
+        dist: distance from the ligand [in Anstroms]
+        
+    Returns:
+        key pts (int[]): indices of selected protein coordinates
+    """
+
+    ligand  = df[df.chain=='LIG']
+    protein = df[df.chain!='LIG']
+    lig_coords  = np.array([ligand.x, ligand.y, ligand.z]).T
+    prot_coords = np.array([protein.x, protein.y, protein.z]).T
+    
+    # Select the binding pocket
+    kd_tree = sp.spatial.KDTree(prot_coords)
+    key_pts = kd_tree.query_ball_point(lig_coords, r=dist, p=2.0)
+    #key_pts = set([k for l in key_pts for k in l])
+    key_pts = np.unique([k for l in key_pts for k in l])
+    
+    new_df = pd.concat([ protein.iloc[key_pts], ligand ])
+    
+    return new_df
+
+
 # --- THE DATASET CLASS ---
+
 
 class MoleculesDataset():
     """Internal data set, including coordinates."""
 
-    def __init__(self, labels_filename, struct_filename, split_filename, name='molecules', drop_hydrogen=False):
+    def __init__(self, labels_filename, struct_filename, split_filename, name='molecules', drop_hydrogen=False, cutoff=None):
         """Initializes a data set.
         
         Args:
@@ -94,21 +129,31 @@ class MoleculesDataset():
             new_struct = struct_df[struct_df.ensemble==code]
             new_labels = labels_df[labels_df.pdb==code]
             new_values = [ new_labels[col].item() for col in self.data_keys ]
-            new_atnums = np.array([ pte.GetAtomicNumber(e.title()) for e in new_struct.element ])
-            conf_coord = dt.get_coordinates_from_df(new_struct)
+            
+            # select the binding pocket
+            if cutoff is None:
+                sel_struct = new_struct
+            else:
+                sel_struct = select_binding_pocket(new_struct,dist=cutoff)
+            
+            # get atom numbers and coordinates
+            sel_atnums = np.array([ pte.GetAtomicNumber(e.title()) for e in sel_struct.element ])
+            conf_coord = dt.get_coordinates_from_df(sel_struct)
+            
+            # select heavy (=non-H) atoms
             heavy_atom = np.array(new_atnums)!=1
 
             self.index.append(code)
             self.data.append(new_values) 
             if drop_hydrogen:
-                self.charges.append(new_atnums[heavy_atom])
+                self.charges.append(sel_atnums[heavy_atom])
                 self.positions.append(conf_coord[heavy_atom])
-                self.num_atoms.append(len(new_atnums[heavy_atom]))
+                self.num_atoms.append(len(sel_atnums[heavy_atom]))
             else:
-                self.charges.append(new_atnums)
+                self.charges.append(sel_atnums)
                 self.positions.append(conf_coord)
-                self.num_atoms.append(len(new_atnums))
-    
+                self.num_atoms.append(len(sel_atnums))
+
         return
     
     
@@ -194,7 +239,7 @@ class MoleculesDataset():
 
 # --- CONVERSION ---
 
-def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=None, droph=False):
+def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=None, droph=False, cutoff=None):
     """Converts a data set given as hdf5 to npz train/validation/test sets.
         
     Args:
@@ -215,9 +260,9 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=Non
     split_te = split_dir_name+'/test.txt'
 
     # Create the internal data sets
-    ds_tr = MoleculesDataset(csv_file, hdf_file, split_tr, drop_hydrogen=droph)
-    ds_va = MoleculesDataset(csv_file, hdf_file, split_va, drop_hydrogen=droph)
-    ds_te = MoleculesDataset(csv_file, hdf_file, split_te, drop_hydrogen=droph)
+    ds_tr = MoleculesDataset(csv_file, hdf_file, split_tr, drop_hydrogen=droph, cutoff=cutoff)
+    ds_va = MoleculesDataset(csv_file, hdf_file, split_va, drop_hydrogen=droph, cutoff=cutoff)
+    ds_te = MoleculesDataset(csv_file, hdf_file, split_te, drop_hydrogen=droph, cutoff=cutoff)
 
     print('Training: %i molecules. Validation: %i molecules. Test: %i molecules.'%(len(ds_tr),len(ds_va),len(ds_te)))
     
@@ -248,10 +293,11 @@ if __name__ == "__main__":
     parser.add_argument('out_dir', type=str, help='directory to write npz files')
     parser.add_argument('-i', dest='idx_dir', type=str, default=None, help='directory from which to read split indices') 
     parser.add_argument('--drop_h', dest='drop_h', action='store_true', help='drop hydrogen atoms')
+    parser.add_argument('--cutoff', type=float, default=None, help='cut off the protein beyond this distance around the ligand [Angstrom]'
     args = parser.parse_args()
     
     cormorant_datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
 
-    ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir, args.idx_dir, datatypes=cormorant_datatypes, droph=args.drop_h)
+    ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir, args.idx_dir, datatypes=cormorant_datatypes, droph=args.drop_h, cutoff=args.cutoff)
 
 
