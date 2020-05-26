@@ -141,7 +141,7 @@ class MoleculesDataset():
             conf_coord = dt.get_coordinates_from_df(sel_struct)
             
             # select heavy (=non-H) atoms
-            heavy_atom = np.array(new_atnums)!=1
+            heavy_atom = np.array(sel_atnums)!=1
 
             self.index.append(code)
             self.data.append(new_values) 
