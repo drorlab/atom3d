@@ -4,6 +4,7 @@ import sys
 sys.path.append('../..')
 
 import atom3d.lap.ensemble as lape
+import atom3d.mut.ensemble as mute
 import atom3d.ppi.db5 as db5
 import atom3d.psp.casp as casp
 import atom3d.rsp.ensemble as rspe
@@ -22,6 +23,7 @@ ensemblers = {
     'casp': casp.casp_ensembler,
     'lap': lape.lap_ensembler,
     'rsp': rspe.rsp_ensembler,
+    'mut': mute.mut_ensembler,
     'none': identity_ensembler,
 }
 
