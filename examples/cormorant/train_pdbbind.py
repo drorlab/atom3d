@@ -72,6 +72,7 @@ def main():
 
     # Instantiate the training class
     trainer = Engine(args, dataloaders, model, loss_fn, optimizer, scheduler, restart_epochs, device, dtype, clip_value=0.1)
+    print('Initialized a trainer with clip value:',trainer.clip_value)
 
     # Load from checkpoint file. If no checkpoint file exists, automatically does nothing.
     trainer.load_checkpoint()
