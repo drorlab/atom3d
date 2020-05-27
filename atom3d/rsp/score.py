@@ -53,4 +53,7 @@ def load_scores(score_dir):
                     engine='python')
         for f in score_files
     }
+    # If duplicate structures present, remove all but first.
+    for x, y in scores.items():
+        scores[x] = y.loc[~y.index.duplicated(keep='first')]
     return scores

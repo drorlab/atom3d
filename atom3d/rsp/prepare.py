@@ -26,7 +26,7 @@ def split(input_sharded, output_root):
     tmp_sharded = sh.Sharded(
         f'{prefix:}_rekeyed@{num_shards:}', ['ensemble', 'subunit'])
     logger.info("Rekeying")
-#    sho.rekey(input_sharded, tmp_sharded)
+    sho.rekey(input_sharded, tmp_sharded)
 
     keys = tmp_sharded.get_keys()
     train_sharded = sh.Sharded(f'{prefix:}_train@{num_shards:}', keys)
@@ -61,7 +61,7 @@ def prepare(input_sharded_path, output_root, score_dir):
         filter_sharded = sh.Sharded(f'{prefix:}_filtered@{num_shards:}', keys)
         filter_fn = sc.form_score_filter(score_dir)
         logger.info('Filtering against score file.')
-#        sho.filter_sharded(input_sharded, filter_sharded, filter_fn)
+        sho.filter_sharded(input_sharded, filter_sharded, filter_fn)
         split(filter_sharded, output_root)
         filter_sharded.delete_files()
     else:
