@@ -36,6 +36,9 @@ def split(input_sharded, output_root, info_csv, shuffle_buffer):
     p_train = proteins[i_train]
     p_val = proteins[i_val]
     p_test = proteins[i_test]
+    logger.info(f'Train proteins: {p_train:}')
+    logger.info(f'Val proteins: {p_val:}')
+    logger.info(f'Test proteins: {p_test:}')
 
     train = info[info['protein'].isin(p_train)].index.tolist()
     val = info[info['protein'].isin(p_val)].index.tolist()
