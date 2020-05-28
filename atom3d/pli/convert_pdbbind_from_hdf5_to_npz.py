@@ -171,25 +171,22 @@ class MoleculesDataset():
 
             # get atomic numbers
             sel_atnums  = np.array([ pte.GetAtomicNumber(e.title()) for e in sel_struct.element ])
+            # extract coordinates
+            conf_coord = dt.get_coordinates_from_df(sel_struct)
+            # select heavy (=non-H) atoms
+            if drop_hydrogen:
+                heavy_atom = np.array(sel_atnums)!=1
+                sel_atnums = sel_atnums[heavy_atom]
+                conf_coord = conf_coord[heavy_atom]
             # move on with the next structure if this one is too large
             if max_num_atoms is not None and len(sel_atnums) > max_num_atoms:
                 continue
-            # extract coordinates
-            conf_coord = dt.get_coordinates_from_df(sel_struct)
-
-            # select heavy (=non-H) atoms
-            heavy_atom = np.array(sel_atnums)!=1
 
             self.index.append(code)
             self.data.append(new_values)
-            if drop_hydrogen:
-                self.charges.append(sel_atnums[heavy_atom])
-                self.positions.append(conf_coord[heavy_atom])
-                self.num_atoms.append(len(sel_atnums[heavy_atom]))
-            else:
-                self.charges.append(sel_atnums)
-                self.positions.append(conf_coord)
-                self.num_atoms.append(len(sel_atnums))
+            self.charges.append(sel_atnums)
+            self.positions.append(conf_coord)
+            self.num_atoms.append(len(sel_atnums))
 
         return
     
