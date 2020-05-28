@@ -25,9 +25,9 @@ Create a separate conda environment::
 Cloning the git repo
 `````````````````````
 
-Cormorant can be cloned directly from the git repo using::
+The Cormorant fork used for this project can be cloned directly from the git repo using::
 
-    git clone https://github.com/risilab/cormorant.git
+    git clone https://github.com/drorlab/cormorant.git
 
 Installing Cormorant
 ````````````````````
