@@ -14,7 +14,7 @@ from cormorant.nn import NoLayer
 
 
 
-class CormorantPDBBind(CGModule):
+class CormorantPDBBindMLP(CGModule):
     """
     Basic Cormorant Network used to train on BDBBind.
 
@@ -88,11 +88,9 @@ class CormorantPDBBind(CGModule):
         num_scalars_in = self.num_species * (self.charge_power + 1)
         num_scalars_out = num_channels[0]
 
-        self.input_func_atom = InputLinear(num_scalars_in, num_scalars_out,
-                                           device=self.device, dtype=self.dtype)
-#        self.input_func_atom = InputMPNN(num_scalars_in, num_scalars_out, num_mpnn_layers,
-#                                         soft_cut_rad[0], soft_cut_width[0], hard_cut_rad[0],
-#                                         activation=activation, device=self.device, dtype=self.dtype)
+        self.input_func_atom = InputMPNN(num_scalars_in, num_scalars_out, num_mpnn_layers,
+                                         soft_cut_rad[0], soft_cut_width[0], hard_cut_rad[0],
+                                         activation=activation, device=self.device, dtype=self.dtype)
         self.input_func_edge = NoLayer()
 
         tau_in_atom = self.input_func_atom.tau
@@ -116,8 +114,8 @@ class CormorantPDBBind(CGModule):
 
         self.output_layer_atom = OutputLinear(num_scalars_atom, bias=True,
                                               device=self.device, dtype=self.dtype)
-#        self.output_layer_atom = OutputPMLP(num_scalars_atom, activation=activation,
-#                                            device=self.device, dtype=self.dtype)
+        self.output_layer_atom = OutputPMLP(num_scalars_atom, activation=activation,
+                                            device=self.device, dtype=self.dtype)
         self.output_layer_edge = NoLayer()
 
         logging.info('Model initialized. Number of parameters: {}'.format(

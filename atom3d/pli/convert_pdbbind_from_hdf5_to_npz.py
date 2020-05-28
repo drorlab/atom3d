@@ -84,9 +84,32 @@ def select_binding_pocket(df,dist=6):
     #key_pts = set([k for l in key_pts for k in l])
     key_pts = np.unique([k for l in key_pts for k in l])
     
-    new_df = pd.concat([ protein.iloc[key_pts], ligand ])
+    new_df = pd.concat([protein.iloc[key_pts], ligand], ignore_index=True)
     
     return new_df
+
+
+def valid_elements(symbols,reference):
+    """Tests a list for elements that are not in the reference.
+
+    Args:
+        symbols (list): The list whose elements to check.
+        reference (list): The list containing all allowed elements.
+
+    Returns:
+        valid (bool): True if symbols only contains elements from the reference.
+
+    """
+
+    valid = True
+
+    if reference is not None:
+        for sym in symbols:
+            if sym not in reference:
+                valid = False
+
+    return valid
+
 
 
 # --- THE DATASET CLASS ---
@@ -95,7 +118,8 @@ def select_binding_pocket(df,dist=6):
 class MoleculesDataset():
     """Internal data set, including coordinates."""
 
-    def __init__(self, labels_filename, struct_filename, split_filename, name='molecules', drop_hydrogen=False, cutoff=None):
+    def __init__(self, labels_filename, struct_filename, split_filename, name='molecules', 
+                 drop_hydrogen=False, cutoff=None, max_num_atoms=None, elements=None, element_dict=None):
         """Initializes a data set.
         
         Args:
@@ -135,16 +159,29 @@ class MoleculesDataset():
                 sel_struct = new_struct
             else:
                 sel_struct = select_binding_pocket(new_struct,dist=cutoff)
-            
-            # get atom numbers and coordinates
-            sel_atnums = np.array([ pte.GetAtomicNumber(e.title()) for e in sel_struct.element ])
+
+            # get element symbols
+            if element_dict is None:
+                sel_symbols = [ e.title() for e in sel_struct.element ]
+            else:
+                sel_symbols = [ element_dict[e.title()] for e in sel_struct.element ]
+            # move on with the next structure if this one contains unwanted elements
+            if not valid_elements(sel_symbols,elements):
+                continue
+
+            # get atomic numbers
+            sel_atnums  = np.array([ pte.GetAtomicNumber(e.title()) for e in sel_struct.element ])
+            # move on with the next structure if this one is too large
+            if max_num_atoms is not None and len(sel_atnums) > max_num_atoms:
+                continue
+            # extract coordinates
             conf_coord = dt.get_coordinates_from_df(sel_struct)
-            
+
             # select heavy (=non-H) atoms
             heavy_atom = np.array(sel_atnums)!=1
 
             self.index.append(code)
-            self.data.append(new_values) 
+            self.data.append(new_values)
             if drop_hydrogen:
                 self.charges.append(sel_atnums[heavy_atom])
                 self.positions.append(conf_coord[heavy_atom])
@@ -239,7 +276,8 @@ class MoleculesDataset():
 
 # --- CONVERSION ---
 
-def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=None, droph=False, cutoff=None):
+def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=None, droph=False, 
+                        cutoff=None, max_num_atoms=None, elements=None, element_dict=None):
     """Converts a data set given as hdf5 to npz train/validation/test sets.
         
     Args:
@@ -260,9 +298,12 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=Non
     split_te = split_dir_name+'/test.txt'
 
     # Create the internal data sets
-    ds_tr = MoleculesDataset(csv_file, hdf_file, split_tr, drop_hydrogen=droph, cutoff=cutoff)
-    ds_va = MoleculesDataset(csv_file, hdf_file, split_va, drop_hydrogen=droph, cutoff=cutoff)
-    ds_te = MoleculesDataset(csv_file, hdf_file, split_te, drop_hydrogen=droph, cutoff=cutoff)
+    ds_tr = MoleculesDataset(csv_file, hdf_file, split_tr, drop_hydrogen=droph, cutoff=cutoff, 
+                             max_num_atoms=max_num_atoms, elements=elements, element_dict=element_dict)
+    ds_va = MoleculesDataset(csv_file, hdf_file, split_va, drop_hydrogen=droph, cutoff=cutoff, 
+                             max_num_atoms=max_num_atoms, elements=elements, element_dict=element_dict)
+    ds_te = MoleculesDataset(csv_file, hdf_file, split_te, drop_hydrogen=droph, cutoff=cutoff, 
+                             max_num_atoms=max_num_atoms, elements=elements, element_dict=element_dict)
 
     print('Training: %i molecules. Validation: %i molecules. Test: %i molecules.'%(len(ds_tr),len(ds_va),len(ds_te)))
     
@@ -294,10 +335,15 @@ if __name__ == "__main__":
     parser.add_argument('-i', dest='idx_dir', type=str, default=None, help='directory from which to read split indices') 
     parser.add_argument('--drop_h', dest='drop_h', action='store_true', help='drop hydrogen atoms')
     parser.add_argument('--cutoff', dest='cutoff', type=float, default=None, help='cut off the protein beyond this distance around the ligand [Angstrom]')
+    parser.add_argument('--maxnumat', dest='maxnumat', type=float, default=None, help='drop all structures with more than this number of atoms')
     args = parser.parse_args()
     
+    elements_pdbbind = ['H','C','N','O','S','Zn','Cl','F','P','Mg'] #,'Br','Ca','Mn','I']
     cormorant_datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
+    element_dict = None
 
-    ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir, args.idx_dir, datatypes=cormorant_datatypes, droph=args.drop_h, cutoff=args.cutoff)
+    ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir, args.idx_dir, 
+                                              datatypes=cormorant_datatypes, droph=args.drop_h, cutoff=args.cutoff, 
+                                              max_num_atoms=args.maxnumat, elements=elements_pdbbind, element_dict=element_dict)
 
 
