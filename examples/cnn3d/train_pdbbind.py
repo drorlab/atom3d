@@ -21,6 +21,7 @@ import atom3d.util.shard as sh
 import examples.cnn3d.model as model
 import examples.cnn3d.feature_pdbbind as feature_pdbbind
 import examples.cnn3d.subgrid_gen as subgrid_gen
+import examples.cnn3d.util as util
 
 
 def compute_stats(results):
@@ -186,125 +187,135 @@ def train_model(sess, args):
     logging.debug('Finished running initializer...')
 
     ##### Training + validation
-    prev_val_loss, best_val_loss = float("inf"), float("inf")
+    if not args.test_only:
+        prev_val_loss, best_val_loss = float("inf"), float("inf")
 
-    if (args.max_pdbs_train == None):
-        pdbcodes = feature_pdbbind.read_split(args.train_split_filename)
-        train_num_structs = len(pdbcodes)
-    else:
-        train_num_structs = args.max_pdbs_train
-
-    if (args.max_pdbs_val == None):
-        pdbcodes = feature_pdbbind.read_split(args.val_split_filename)
-        val_num_structs = len(pdbcodes)
-    else:
-        val_num_structs = args.max_pdbs_val
-
-    train_num_structs *= args.repeat_gen
-    val_num_structs *= args.repeat_gen
-
-    logging.info("Start training with {:} structs for train and {:} structs for val per epoch".format(
-        train_num_structs, val_num_structs))
-
-
-    def _save():
-        ckpt = saver.save(sess, os.path.join(args.output_dir, 'model-ckpt'),
-                          global_step=epoch)
-        return ckpt
-
-    run_info_filename = os.path.join(args.output_dir, 'run_info.json')
-    run_info = {}
-    def __update_and_write_run_info(key, val):
-        run_info[key] = val
-        with open(run_info_filename, 'w') as f:
-            json.dump(run_info, f, indent=4)
-
-    per_epoch_val_losses = []
-    for epoch in range(1, args.num_epochs+1):
-        random_seed = args.random_seed #random.randint(1, 10e6)
-        logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
-
-        logging.debug('Creating train generator...')
-        train_generator_callable = functools.partial(
-            feature_pdbbind.dataset_generator,
-            args.data_filename,
-            args.train_split_filename,
-            args.labels_filename,
-            args.grid_config,
-            shuffle=args.shuffle,
-            repeat=args.repeat_gen,
-            max_pdbs=args.max_pdbs_train,
-            random_seed=random_seed)
-
-        logging.debug('Creating val generator...')
-        val_generator_callable = functools.partial(
-            feature_pdbbind.dataset_generator,
-            args.data_filename,
-            args.val_split_filename,
-            args.labels_filename,
-            args.grid_config,
-            shuffle=args.shuffle,
-            repeat=args.repeat_gen,
-            max_pdbs=args.max_pdbs_val,
-            random_seed=random_seed)
-
-        # Training
-        train_structs, train_preds, train_labels, _, curr_train_loss = __loop(
-            train_generator_callable, 'train', num_iters=train_num_structs)
-        # Validation
-        val_structs, val_preds, val_labels, _, curr_val_loss = __loop(
-            val_generator_callable, 'val', num_iters=val_num_structs)
-
-        per_epoch_val_losses.append(curr_val_loss)
-        __update_and_write_run_info('val_losses', per_epoch_val_losses)
-
-        if args.use_best or args.early_stopping:
-            if curr_val_loss < best_val_loss:
-                # Found new best epoch.
-                best_val_loss = curr_val_loss
-                ckpt = _save()
-                __update_and_write_run_info('val_best_loss', best_val_loss)
-                __update_and_write_run_info('best_ckpt', ckpt)
-                logging.info("New best {:}".format(ckpt))
-
-        if (epoch == args.num_epochs - 1 and not args.use_best):
-            # At end and just using final checkpoint.
-            ckpt = _save()
-            __update_and_write_run_info('best_ckpt', ckpt)
-            logging.info("Last checkpoint {:}".format(ckpt))
-
-        if args.save_all_ckpts:
-            # Save at every checkpoint
-            ckpt = _save()
-            logging.info("Saving checkpoint {:}".format(ckpt))
-
-        if args.early_stopping and curr_val_loss >= prev_val_loss:
-            logging.info("Validation loss stopped decreasing, stopping...")
-            break
+        if (args.max_pdbs_train == None):
+            pdbcodes = feature_pdbbind.read_split(args.train_split_filename)
+            train_num_structs = len(pdbcodes)
         else:
-            prev_val_loss = curr_val_loss
+            train_num_structs = args.max_pdbs_train
 
-    logging.info("Finished training")
+        if (args.max_pdbs_val == None):
+            pdbcodes = feature_pdbbind.read_split(args.val_split_filename)
+            val_num_structs = len(pdbcodes)
+        else:
+            val_num_structs = args.max_pdbs_val
 
-    ## Save last train and val results
-    logging.info("Saving train and val results")
-    train_df = pd.DataFrame(
-        np.array([train_structs, train_labels, train_preds]).T,
-        columns=['structure', 'true', 'pred'],
-        )
-    train_df.to_pickle(os.path.join(args.output_dir, 'train_result.pkl'))
+        train_num_structs *= args.repeat_gen
+        val_num_structs *= args.repeat_gen
 
-    val_df = pd.DataFrame(
-        np.array([val_structs, val_labels, val_preds]).T,
-        columns=['structure', 'true', 'pred'],
-        )
-    val_df.to_pickle(os.path.join(args.output_dir, 'val_result.pkl'))
+        logging.info("Start training with {:} structs for train and {:} structs for val per epoch".format(
+            train_num_structs, val_num_structs))
+
+
+        def _save():
+            ckpt = saver.save(sess, os.path.join(args.output_dir, 'model-ckpt'),
+                              global_step=epoch)
+            return ckpt
+
+        run_info_filename = os.path.join(args.output_dir, 'run_info.json')
+        run_info = {}
+        def __update_and_write_run_info(key, val):
+            run_info[key] = val
+            with open(run_info_filename, 'w') as f:
+                json.dump(run_info, f, indent=4)
+
+        per_epoch_val_losses = []
+        for epoch in range(1, args.num_epochs+1):
+            random_seed = args.random_seed #random.randint(1, 10e6)
+            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
+
+            logging.debug('Creating train generator...')
+            train_generator_callable = functools.partial(
+                feature_pdbbind.dataset_generator,
+                args.data_filename,
+                args.train_split_filename,
+                args.labels_filename,
+                args.grid_config,
+                shuffle=args.shuffle,
+                repeat=args.repeat_gen,
+                max_pdbs=args.max_pdbs_train,
+                random_seed=random_seed)
+
+            logging.debug('Creating val generator...')
+            val_generator_callable = functools.partial(
+                feature_pdbbind.dataset_generator,
+                args.data_filename,
+                args.val_split_filename,
+                args.labels_filename,
+                args.grid_config,
+                shuffle=args.shuffle,
+                repeat=args.repeat_gen,
+                max_pdbs=args.max_pdbs_val,
+                random_seed=random_seed)
+
+            # Training
+            train_structs, train_preds, train_labels, _, curr_train_loss = __loop(
+                train_generator_callable, 'train', num_iters=train_num_structs)
+            # Validation
+            val_structs, val_preds, val_labels, _, curr_val_loss = __loop(
+                val_generator_callable, 'val', num_iters=val_num_structs)
+
+            per_epoch_val_losses.append(curr_val_loss)
+            __update_and_write_run_info('val_losses', per_epoch_val_losses)
+
+            if args.use_best or args.early_stopping:
+                if curr_val_loss < best_val_loss:
+                    # Found new best epoch.
+                    best_val_loss = curr_val_loss
+                    ckpt = _save()
+                    __update_and_write_run_info('val_best_loss', best_val_loss)
+                    __update_and_write_run_info('best_ckpt', ckpt)
+                    logging.info("New best {:}".format(ckpt))
+
+            if (epoch == args.num_epochs - 1 and not args.use_best):
+                # At end and just using final checkpoint.
+                ckpt = _save()
+                __update_and_write_run_info('best_ckpt', ckpt)
+                logging.info("Last checkpoint {:}".format(ckpt))
+
+            if args.save_all_ckpts:
+                # Save at every checkpoint
+                ckpt = _save()
+                logging.info("Saving checkpoint {:}".format(ckpt))
+
+            if args.early_stopping and curr_val_loss >= prev_val_loss:
+                logging.info("Validation loss stopped decreasing, stopping...")
+                break
+            else:
+                prev_val_loss = curr_val_loss
+
+        logging.info("Finished training")
+
+        ## Save last train and val results
+        logging.info("Saving train and val results")
+        train_df = pd.DataFrame(
+            np.array([train_structs, train_labels, train_preds]).T,
+            columns=['structure', 'true', 'pred'],
+            )
+        train_df.to_pickle(os.path.join(args.output_dir, 'train_result.pkl'))
+
+        val_df = pd.DataFrame(
+            np.array([val_structs, val_labels, val_preds]).T,
+            columns=['structure', 'true', 'pred'],
+            )
+        val_df.to_pickle(os.path.join(args.output_dir, 'val_result.pkl'))
 
 
     ##### Testing
-    to_use = run_info['best_ckpt'] if args.use_best else ckpt
-    logging.info("Using {:} for testing".format(to_use))
-    saver.restore(sess, to_use)
+    logging.debug("Run testing")
+    if not args.test_only:
+        to_use = run_info['best_ckpt'] if args.use_best else ckpt
+    else:
+        if args.use_ckpt_num == None:
+            with open(os.path.join(args.model_dir, 'run_info.json')) as f:
+                run_info = json.load(f)
+            to_use = run_info['best_ckpt']
+        else:
+            to_use = os.path.join(
+                args.model_dir, 'model-ckpt-{:}'.format(args.use_ckpt_num))
+        saver = tf.train.import_meta_graph(to_use + '.meta')
 
     test_generator_callable = functools.partial(
         feature_pdbbind.dataset_generator,
@@ -398,12 +409,28 @@ def create_train_parser():
     parser.add_argument('--unobserved', action='store_true', default=False)
     parser.add_argument('--save_all_ckpts', action='store_true', default=False)
 
+    # Test only
+    parser.add_argument('--test_only', action='store_true', default=False)
+    parser.add_argument('--model_dir', type=str, default=None)
+    parser.add_argument('--use_ckpt_num', type=int, default=None)
+
     return parser
 
 
 def main():
     parser = create_train_parser()
     args = parser.parse_args()
+
+    args.__dict__['grid_config'] = feature_pdbbind.grid_config
+
+    if args.test_only:
+        with open(os.path.join(args.model_dir, 'config.json')) as f:
+            model_config = json.load(f)
+            args.num_conv = model_config['num_conv']
+            args.use_batch_norm = model_config['use_batch_norm']
+            if 'grid_config' in model_config:
+                args.__dict__['grid_config'] = util.dotdict(
+                    model_config['grid_config'])
 
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     if args.debug:
@@ -427,7 +454,6 @@ def main():
                 os.mkdir(args.output_dir)
                 break
 
-    args.__dict__['grid_config'] = feature_pdbbind.grid_config
     logging.info("\n" + str(json.dumps(args.__dict__, indent=4)) + "\n")
 
     # Save config

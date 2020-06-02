@@ -23,6 +23,7 @@ import atom3d.util.shard as sh
 import examples.cnn3d.model as model
 import examples.cnn3d.feature_mut as feature_mut
 import examples.cnn3d.subgrid_gen as subgrid_gen
+import examples.cnn3d.util as util
 
 
 def major_vote(results):
@@ -272,119 +273,132 @@ def train_model(sess, args):
     logging.debug('Finished running initializer...')
 
     ##### Training + validation
-    prev_val_loss, best_val_loss = float("inf"), float("inf")
+    if not args.test_only:
+        prev_val_loss, best_val_loss = float("inf"), float("inf")
 
-    multiplier = args.grid_config.max_pos_per_shard * int(
-        1 + args.grid_config.neg_to_pos_ratio)
+        multiplier = args.grid_config.max_pos_per_shard * int(
+            1 + args.grid_config.neg_to_pos_ratio)
 
-    train_num_ensembles = args.train_sharded.get_num_shards()*multiplier
-    train_num_ensembles *= args.repeat_gen
+        train_num_ensembles = args.train_sharded.get_num_shards()*multiplier
+        train_num_ensembles *= args.repeat_gen
 
-    val_num_ensembles = args.val_sharded.get_num_shards()*multiplier
-    val_num_ensembles *= args.repeat_gen
+        val_num_ensembles = args.val_sharded.get_num_shards()*multiplier
+        val_num_ensembles *= args.repeat_gen
 
-    logging.info("Start training with {:} ensembles for train and {:} ensembles for val per epoch".format(
-        train_num_ensembles, val_num_ensembles))
+        logging.info("Start training with {:} ensembles for train and {:} ensembles for val per epoch".format(
+            train_num_ensembles, val_num_ensembles))
 
 
-    def _save():
-        ckpt = saver.save(sess, os.path.join(args.output_dir, 'model-ckpt'),
-                          global_step=epoch)
-        return ckpt
+        def _save():
+            ckpt = saver.save(sess, os.path.join(args.output_dir, 'model-ckpt'),
+                              global_step=epoch)
+            return ckpt
 
-    run_info_filename = os.path.join(args.output_dir, 'run_info.json')
-    run_info = {}
-    def __update_and_write_run_info(key, val):
-        run_info[key] = val
-        with open(run_info_filename, 'w') as f:
-            json.dump(run_info, f, indent=4)
+        run_info_filename = os.path.join(args.output_dir, 'run_info.json')
+        run_info = {}
+        def __update_and_write_run_info(key, val):
+            run_info[key] = val
+            with open(run_info_filename, 'w') as f:
+                json.dump(run_info, f, indent=4)
 
-    per_epoch_val_losses = []
-    for epoch in range(1, args.num_epochs+1):
-        random_seed = args.random_seed #random.randint(1, 10e6)
-        logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
+        per_epoch_val_losses = []
+        for epoch in range(1, args.num_epochs+1):
+            random_seed = args.random_seed #random.randint(1, 10e6)
+            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
 
-        logging.debug('Creating train generator...')
-        train_generator_callable = functools.partial(
-            feature_mut.dataset_generator,
-            args.train_sharded,
-            args.grid_config,
-            shuffle=args.shuffle,
-            repeat=args.repeat_gen,
-            add_flag=args.add_flag,
-            center_at_mut=args.center_at_mut,
-            testing=False,
-            random_seed=random_seed)
+            logging.debug('Creating train generator...')
+            train_generator_callable = functools.partial(
+                feature_mut.dataset_generator,
+                args.train_sharded,
+                args.grid_config,
+                shuffle=args.shuffle,
+                repeat=args.repeat_gen,
+                add_flag=args.add_flag,
+                center_at_mut=args.center_at_mut,
+                testing=False,
+                random_seed=random_seed)
 
-        logging.debug('Creating val generator...')
-        val_generator_callable = functools.partial(
-            feature_mut.dataset_generator,
-            args.val_sharded,
-            args.grid_config,
-            shuffle=args.shuffle,
-            repeat=args.repeat_gen,
-            add_flag=args.add_flag,
-            center_at_mut=args.center_at_mut,
-            testing=False,
-            random_seed=random_seed)
+            logging.debug('Creating val generator...')
+            val_generator_callable = functools.partial(
+                feature_mut.dataset_generator,
+                args.val_sharded,
+                args.grid_config,
+                shuffle=args.shuffle,
+                repeat=args.repeat_gen,
+                add_flag=args.add_flag,
+                center_at_mut=args.center_at_mut,
+                testing=False,
+                random_seed=random_seed)
 
-        # Training
-        train_ensembles, train_logits, train_preds, train_labels, _, curr_train_loss = __loop(
-            train_generator_callable, 'train', num_iters=train_num_ensembles)
-        # Validation
-        val_ensembles, val_logits, val_preds, val_labels, _, curr_val_loss = __loop(
-            val_generator_callable, 'val', num_iters=val_num_ensembles)
+            # Training
+            train_ensembles, train_logits, train_preds, train_labels, _, curr_train_loss = __loop(
+                train_generator_callable, 'train', num_iters=train_num_ensembles)
+            # Validation
+            val_ensembles, val_logits, val_preds, val_labels, _, curr_val_loss = __loop(
+                val_generator_callable, 'val', num_iters=val_num_ensembles)
 
-        per_epoch_val_losses.append(curr_val_loss)
-        __update_and_write_run_info('val_losses', per_epoch_val_losses)
+            per_epoch_val_losses.append(curr_val_loss)
+            __update_and_write_run_info('val_losses', per_epoch_val_losses)
 
-        if args.use_best or args.early_stopping:
-            if curr_val_loss < best_val_loss:
-                # Found new best epoch.
-                best_val_loss = curr_val_loss
+            if args.use_best or args.early_stopping:
+                if curr_val_loss < best_val_loss:
+                    # Found new best epoch.
+                    best_val_loss = curr_val_loss
+                    ckpt = _save()
+                    __update_and_write_run_info('val_best_loss', best_val_loss)
+                    __update_and_write_run_info('best_ckpt', ckpt)
+                    logging.info("New best {:}".format(ckpt))
+
+            if (epoch == args.num_epochs - 1 and not args.use_best):
+                # At end and just using final checkpoint.
                 ckpt = _save()
-                __update_and_write_run_info('val_best_loss', best_val_loss)
                 __update_and_write_run_info('best_ckpt', ckpt)
-                logging.info("New best {:}".format(ckpt))
+                logging.info("Last checkpoint {:}".format(ckpt))
 
-        if (epoch == args.num_epochs - 1 and not args.use_best):
-            # At end and just using final checkpoint.
-            ckpt = _save()
-            __update_and_write_run_info('best_ckpt', ckpt)
-            logging.info("Last checkpoint {:}".format(ckpt))
+            if args.save_all_ckpts:
+                # Save at every checkpoint
+                ckpt = _save()
+                logging.info("Saving checkpoint {:}".format(ckpt))
 
-        if args.save_all_ckpts:
-            # Save at every checkpoint
-            ckpt = _save()
-            logging.info("Saving checkpoint {:}".format(ckpt))
+            ## Save train and val results
+            logging.info("Saving train and val results")
+            train_df = pd.DataFrame(
+                np.array([train_ensembles, train_labels, train_preds, train_logits]).T,
+                columns=['ensembles', 'true', 'pred', 'logits'],
+                )
+            train_df.to_pickle(os.path.join(args.output_dir, 'train_result-{:}.pkl'.format(epoch)))
 
-        ## Save train and val results
-        logging.info("Saving train and val results")
-        train_df = pd.DataFrame(
-            np.array([train_ensembles, train_labels, train_preds, train_logits]).T,
-            columns=['ensembles', 'true', 'pred', 'logits'],
-            )
-        train_df.to_pickle(os.path.join(args.output_dir, 'train_result-{:}.pkl'.format(epoch)))
+            val_df = pd.DataFrame(
+                np.array([val_ensembles, val_labels, val_preds, val_logits]).T,
+                columns=['ensembles', 'true', 'pred', 'logits'],
+                )
+            val_df.to_pickle(os.path.join(args.output_dir, 'val_result-{:}.pkl'.format(epoch)))
 
-        val_df = pd.DataFrame(
-            np.array([val_ensembles, val_labels, val_preds, val_logits]).T,
-            columns=['ensembles', 'true', 'pred', 'logits'],
-            )
-        val_df.to_pickle(os.path.join(args.output_dir, 'val_result-{:}.pkl'.format(epoch)))
+            __stats('Train Epoch {:}'.format(epoch), train_df)
+            __stats('Val Epoch {:}'.format(epoch), val_df)
 
-        __stats('Train Epoch {:}'.format(epoch), train_df)
-        __stats('Val Epoch {:}'.format(epoch), val_df)
+            if args.early_stopping and curr_val_loss >= prev_val_loss:
+                logging.info("Validation loss stopped decreasing, stopping...")
+                break
+            else:
+                prev_val_loss = curr_val_loss
 
-        if args.early_stopping and curr_val_loss >= prev_val_loss:
-            logging.info("Validation loss stopped decreasing, stopping...")
-            break
-        else:
-            prev_val_loss = curr_val_loss
-
-    logging.info("Finished training")
+        logging.info("Finished training")
 
     ##### Testing
-    to_use = run_info['best_ckpt'] if args.use_best else ckpt
+    logging.debug("Run testing")
+    if not args.test_only:
+        to_use = run_info['best_ckpt'] if args.use_best else ckpt
+    else:
+        if args.use_ckpt_num == None:
+            with open(os.path.join(args.model_dir, 'run_info.json')) as f:
+                run_info = json.load(f)
+            to_use = run_info['best_ckpt']
+        else:
+            to_use = os.path.join(
+                args.model_dir, 'model-ckpt-{:}'.format(args.use_ckpt_num))
+        saver = tf.train.import_meta_graph(to_use + '.meta')
+
     logging.info("Using {:} for testing".format(to_use))
     saver.restore(sess, to_use)
 
@@ -460,6 +474,11 @@ def create_train_parser():
     parser.add_argument('--debug', action='store_true', default=False)
     parser.add_argument('--unobserved', action='store_true', default=False)
     parser.add_argument('--save_all_ckpts', action='store_true', default=False)
+
+    # Test only
+    parser.add_argument('--test_only', action='store_true', default=False)
+    parser.add_argument('--model_dir', type=str, default=None)
+    parser.add_argument('--use_ckpt_num', type=int, default=None)
 
     return parser
 
