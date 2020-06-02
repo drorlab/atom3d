@@ -1,13 +1,15 @@
 """Functions for splitting data into test, validation, and training sets."""
+import math
+import random
 import sys
 
 import numpy as np
+sys.path.append('../..')
 
 import atom3d.util.file as fi
 import atom3d.util.log as log
 import atom3d.util.sequence as seq
 
-sys.path.append('../..')
 logger = log.getLogger('splits')
 
 
@@ -169,8 +171,6 @@ def cluster_split(all_chain_sequences, cutoff, val_split=0.1,
 
     test_size = n * test_split
     val_size = n * val_split
-    max_hit_size_test = test_size / min_fam_in_split
-    max_hit_size_val = val_size / min_fam_in_split
 
     np.random.shuffle(all_chain_sequences)
 
@@ -267,8 +267,6 @@ def identity_split(
     n = len(pdb_codes)
     test_size = n * test_split
     val_size = n * val_split
-    max_hit_size_test = test_size / min_fam_in_split
-    max_hit_size_val = val_size / min_fam_in_split
 
     np.random.shuffle(all_chain_sequences)
 
@@ -298,25 +296,32 @@ def create_identity_split(all_chain_sequences, cutoff, split_size,
     Returns split and removes any pdbs in this split from the remaining dataset
     """
     dataset_size = len(all_chain_sequences)
-    pdb_ids = np.array(
-        [fi.get_pdb_code(p[0]) for (p, _) in all_chain_sequences])
-    split = set()
-    idx = 0
-    while len(split) < split_size:
-        (rand_id, rand_cs) = all_chain_sequences[idx]
-        split.add(rand_id)
-        hits = seq.find_similar(rand_cs, 'blast_db', cutoff, dataset_size)
-        # ensure that at least min_fam_in_split families in each split
-        if len(hits) > split_size / min_fam_in_split:
-            idx += 1
-            continue
-        split = split.union(hits)
-        idx += 1
+    tmp = {x: y for (x, y) in all_chain_sequences}
+    assert len(tmp) == len(all_chain_sequences)
+    all_chain_sequences = tmp
 
-    matches = np.array([i for i, x in enumerate(pdb_ids) if x in split])
+    # Get structure tuple.
+    split, used = set(), set()
+    to_use = set(all_chain_sequences.keys())
+    while len(split) < split_size:
+        # Get random structure tuple and random chain_sequence.
+        rstuple = random.sample(to_use, 1)[0]
+        rcs = all_chain_sequences[rstuple]
+
+        found = seq.find_similar(rcs, 'blast_db', cutoff, dataset_size)
+
+        # Get structure tuples.
+        found = set([seq.fasta_name_to_tuple(x)[0] for x in found])
+
+        # ensure that at least min_fam_in_split families in each split
+        max_fam_size = int(math.ceil(split_size / min_fam_in_split))
+        split = split.union(list(found)[:max_fam_size])
+        to_use = to_use.difference(found)
+        used = used.union(found)
+
     selected_chain_sequences = \
-        [x for i, x in enumerate(all_chain_sequences) if i in matches]
+        [(s, cs) for s, cs in all_chain_sequences.items() if s in split]
     remaining_chain_sequences = \
-        [x for i, x in enumerate(all_chain_sequences) if i not in matches]
+        [(s, cs) for s, cs in all_chain_sequences.items() if s in to_use]
 
     return selected_chain_sequences, remaining_chain_sequences

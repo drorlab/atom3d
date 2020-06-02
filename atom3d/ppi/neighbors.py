@@ -1,19 +1,22 @@
 """Methods to extract protein interface labels pair."""
-import logging
-
 import click
 import numpy as np
 import pandas as pd
 import scipy.spatial as spa
 
 import atom3d.util.shard as sh
+import atom3d.util.log as log
 
 
-index_columns = ['structure', 'model', 'chain', 'residue']
+logger = log.getLogger('neighbors')
+
+
+index_columns = \
+    ['ensemble', 'subunit', 'structure', 'model', 'chain', 'residue']
 
 
 @click.command(help='Find neighbors for entry in sharded.')
-@click.argument('sharded', type=click.Path())
+@click.argument('sharded_path', type=click.Path())
 @click.argument('ensemble')
 @click.argument('output_labels', type=click.Path())
 @click.option('-c', '--cutoff', type=int, default=8,
@@ -23,8 +26,10 @@ index_columns = ['structure', 'model', 'chain', 'residue']
               type=click.Choice(['heavy', 'CA'], case_sensitive=False),
               help='How to compute distance between residues: CA is based on '
               'alpha-carbons, heavy is based on any heavy atom.')
-def get_neighbors_main(sharded, ensemble, output_labels, cutoff, cutoff_type):
-    ensemble = sh.read_ensemble(sharded, ensemble)
+def get_neighbors_main(sharded_path, ensemble, output_labels, cutoff,
+                       cutoff_type):
+    sharded = sh.load_sharded(sharded_path)
+    ensemble = sharded.read_keyed(ensemble)
 
     neighbors = neighbors_from_ensemble(ensemble, cutoff, cutoff_type)
     # Write label file.
@@ -35,6 +40,15 @@ def neighbors_from_ensemble(ensemble, cutoff, cutoff_type):
     _, (bdf0, bdf1, udf0, udf1) = get_subunits(ensemble)
     neighbors = get_neighbors(bdf0, bdf1, cutoff, cutoff_type)
     if udf0 is not None and udf1 is not None:
+        # Map to unbound.
+        neighbors['subunit0'] = neighbors['subunit0'].apply(
+            lambda x: x.replace('bound', 'unbound'))
+        neighbors['subunit1'] = neighbors['subunit1'].apply(
+            lambda x: x.replace('bound', 'unbound'))
+        neighbors['structure0'] = neighbors['structure0'].apply(
+            lambda x: x.replace('_b_', '_u_'))
+        neighbors['structure1'] = neighbors['structure1'].apply(
+            lambda x: x.replace('_b_', '_u_'))
         neighbors = remove_unmatching(neighbors, udf0, udf1)
 
     return neighbors
@@ -69,11 +83,13 @@ def remove_unmatching(neighbors, df0, df1):
         pd.concat([df0, df1]))
     to_drop = []
     for i, neighbor in neighbors.iterrows():
-        res0 = tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
-        res1 = tuple(neighbor[['structure1', 'model1', 'chain1', 'residue1']])
+        res0 = tuple(neighbor[['ensemble0', 'subunit0', 'structure0', 'model0',
+                               'chain0', 'residue0']])
+        res1 = tuple(neighbor[['ensemble1', 'subunit1', 'structure1', 'model1',
+                               'chain1', 'residue1']])
         if res0 not in res_to_idx or res1 not in res_to_idx:
             to_drop.append(i)
-    logging.info(
+    logger.info(
         f'Removing {len(to_drop):} / {len(neighbors):} due to no matching '
         f'residue in unbound.')
     neighbors = neighbors.drop(to_drop).reset_index(drop=True)
@@ -101,8 +117,10 @@ def get_negatives(neighbors, df0, df1):
     idx_to_res1, res_to_idx1 = _get_idx_to_res_mapping(df1)
     all_pairs = np.zeros((len(idx_to_res0.index), len(idx_to_res1.index)))
     for i, neighbor in neighbors.iterrows():
-        res0 = tuple(neighbor[['structure0', 'model0', 'chain0', 'residue0']])
-        res1 = tuple(neighbor[['structure1', 'model1', 'chain1', 'residue1']])
+        res0 = tuple(neighbor[['ensemble0', 'subunit0', 'structure0', 'model0',
+                               'chain0', 'residue0']])
+        res1 = tuple(neighbor[['ensemble1', 'subunit1', 'structure1', 'model1',
+                               'chain1', 'residue1']])
         idx0 = res_to_idx0[res0]
         idx1 = res_to_idx1[res1]
         all_pairs[idx0, idx1] = 1

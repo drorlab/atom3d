@@ -45,7 +45,6 @@ def __stats(mode, df):
     res = compute_perf(df)
     logging.info(
         '\n{:}\n'
-        #'{:}\n'
         'Perf Metrics:\n'
         '    AP: {:.3f}\n'
         '    AUROC: {:.3f}\n'
@@ -53,7 +52,6 @@ def __stats(mode, df):
         '    Balanced Accuracy: {:.3f}\n'
         '    Log loss: {:.3f}'.format(
         mode,
-        #df.groupby(['true', 'pred']).size(),
         float(res["all_ap"]),
         float(res["all_auroc"]),
         float(res["all_acc"]),
@@ -85,20 +83,6 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     max_pool_strides = [2]*num_conv
     fc_units = [512]
     top_fc_units = [512]*args.num_final_fc_layers
-
-    '''logits = model.single_model(
-        tf.concat([feature[:,0], feature[:,1]], 1),
-        is_training,
-        conv_drop_rate,
-        fc_drop_rate,
-        top_nn_drop_rate,
-        conv_filters, conv_kernel_size,
-        max_pool_positions,
-        max_pool_sizes, max_pool_strides,
-        fc_units,
-        batch_norm=args.use_batch_norm,
-        dropout=not args.no_dropout,
-        top_nn_activation=args.top_nn_activation)'''
 
     logits = model.siamese_model(
         feature,
@@ -226,7 +210,6 @@ def train_model(sess, args):
                                        args.fc_drop_rate if mode == 'train' else 0.0,
                                    top_nn_drop_rate_placeholder:
                                        args.top_nn_drop_rate if mode == 'train' else 0.0})
-                    #print('logit: {:}, predict: {:}, loss: {:.3f}, actual: {:}'.format(logit, pred, loss, label_))
                     epoch_loss += (np.mean(loss) - epoch_loss) / (i + 1)
                     epoch_acc += (np.mean(accuracy) - epoch_acc) / (i + 1)
                     structures.extend(structure_.astype(str))
@@ -274,12 +257,12 @@ def train_model(sess, args):
                 1 + args.grid_config.neg_to_pos_ratio)
 
             if (args.max_num_ensembles_train == None):
-                train_num_structures = sh.get_num_ensembles(args.train_sharded)
+                train_num_structures = args.train_sharded.get_num_keyed()
             else:
                 train_num_structures = args.max_num_ensembles_train
 
             if (args.max_num_ensembles_val == None):
-                val_num_structures = sh.get_num_ensembles(args.val_sharded)
+                val_num_structures = args.val_sharded.get_num_keyed()
             else:
                 val_num_structures = args.max_num_ensembles_val
 
@@ -308,7 +291,7 @@ def train_model(sess, args):
         for epoch in range(1, args.num_epochs+1):
             random_seed = args.random_seed #random.randint(1, 10e6)
 
-            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, random_seed))
+            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
 
             logging.debug('Creating train generator...')
             train_generator_callable = functools.partial(
@@ -421,7 +404,7 @@ def train_model(sess, args):
             1 + args.grid_config.neg_to_pos_ratio_testing)
 
         if (args.max_num_ensembles_test == None):
-            test_num_structures = sh.get_num_ensembles(args.test_sharded)
+            test_num_structures = args.test_sharded.get_num_keyed()
         else:
             test_num_structures = args.max_num_ensembles_test
 
@@ -549,6 +532,10 @@ def main():
     # Save config
     with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
         json.dump(args.__dict__, f, indent=4)
+
+    args.train_sharded = sh.load_sharded(args.train_sharded)
+    args.val_sharded = sh.load_sharded(args.val_sharded)
+    args.test_sharded = sh.load_sharded(args.test_sharded)
 
     logging.info("Writing all output to {:}".format(args.output_dir))
     with tf.Session() as sess:

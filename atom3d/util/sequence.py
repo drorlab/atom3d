@@ -36,12 +36,10 @@ def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
 
         for res in out.split():
             nident, match = res.split(',')
-            ref_pdb = match.split('_')[0]
             seq_id = float(nident) / len(s)
             if seq_id >= cutoff:
-                sim.add(ref_pdb)
-
-    return sim
+                sim.add(match)
+    return list(sim)
 
 
 ####################################
@@ -116,13 +114,28 @@ def write_to_blast_db(all_chain_sequences, blast_db):
     flat_map = {}
     for (structure_name, cs) in all_chain_sequences:
         for (chain_name, seq) in cs:
-            name = '__'.join([str(x) for x in structure_name + chain_name])
+            name = tuple_to_fasta_name(structure_name, chain_name)
             flat_map[name] = seq
 
     write_fasta(flat_map, blast_db)
 
     cmd = os.path.join(os.environ['BLAST_BIN'], 'makeblastdb')
     subprocess.check_output(f'{cmd:} -in {blast_db:} -dbtype prot', shell=True)
+
+
+def tuple_to_fasta_name(structure_name, chain_name):
+    """Fasta names can only be strings. This code writes the tuples in."""
+    sname = '___'.join([str(x) for x in structure_name])
+    cname = '___'.join([str(x) for x in chain_name])
+    return sname + '____' + cname
+
+
+def fasta_name_to_tuple(x):
+    """Fasta names can only be strings. This code gets the tuples back out."""
+    stuple = tuple(x.split('____')[0].split('___'))
+    ctuple = tuple(x.split('____')[1].split('___'))
+    stuple = (stuple[0], int(stuple[1]), stuple[2])
+    return (stuple, ctuple)
 
 
 def get_chain_sequences(pdb_file):
@@ -141,7 +154,7 @@ def get_chain_sequences(pdb_file):
 
 def get_all_chain_sequences(pdb_dataset):
     """Return list of tuples of (pdb_code, chain_sequences) for PDB dataset."""
-    return [(fi.get_pdb_code(p), get_chain_sequences(p))
+    return [((fi.get_pdb_code(p),), get_chain_sequences(p))
             for p in tqdm.tqdm(pdb_dataset)]
 
 

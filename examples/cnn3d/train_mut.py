@@ -25,10 +25,20 @@ import examples.cnn3d.feature_mut as feature_mut
 import examples.cnn3d.subgrid_gen as subgrid_gen
 
 
-def compute_perf(results):
-    # Drop duplicated data
-    #results = results.drop_duplicates(subset=['ensembles'], keep='first')
+def major_vote(results):
+    data = []
+    for ensemble, df in results.groupby('ensembles'):
+        true = int(df['true'].unique()[0])
+        zeros = np.sum(df['pred'] == '0')
+        ones = np.sum(df['pred'] == '1')
+        majority_pred = int(df['pred'].mode().values[0])
+        data.append([ensemble, true, majority_pred, zeros, ones])
+    vote_df = pd.DataFrame(data, columns=['ensembles', 'true', 'pred', '0', '1'])
+    return vote_df
 
+
+def compute_perf(df):
+    results = major_vote(df)
     res = {}
     all_trues = results['true'].astype(np.int8)
     all_preds = results['pred'].astype(np.int8)
@@ -266,10 +276,13 @@ def train_model(sess, args):
 
     multiplier = args.grid_config.max_pos_per_shard * int(
         1 + args.grid_config.neg_to_pos_ratio)
-    train_num_ensembles = sh.get_num_shards(args.train_sharded)*multiplier
+
+    train_num_ensembles = args.train_sharded.get_num_shards()*multiplier
     train_num_ensembles *= args.repeat_gen
 
-    val_num_ensembles = sh.get_num_ensembles(args.val_sharded)
+    val_num_ensembles = args.val_sharded.get_num_shards()*multiplier
+    val_num_ensembles *= args.repeat_gen
+
     logging.info("Start training with {:} ensembles for train and {:} ensembles for val per epoch".format(
         train_num_ensembles, val_num_ensembles))
 
@@ -289,7 +302,7 @@ def train_model(sess, args):
     per_epoch_val_losses = []
     for epoch in range(1, args.num_epochs+1):
         random_seed = args.random_seed #random.randint(1, 10e6)
-        logging.info('Epoch {:} - random_seed: {:}'.format(epoch, random_seed))
+        logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
 
         logging.debug('Creating train generator...')
         train_generator_callable = functools.partial(
@@ -380,13 +393,14 @@ def train_model(sess, args):
         args.test_sharded,
         args.grid_config,
         shuffle=args.shuffle,
-        repeat=1,
+        repeat=args.repeat_gen,
         add_flag=args.add_flag,
         center_at_mut=args.center_at_mut,
         testing=True,
         random_seed=args.random_seed)
 
-    test_num_ensembles = sh.get_num_ensembles(args.test_sharded)
+    test_num_ensembles = args.test_sharded.get_num_keyed()
+    test_num_ensembles *= args.repeat_gen
     logging.info("Start testing with {:} ensembles".format(test_num_ensembles))
 
     test_ensembles, test_logits, test_preds, test_labels, _, test_loss = __loop(
@@ -485,6 +499,10 @@ def main():
     # Save config
     with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
         json.dump(args.__dict__, f, indent=4)
+
+    args.train_sharded = sh.load_sharded(args.train_sharded)
+    args.val_sharded = sh.load_sharded(args.val_sharded)
+    args.test_sharded = sh.load_sharded(args.test_sharded)
 
     logging.info("Writing all output to {:}".format(args.output_dir))
     with tf.Session() as sess:

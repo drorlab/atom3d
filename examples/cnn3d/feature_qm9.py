@@ -59,7 +59,6 @@ def dataset_generator(data_filename, labels_filename, grid_config, label_type,
     all_mol_ids = labels_df.mol_id.unique()
     data_df = data_df[data_df.structure.isin(all_mol_ids)]
 
-    #np.random.seed(random_seed)
     if repeat == None:
         repeat = 1
     for epoch in range(repeat):
@@ -74,9 +73,6 @@ def dataset_generator(data_filename, labels_filename, grid_config, label_type,
             feature = df_to_feature(mol_df, grid_config, random_seed)
             label = labels_df[labels_df.mol_id == mol_id][label_type].values
 
-            #print('Complex {:} ({:}/{:}) -> feature {:}, label {:}'.format(
-            #    mol_id, i+1, len(mol_ids), feature.shape, label.shape))
-
             yield mol_id, feature, label
 
 
@@ -86,7 +82,6 @@ def get_data_stats(data_filename):
     atoms for each molecule in the dataset.
     """
     data_df = pd.read_hdf(data_filename, 'structures')
-    import pdb; pdb.set_trace()
 
     data = []
     for mol_id, mol_df in data_df.groupby(['structure']):
@@ -94,8 +89,6 @@ def get_data_stats(data_filename):
         max_dist = util.get_max_distance_from_center(pos, util.get_center(pos))
         num_atoms = mol_df.shape[0]
         data.append((mol_id, max_dist, num_atoms))
-        #print('{:} -> max dist: {:.2f}, num atoms: {:}'.format(
-        #    mol_id, max_dist, num_atoms))
 
     df = pd.DataFrame(data, columns=['mol_id', 'max_dist', 'num_atoms'])
     df = df.sort_values(by=['max_dist', 'num_atoms'],

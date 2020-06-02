@@ -30,7 +30,8 @@ def plot_scatter(df):
     import matplotlib.pyplot as plt
     df['true'] = df['true'].astype(float)
     df['pred'] = df['pred'].astype(float)
-    g = sns.relplot(x='true', y='pred', hue='type', col='target', kind='scatter', data=df, height=2.8, aspect=1.5, col_wrap=4)
+    g = sns.relplot(x='true', y='pred', hue='type', col='target', kind='scatter',
+                    data=df, height=2.8, aspect=1.5, col_wrap=4)
     plt.show()
 
 
@@ -51,9 +52,6 @@ def get_best_n(df, best_n=10):
 
 
 def compute_global_correlations(results):
-    # Drop duplicated data
-    #results = results.drop_duplicates(subset=['structure'], keep='first')
-
     per_target = []
     for key, val in results.groupby(['target']):
         # Ignore target with 2 decoys only since the correlations are
@@ -267,18 +265,18 @@ def train_model(sess, args):
         prev_val_loss, best_val_loss = float("inf"), float("inf")
 
         if (args.max_shards_train == None) and (args.max_decoys_train == None):
-            train_num_structs = sh.get_num_structures(args.train_sharded)
+            train_num_structs = args.train_sharded.get_num_structures(['ensemble', 'subunit'])
         elif (args.max_shards_train == None):
-            train_num_structs = sh.get_num_ensembles(args.train_sharded) * args.max_decoys_train
+            train_num_structs = args.train_sharded.get_num_keyed() * args.max_decoys_train
         elif (args.max_decoys_train == None):
             assert False
         else:
             train_num_structs = args.max_shards_train * args.max_decoys_train
 
         if (args.max_shards_val == None) and (args.max_decoys_val == None):
-            val_num_structs = sh.get_num_structures(args.val_sharded)
+            val_num_structs = args.val_sharded.get_num_structures(['ensemble', 'subunit'])
         elif (args.max_shards_val == None):
-            val_num_structs = sh.get_num_ensembles(args.val_sharded) * args.max_decoys_val
+            val_num_structs = args.val_sharded.get_num_keyed() * args.max_decoys_val
         elif (args.max_decoys_val == None):
             assert False
         else:
@@ -305,8 +303,7 @@ def train_model(sess, args):
 
         per_epoch_val_losses = []
         for epoch in range(1, args.num_epochs+1):
-            random_seed = args.random_seed #random.randint(1, 10e6)
-            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, random_seed))
+            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
 
             logging.debug('Creating train generator...')
             train_generator_callable = functools.partial(
@@ -317,7 +314,7 @@ def train_model(sess, args):
                 repeat=args.repeat_gen,
                 max_shards=args.max_shards_train,
                 max_decoys=args.max_decoys_train,
-                random_seed=random_seed)
+                random_seed=args.random_seed)
 
             logging.debug('Creating val generator...')
             val_generator_callable = functools.partial(
@@ -328,7 +325,7 @@ def train_model(sess, args):
                 repeat=1,#*args.repeat_gen,
                 max_shards=args.max_shards_val,
                 max_decoys=args.max_decoys_val,
-                random_seed=random_seed)
+                random_seed=args.random_seed)
 
             # Training
             train_structs, train_preds, train_labels, _, curr_train_loss = __loop(
@@ -411,9 +408,9 @@ def train_model(sess, args):
         random_seed=args.random_seed)
 
     if (args.max_shards_test == None) and (args.max_decoys_test == None):
-        test_num_structs = sh.get_num_structures(args.test_sharded)
+        test_num_structs = args.test_sharded.get_num_structures(['ensemble', 'subunit'])
     elif (args.max_shards_test == None):
-        test_num_structs = sh.get_num_ensembles(args.test_sharded) * args.max_decoys_test
+        test_num_structs = args.test_sharded.get_num_keyed() * args.max_decoys_test
     elif (args.max_decoys_test == None):
         assert False
     else:
@@ -534,6 +531,10 @@ def main():
     # Save config
     with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
         json.dump(args.__dict__, f, indent=4)
+
+    args.train_sharded = sh.load_sharded(args.train_sharded)
+    args.val_sharded = sh.load_sharded(args.val_sharded)
+    args.test_sharded = sh.load_sharded(args.test_sharded)
 
     logging.info("Writing all output to {:}".format(args.output_dir))
     with tf.Session() as sess:

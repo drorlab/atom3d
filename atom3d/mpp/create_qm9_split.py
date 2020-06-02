@@ -30,9 +30,9 @@ def generate_split(excl_uncharacterized=True, excl_rdkitfails=True, out_dir_name
     print('Training: %i molecules. Validation: %i molecules. Test: %i molecules.'%(len(train_indices),len(vali_indices),len(test_indices)))
     
     # Save the indices for the split
-    np.savetxt(out_dir_name+'/indices_test.dat', test_indices, fmt='%1d')
-    np.savetxt(out_dir_name+'/indices_valid.dat',vali_indices, fmt='%1d')
-    np.savetxt(out_dir_name+'/indices_train.dat',train_indices,fmt='%1d')
+    np.savetxt(out_dir_name+'/indices_test.dat', np.sort(test_indices), fmt='%1d')
+    np.savetxt(out_dir_name+'/indices_valid.dat',np.sort(vali_indices), fmt='%1d')
+    np.savetxt(out_dir_name+'/indices_train.dat',np.sort(train_indices),fmt='%1d')
         
     return
 

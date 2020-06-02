@@ -70,7 +70,6 @@ def dataset_generator(data_filename, split_filename, labels_filename,
     data_df = pd.read_hdf(data_filename, 'structures')
     data_df = data_df[data_df.ensemble.isin(all_pdbcodes)]
 
-    #np.random.seed(random_seed)
     if repeat == None:
         repeat = 1
     for epoch in range(repeat):
@@ -84,9 +83,6 @@ def dataset_generator(data_filename, split_filename, labels_filename,
 
             feature = df_to_feature(struct_df, grid_config, random_seed)
             label = labels_df[labels_df.pdb == pdbcode].label.values
-
-            #print('Complex {:} ({:}/{:}) -> feature {:}, label {:}'.format(
-            #    pdbcode, i+1, len(pdbcodes), feature.shape, label.shape))
 
             yield pdbcode, feature, label
 
@@ -109,8 +105,6 @@ def get_data_stats(data_filename):
         max_dist = util.get_max_distance_from_center(pos, ligand_center)
         num_atoms = struct_df.shape[0]
         data.append((pdbcode, max_dist, num_atoms))
-        #print('{:} -> max dist: {:.2f}, num atoms: {:}'.format(
-        #    pdbcode, max_dist, num_atoms))
 
     df = pd.DataFrame(data, columns=['pdbcode', 'max_dist', 'num_atoms'])
     df = df.sort_values(by=['max_dist', 'num_atoms'],
@@ -128,7 +122,7 @@ if __name__ == "__main__":
 
     data_stats_df = get_data_stats(data_filename)
 
-    print('Testing pdbbind feature generator')
+    print('\nTesting pdbbind feature generator')
     gen = dataset_generator(
         data_filename, split_filename, labels_filename, grid_config,
         shuffle=True, repeat=1, max_pdbs=10)

@@ -122,10 +122,12 @@ class MoleculesDataset():
         save_dict = {}
         # Add the data from the CSV file (dynamically)
         for ip,prop in enumerate(self.data_keys):
-            locals()[prop] = [col[ip] for col in self.data]
+            selected_data = [self.data[idx] for idx in indices]
+            locals()[prop] = [col[ip] for col in selected_data]
             # Use only those quantities that are of one of the defined data types
             if datatypes is not None and np.array(locals()[prop]).dtype in datatypes:
                 save_dict[prop] = locals()[prop]
+
         # Add the data from the SDF file
         save_dict['index']     = index
         save_dict['num_atoms'] = num_atoms

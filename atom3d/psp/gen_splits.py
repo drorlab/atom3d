@@ -113,34 +113,9 @@ def generate_train_val_targets_tests(structures_df, targets_train, targets_val,
     return sets
 
 
-def create_sharded_dataset(files, sharded):
-    num_shards = sh.get_num_shards(sharded)
-
+def create_sharded_dataset(files, sharded_path):
     ensembles = en.ensemblers['casp'](files)
-
-    # Check if already partly written.  If so, resume from there.
-    metadata_path = sh._get_metadata(sharded)
-    if os.path.exists(metadata_path):
-        metadata = pd.read_hdf(metadata_path, f'metadata')
-        num_written = len(metadata['shard_num'].unique())
-    else:
-        num_written = 0
-
-    shard_ranges = sh._get_shard_ranges(len(ensembles), num_shards)
-    shard_size = shard_ranges[0, 1] - shard_ranges[0, 0]
-
-    total = 0
-    print(f'Ensembles per shard: {shard_size:}')
-    for shard_num in tqdm.trange(num_written, num_shards):
-        start, stop = shard_ranges[shard_num]
-
-        dfs = []
-        for name in sorted(ensembles.keys())[start:stop]:
-            df = en.parse_ensemble(name, ensembles[name])
-            dfs.append(df)
-        df = dt.merge_dfs(dfs)
-
-        sh._write_shard(sharded, shard_num, df)
+    sh.create_from_ensembles(ensembles, sharded_path)
 
 
 def create_parser():
@@ -150,7 +125,6 @@ def create_parser():
         'target_list',
         help='Path to the file that contains the targets and the years the '
         'targets were released)')
-    #parser.add_argument('sharded')
     parser.add_argument('input_dir')
     parser.add_argument('output_sharded_train')
     parser.add_argument('output_sharded_val')
@@ -212,13 +186,6 @@ def gen_splits(target_list, input_dir, output_sharded_train, output_sharded_val,
     """ Generate train/val/test sets from the input dataset. """
     targets_df = pd.read_csv(
         target_list, delimiter='\s*', engine='python').dropna()
-
-    '''structures_df = pd.DataFrame(
-        sh.get_names(sharded).apply(lambda x: [util.get_target_name(x),
-                                               util.get_decoy_name(x)]).tolist(),
-        columns = ['target', 'decoy'])
-    structures_df = pd.merge(structures_df, targets_df, on='target')'''
-
 
     files = fi.find_files(input_dir, dt.patterns['pdb'])
     structures_df = pd.DataFrame(

@@ -202,7 +202,7 @@ def df_to_bps(df_in):
     return all_structures
 
 
-def split_df(df, key='ensemble'):
+def split_df(df, key):
     return [(x, y) for x, y in df.groupby(key)]
 
 
@@ -366,3 +366,12 @@ def mol_to_df(mol, addHs=True, structure=None, model=None):
     df = pd.DataFrame(df)
     return df
 
+def get_coordinates_from_df(df):
+    
+    xyz  = np.empty([len(df),3])
+
+    xyz[:,0] = np.array(df.x)
+    xyz[:,1] = np.array(df.y)
+    xyz[:,2] = np.array(df.z)
+    
+    return xyz

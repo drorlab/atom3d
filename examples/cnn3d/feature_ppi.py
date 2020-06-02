@@ -104,7 +104,7 @@ def dataset_generator(sharded, grid_config, shuffle=True, repeat=None,
                       use_shard_nums=None, random_seed=None):
 
     if use_shard_nums is None:
-        num_shards = sh.get_num_shards(sharded)
+        num_shards = sharded.get_num_shards()
         all_shard_nums = np.arange(num_shards)
     else:
         all_shard_nums = use_shard_nums
@@ -112,7 +112,6 @@ def dataset_generator(sharded, grid_config, shuffle=True, repeat=None,
     seen = col.defaultdict(set)
     ensemble_count = 0
 
-    #np.random.seed(random_seed)
     if repeat == None:
         repeat = 1
     for epoch in range(repeat):
@@ -122,8 +121,8 @@ def dataset_generator(sharded, grid_config, shuffle=True, repeat=None,
         shard_nums = all_shard_nums
 
         for i, shard_num in enumerate(shard_nums):
-            shard_neighbors_df = sh.read_shard(sharded, shard_num, key='neighbors')
-            shard_structs_df = sh.read_shard(sharded, shard_num, key='structures')
+            shard_neighbors_df = sharded.read_shard(shard_num, key='neighbors')
+            shard_structs_df = sharded.read_shard(shard_num, key='structures')
 
             ensemble_names = shard_structs_df.ensemble.unique()
             if len(seen[shard_num]) == len(ensemble_names):
@@ -198,10 +197,10 @@ def dataset_generator(sharded, grid_config, shuffle=True, repeat=None,
 def get_data_stats(sharded_list):
     data = []
     for i, sharded in enumerate(sharded_list):
-        num_shards = sh.get_num_shards(sharded)
+        num_shards = sharded.get_num_shards()
         for _, shard_num in enumerate(range(num_shards)):
-            shard_neighbors_df = sh.read_shard(sharded, shard_num, key='neighbors')
-            shard_structs_df = sh.read_shard(sharded, shard_num, key='structures')
+            shard_neighbors_df = sharded.read_shard(shard_num, key='neighbors')
+            shard_structs_df = sharded.read_shard(shard_num, key='structures')
 
             ensemble_names = shard_structs_df.ensemble.unique()
             for _, ensemble_name in enumerate(ensemble_names):
@@ -217,20 +216,21 @@ def get_data_stats(sharded_list):
     df = pd.DataFrame(data, columns=['sharded', 'shard_num', 'ensemble', 'num_pos'])
     df = df.sort_values(['sharded', 'num_pos'], ascending=[True, False]).reset_index(drop=True)
     print(df.describe())
-    #pd.set_option('display.max_rows', None)
     return df
 
 
 if __name__ == "__main__":
-    sharded_list = [
+    sharded_path_list = [
         #'/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_train@1000',
         #'/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_val@1000',
         #'/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_test@1000',
         '/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DB5/sharded/pairs@10'
         ]
+    sharded_list = [sh.load_sharded(path) for path in sharded_path_list]
 
-    #stats_df = get_data_stats(sharded_list)
+    stats_df = get_data_stats(sharded_list)
 
+    print('\nTesting PPI feature generator')
     num_repeat = 3
     gen = dataset_generator(
         sharded_list[0], grid_config, shuffle=True, repeat=num_repeat,

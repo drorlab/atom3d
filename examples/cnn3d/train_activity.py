@@ -57,7 +57,6 @@ def __stats(mode, df):
     res = compute_perf(df)
     logging.info(
         '\n{:}\n'
-        #'{:}\n'
         'Perf Metrics:\n'
         '    AP: {:.3f}\n'
         '    AUROC: {:.3f}\n'
@@ -65,7 +64,6 @@ def __stats(mode, df):
         '    Balanced Accuracy: {:.3f}\n'
         '    Log loss: {:.3f}'.format(
         mode,
-        #df.groupby(['true', 'pred']).size(),
         float(res["all_ap"]),
         float(res["all_auroc"]),
         float(res["all_acc"]),
@@ -104,20 +102,6 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     max_pool_strides = [2]*num_conv
     fc_units = [512]
     top_fc_units = [512]*args.num_final_fc_layers
-
-    '''logits = model.single_model(
-        tf.concat([feature[:,0], feature[:,1]], 1),
-        is_training,
-        conv_drop_rate,
-        fc_drop_rate,
-        top_nn_drop_rate,
-        conv_filters, conv_kernel_size,
-        max_pool_positions,
-        max_pool_sizes, max_pool_strides,
-        fc_units,
-        batch_norm=args.use_batch_norm,
-        dropout=not args.no_dropout,
-        top_nn_activation=args.top_nn_activation)'''
 
     logits = model.siamese_model(
         feature,
@@ -234,7 +218,6 @@ def train_model(sess, args):
                                        args.fc_drop_rate if mode == 'train' else 0.0,
                                    top_nn_drop_rate_placeholder:
                                        args.top_nn_drop_rate if mode == 'train' else 0.0})
-                    #print('logit: {:}, predict: {:}, loss: {:.3f}, actual: {:}'.format(logit, pred, loss, label_))
                     epoch_loss += (np.mean(loss) - epoch_loss) / (i + 1)
                     epoch_acc += (np.mean(accuracy) - epoch_acc) / (i + 1)
                     ensembles.extend(ensemble_.astype(str))
@@ -273,17 +256,17 @@ def train_model(sess, args):
         prev_val_loss, best_val_loss = float("inf"), float("inf")
 
         if (args.max_shards_train == None):
-            train_num_ensembles = sh.get_num_ensembles(args.train_sharded)
+            train_num_ensembles = args.train_sharded.get_num_keyed()
         else:
-            total = sh.get_num_ensembles(args.train_sharded)
-            ratio = args.max_shards_train/sh.get_num_shards(args.train_sharded)
+            total = args.train_sharded.get_num_keyed()
+            ratio = args.max_shards_train/args.train_sharded.get_num_shards()
             train_num_ensembles = int(math.ceil(ratio*total))
 
         if (args.max_shards_val == None):
-            val_num_ensembles = sh.get_num_ensembles(args.val_sharded)
+            val_num_ensembles = args.val_sharded.get_num_keyed()
         else:
-            total = sh.get_num_ensembles(args.val_sharded)
-            ratio = args.max_shards_val/sh.get_num_shards(args.val_sharded)
+            total = args.val_sharded.get_num_keyed()
+            ratio = args.max_shards_val/args.val_sharded.get_num_shards()
             val_num_ensembles = int(math.ceil(ratio*total))
 
         train_num_ensembles *= args.repeat_gen
@@ -307,8 +290,8 @@ def train_model(sess, args):
 
         per_epoch_val_losses = []
         for epoch in range(1, args.num_epochs+1):
-            random_seed = args.random_seed #random.randint(1, 10e6)
-            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, random_seed))
+            random_seed = args.random_seed
+            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
 
             logging.debug('Creating train generator...')
             train_generator_callable = functools.partial(
@@ -411,19 +394,19 @@ def train_model(sess, args):
         args.test_sharded,
         args.grid_config,
         shuffle=args.shuffle,
-        repeat=1,#args.repeat_gen,
+        repeat=args.repeat_gen,
         max_shards=args.max_shards_test,
         add_flag=args.add_flag,
         testing=True,
         random_seed=args.random_seed)
 
     if (args.max_shards_test == None):
-        test_num_ensembles = sh.get_num_ensembles(args.test_sharded)
+        test_num_ensembles = args.test_sharded.get_num_keyed()
     else:
-        total = sh.get_num_ensembles(args.test_sharded)
-        ratio = args.max_shards_test/sh.get_num_shards(args.test_sharded)
+        total = args.test_sharded.get_num_keyed()
+        ratio = args.max_shards_test/args.test_sharded.get_num_shards()
         test_num_ensembles = int(math.ceil(ratio*total))
-    #test_num_ensembles *= args.repeat_gen
+    test_num_ensembles *= args.repeat_gen
 
     logging.info("Start testing with {:} ensembles".format(test_num_ensembles))
 
@@ -537,6 +520,10 @@ def main():
     # Save config
     with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
         json.dump(args.__dict__, f, indent=4)
+
+    args.train_sharded = sh.load_sharded(args.train_sharded)
+    args.val_sharded = sh.load_sharded(args.val_sharded)
+    args.test_sharded = sh.load_sharded(args.test_sharded)
 
     logging.info("Writing all output to {:}".format(args.output_dir))
     with tf.Session() as sess:

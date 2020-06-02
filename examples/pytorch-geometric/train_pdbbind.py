@@ -182,9 +182,9 @@ def train_pdbbind(split, architecture, base_dir, device, log_dir, seed=None, tes
     hidden_dim = 64
     learning_rate = 1e-4
     split_dir = os.path.join(os.getcwd(), base_dir, 'splits')
-    train_split = os.path.join(split_dir, 'core_split', f'train_{split}.txt')
-    val_split = os.path.join(split_dir, 'core_split', f'val_{split}.txt')
-    test_split = os.path.join(split_dir, 'core_split', f'test.txt')
+    train_split = os.path.join(split_dir, 'cluster_split', f'train_{split}.txt')
+    val_split = os.path.join(split_dir, 'cluster_split', f'val_{split}.txt')
+    test_split = os.path.join(split_dir, 'cluster_split', f'test_{split}.txt')
     train_loader = pdbbind_dataloader(batch_size, split_file=train_split)
     val_loader = pdbbind_dataloader(batch_size, split_file=val_split)
     test_loader = pdbbind_dataloader(batch_size, split_file=test_split)
@@ -206,6 +206,7 @@ def train_pdbbind(split, architecture, base_dir, device, log_dir, seed=None, tes
         model = GCN(num_features, hidden_dim=hidden_dim).to(device)
     elif architecture == 'GIN':
         model = GIN(num_features, hidden_dim=hidden_dim).to(device) 
+    model.to(device)
 
     best_val_loss = 999
     best_rp = 0
@@ -260,8 +261,10 @@ if __name__=="__main__":
         if log_dir is None:
             now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
             log_dir = os.path.join(base_dir, 'logs', now)
-            if not os.path.exists(log_dir):
-                os.makedirs(log_dir)
+        else:
+            log_dir = os.path.join(base_dir, 'logs', log_dir)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
         train_pdbbind(args.split, args.architecture, base_dir, device, log_dir)
     elif args.mode == 'test':
         for seed in np.random.randint(0, 1000, size=3):
@@ -272,6 +275,11 @@ if __name__=="__main__":
             np.random.seed(seed)
             torch.manual_seed(seed)
             train_pdbbind(args.split, args.architecture, base_dir, device, log_dir, seed, test_mode=True)
+    # elif args.mode == 'cv':
+    #     log_dir = os.path.join(base_dir, 'logs', f'superfam_cv')
+    #     if not os.path.exists(log_dir):
+    #         os.makedirs(log_dir)
+    #     train_cv_pdbbind(args.architecture, base_dir, device, log_dir)
 
 
 

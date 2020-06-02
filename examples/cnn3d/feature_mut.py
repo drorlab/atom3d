@@ -66,11 +66,11 @@ def df_to_feature(struct_df, label_info, grid_config, center_at_mut=True,
 
 
 def read_all_labels(sharded):
-    num_shards = sh.get_num_shards(sharded)
+    num_shards = sharded.get_num_shards()
     # Read all labels
     frames = []
     for shard_num in range(num_shards):
-        df = sh.read_shard(sharded, shard_num, key='labels')
+        df = sharded.read_shard(shard_num, key='labels')
         df['shard'] = shard_num
         frames.append(df)
     all_df = pd.concat(frames)
@@ -97,9 +97,7 @@ def dataset_generator(sharded, grid_config, shuffle=True, repeat=None,
                       add_flag=True, center_at_mut=True,
                       testing=False, random_seed=None):
 
-    #np.random.seed(random_seed)
-
-    num_shards = sh.get_num_shards(sharded)
+    num_shards = sharded.get_num_shards()
     all_shard_nums = np.arange(num_shards)
 
     all_neg_labels_df, all_pos_labels_df = read_all_labels(sharded)
@@ -136,7 +134,7 @@ def dataset_generator(sharded, grid_config, shuffle=True, repeat=None,
                 list(util.intersperse(pos_labels_df.values, neg_labels_df.values)),
                 columns=pos_labels_df.columns.values)
 
-            shard_df = sh.read_shard(sharded, shard_num, key='structures')
+            shard_df = sharded.read_shard(shard_num, key='structures')
 
             for index, label_info in labels_df.iterrows():
                 ensemble_name = label_info.ensemble
@@ -165,8 +163,8 @@ def get_data_stats(sharded_list, center_at_mut=True):
     labels = []
 
     for i, sharded in enumerate(sharded_list):
-        for shard_num, shard_df in sh.iter_shards(sharded):
-            labels_df = sh.read_shard(sharded, shard_num, key='labels')
+        for shard_num, shard_df in sharded.iter_shards():
+            labels_df = sharded.read_shard(shard_num, key='labels')
 
             for ensemble_name, ensemble_df in shard_df.groupby(['ensemble']):
                 all_elements.extend(ensemble_df.element.values)
@@ -181,9 +179,6 @@ def get_data_stats(sharded_list, center_at_mut=True):
                     max_dist = util.get_max_distance_from_center(pos, mutation_center)
                     num_atoms = struct_df.shape[0]
                     data.append((ensemble_name, subunit_name, max_dist, num_atoms))
-
-                    #print('{:}/{:} -> max dist: {:.2f}'.format(
-                    #    ensemble_name, subunit_name, max_dist))
 
                 labels.append((i, shard_num, label_info.label))
 
@@ -205,19 +200,19 @@ def get_data_stats(sharded_list, center_at_mut=True):
     print(df.describe())
 
     print(df[df.max_dist < 50].shape[0]*100.0/df.shape[0])
-    import pdb; pdb.set_trace()
     return df
 
 
 if __name__ == "__main__":
-    sharded_list = [
-        '/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_train@40',
-        '/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_val@40',
+    sharded_path_list = [
+        #'/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_train@40',
+        #'/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_val@40',
         '/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_test@40']
+    sharded_list = [sh.load_sharded(path) for path in sharded_path_list]
 
     data_stats_df = get_data_stats(sharded_list, center_at_mut=True)
 
-    print('Testing Mutation feature generator')
+    print('\nTesting Mutation feature generator')
     gen = dataset_generator(
         sharded_list[0], grid_config, shuffle=True,
         repeat=1, add_flag=True, testing=False)

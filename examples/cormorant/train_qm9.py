@@ -44,8 +44,8 @@ def main():
                                                                     force_download=args.force_download
                                                                     )
 
+    # unit conversion (U0, U, G, H are not converted when loaded from our or the MoleculeNet data because the identifiers differ)
     qm9_to_eV = {'U0': 27.2114, 'U': 27.2114, 'G': 27.2114, 'H': 27.2114, 'zpve': 27211.4, 'gap': 27.2114, 'homo': 27.2114, 'lumo': 27.2114}
-
     for dataset in datasets.values():
         dataset.convert_units(qm9_to_eV)
 

@@ -229,7 +229,7 @@ def train_model(sess, args):
     per_epoch_val_losses = []
     for epoch in range(1, args.num_epochs+1):
         random_seed = args.random_seed #random.randint(1, 10e6)
-        logging.info('Epoch {:} - random_seed: {:}'.format(epoch, random_seed))
+        logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
 
         logging.debug('Creating train generator...')
         train_generator_callable = functools.partial(

@@ -2,10 +2,11 @@
 import numpy as np
 import pandas as pd
 
+import Bio.PDB.Polypeptide as poly
+
 import atom3d.util.file as fi
 import atom3d.util.scop as scop
 import atom3d.util.sequence as seq
-import atom3d.util.shard as sh
 
 
 PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
@@ -101,6 +102,21 @@ def form_size_filter(max_size=None, min_size=None):
     return filter_fn
 
 
+def standard_residue_filter(df):
+    """Filter out non-standard residues."""
+    residues = df[['structure', 'model', 'chain', 'residue', 'resname']] \
+        .drop_duplicates()
+    sel = residues['resname'].apply(
+        lambda x: poly.is_aa(x, standard=True))
+
+    residues['to_keep'] = sel
+    residues_to_keep = residues.set_index(
+        ['structure', 'model', 'chain', 'residue', 'resname'])['to_keep']
+    to_keep = residues_to_keep.loc[df.set_index(
+        ['structure', 'model', 'chain', 'residue', 'resname']).index]
+    return df[to_keep.values]
+
+
 def first_model_filter(df):
     """Remove anything beyond first model in structure."""
 
@@ -111,6 +127,20 @@ def first_model_filter(df):
     models_to_keep = models.set_index(['structure', 'model'])
 
     to_keep = models_to_keep.loc[df.set_index(['structure', 'model']).index]
+    return df[to_keep.values]
+
+
+def single_chain_filter(df):
+    """Remove anything that has more than one model/chain."""
+
+    chains = df[['structure', 'model', 'chain']].drop_duplicates()
+    chains = chains.sort_values(['structure', 'model', 'chain'])
+
+    chains['to_keep'] = ~chains['structure'].duplicated(False)
+    chains_to_keep = chains.set_index(['structure', 'model', 'chain'])
+
+    to_keep = \
+        chains_to_keep.loc[df.set_index(['structure', 'model', 'chain']).index]
     return df[to_keep.values]
 
 
@@ -160,9 +190,9 @@ def form_seq_filter_against(sharded, cutoff):
     We consider each chain in each structure separately, and remove the
     structure if any of them matches any chain in sharded.
     """
-    blast_db_path = f'{sharded:}.db'
+    blast_db_path = f'{sharded.path:}.db'
     all_chain_sequences = []
-    for _, shard in sh.iter_shards(sharded):
+    for _, shard in sharded.iter_shards():
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
     seq.write_to_blast_db(all_chain_sequences, blast_db_path)
 
@@ -196,7 +226,7 @@ def form_scop_filter_against(sharded, level, conservative):
     scop_index = scop.get_scop_index()[level]
 
     scop_against = []
-    for shard in sh.iter_shards(sharded):
+    for shard in sharded.iter_shards():
         for (e, su, st), structure in shard.groupby(
                 ['ensemble', 'subunit', 'structure']):
             pc = fi.get_pdb_code(st).lower()

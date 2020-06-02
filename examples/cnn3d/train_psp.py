@@ -26,9 +26,6 @@ import examples.cnn3d.util as util
 
 
 def compute_global_correlations(results):
-    # Drop duplicated data
-    results = results.drop_duplicates(subset=['structure'], keep='first')
-
     per_target = []
     for key, val in results.groupby(['target']):
         # Ignore target with 2 decoys only since the correlations are
@@ -239,9 +236,9 @@ def train_model(sess, args):
         prev_val_loss, best_val_loss = float("inf"), float("inf")
 
         if (args.max_targets_train == None) and (args.max_decoys_train == None):
-            train_num_structs = sh.get_num_structures(args.train_sharded)
+            train_num_structs = args.train_sharded.get_num_structures(['ensemble', 'subunit'])
         elif (args.max_targets_train == None):
-            train_num_structs = sh.get_num_ensembles(args.train_sharded) * args.max_decoys_train
+            train_num_structs = args.train_sharded.get_num_keyed() * args.max_decoys_train
         elif (args.max_decoys_train == None):
             assert False
         else:
@@ -249,9 +246,9 @@ def train_model(sess, args):
 
 
         if (args.max_targets_val == None) and (args.max_decoys_val == None):
-            val_num_structs = sh.get_num_structures(args.val_sharded)
+            val_num_structs = args.val_sharded.get_num_structures(['ensemble', 'subunit'])
         elif (args.max_targets_val == None):
-            val_num_structs = sh.get_num_ensembles(args.val_sharded) * args.max_decoys_val
+            val_num_structs = args.val_sharded.get_num_keyed() * args.max_decoys_val
         elif (args.max_decoys_val == None):
             assert False
         else:
@@ -279,7 +276,7 @@ def train_model(sess, args):
         per_epoch_val_losses = []
         for epoch in range(1, args.num_epochs+1):
             random_seed = args.random_seed #random.randint(1, 10e6)
-            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, random_seed))
+            logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
 
             logging.debug('Creating train generator...')
             train_generator_callable = functools.partial(
@@ -387,9 +384,9 @@ def train_model(sess, args):
         random_seed=args.random_seed)
 
     if (args.max_targets_test == None) and (args.max_decoys_test == None):
-        test_num_structs = sh.get_num_structures(args.test_sharded)
+        test_num_structs = args.test_sharded.get_num_structures(['ensemble', 'subunit'])
     elif (args.max_targets_test == None):
-        test_num_structs = sh.get_num_ensembles(args.test_sharded) * args.max_decoys_test
+        test_num_structs = args.test_sharded.get_num_keyed() * args.max_decoys_test
     elif (args.max_decoys_test == None):
         assert False
     else:
@@ -422,16 +419,13 @@ def create_train_parser():
         default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/labels/scores')
     parser.add_argument(
         '--train_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/train_decoy_50@508')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/train_decoy_20@508')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/train_decoy_50@508')
     parser.add_argument(
         '--val_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/val_decoy_50@56')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/val_decoy_20@56')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/val_decoy_50@56')
     parser.add_argument(
         '--test_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/test_decoy_all@85')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
     parser.add_argument(
         '--output_dir', type=str,
         default='/scratch/users/psuriana/atom3d/model')
@@ -518,6 +512,10 @@ def main():
     # Save config
     with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
         json.dump(args.__dict__, f, indent=4)
+
+    args.train_sharded = sh.load_sharded(args.train_sharded)
+    args.val_sharded = sh.load_sharded(args.val_sharded)
+    args.test_sharded = sh.load_sharded(args.test_sharded)
 
     logging.info("Writing all output to {:}".format(args.output_dir))
     with tf.Session() as sess:
