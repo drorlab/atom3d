@@ -25,7 +25,6 @@ grid_config = util.dotdict({
     'num_directions': 20,
     # Number of rolls to apply for data augmentation.
     'num_rolls': 20,
-    'random_seed': 131313,
 })
 
 
@@ -38,18 +37,18 @@ def read_labels(labels_filename, mol_ids, label_type):
     return labels_df[labels_df.mol_id.isin(mol_ids)][['mol_id', label_type]].reset_index(drop=True)
 
 
-def df_to_feature(mol_df, grid_config):
+def df_to_feature(mol_df, grid_config, random_seed=None):
     pos = mol_df[['x', 'y', 'z']].astype(np.float32)
     center = util.get_center(pos)
 
-    rot_mat = subgrid_gen.gen_rot_matrix(grid_config)
+    rot_mat = subgrid_gen.gen_rot_matrix(grid_config, random_seed=random_seed)
     grid = subgrid_gen.get_grid(
         mol_df, center, config=grid_config, rot_mat=rot_mat)
     return grid
 
 
 def dataset_generator(data_filename, labels_filename, grid_config, label_type,
-                      shuffle=True, repeat=None, max_mols=None):
+                      shuffle=True, repeat=None, max_mols=None, random_seed=None):
 
     data_df = pd.read_hdf(data_filename, 'structures')
     all_mol_ids = data_df.structure.unique()
@@ -60,7 +59,7 @@ def dataset_generator(data_filename, labels_filename, grid_config, label_type,
     all_mol_ids = labels_df.mol_id.unique()
     data_df = data_df[data_df.structure.isin(all_mol_ids)]
 
-    np.random.seed(grid_config.random_seed)
+    #np.random.seed(random_seed)
     if repeat == None:
         repeat = 1
     for epoch in range(repeat):
@@ -72,7 +71,7 @@ def dataset_generator(data_filename, labels_filename, grid_config, label_type,
         for i, mol_id in enumerate(mol_ids):
             mol_df = data_df[data_df.structure == mol_id]
 
-            feature = df_to_feature(mol_df, grid_config)
+            feature = df_to_feature(mol_df, grid_config, random_seed)
             label = labels_df[labels_df.mol_id == mol_id][label_type].values
 
             #print('Complex {:} ({:}/{:}) -> feature {:}, label {:}'.format(
@@ -87,6 +86,7 @@ def get_data_stats(data_filename):
     atoms for each molecule in the dataset.
     """
     data_df = pd.read_hdf(data_filename, 'structures')
+    import pdb; pdb.set_trace()
 
     data = []
     for mol_id, mol_df in data_df.groupby(['structure']):
@@ -107,11 +107,11 @@ def get_data_stats(data_filename):
 
 
 if __name__ == "__main__":
-    base_filename = '/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/valid'
+    base_filename = '/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/test'
     data_filename = base_filename + '.h5'
     labels_filename = base_filename + '.csv'
 
-    #data_stats_df = get_data_stats(data_filename)
+    data_stats_df = get_data_stats(data_filename)
 
     print('Testing qm9 feature generator')
     gen = dataset_generator(

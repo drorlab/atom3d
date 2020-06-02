@@ -26,13 +26,12 @@ def _batch_norm_dropout(x, training, batch_norm, dropout, drop_rate):
     return x
 
 
-def scoring_model(x, training, conv_drop_rate, fc_drop_rate, top_nn_drop_rate,
-                  conv_filters, conv_kernel_size,
-                  max_pool_positions,
-                  max_pool_sizes, max_pool_strides,
-                  fc_units,
-                  batch_norm=True,
-                  dropout=False):
+def base_network(x, training, conv_drop_rate, fc_drop_rate,
+                 conv_filters, conv_kernel_size,
+                 max_pool_positions, max_pool_sizes, max_pool_strides,
+                 fc_units,
+                 batch_norm=True,
+                 dropout=False):
     if batch_norm:
         x = tf.layers.batch_normalization(
             x, fused=True, training=training, scale=True, momentum=0.99)
@@ -65,7 +64,7 @@ def scoring_model(x, training, conv_drop_rate, fc_drop_rate, top_nn_drop_rate,
                  first_n=1, summarize=10)
 
     x = tf.layers.flatten(x)
-    # FC 1.
+    # FC layers.
     for layer, units in enumerate(fc_units):
         with tf.variable_scope("fc{:}".format(i)):
             x = _dense_batch_norm_dropout(x, units, training, batch_norm,
@@ -75,33 +74,114 @@ def scoring_model(x, training, conv_drop_rate, fc_drop_rate, top_nn_drop_rate,
                  message="FC layer {:}: ".format(layer),
                  first_n=1, summarize=10)
 
+    x = tf.identity(x, name='fcfinal')
+    return x
+
+
+def single_model(x, training, conv_drop_rate, fc_drop_rate, top_nn_drop_rate,
+                 conv_filters, conv_kernel_size,
+                 max_pool_positions, max_pool_sizes, max_pool_strides,
+                 fc_units,
+                 batch_norm=True,
+                 dropout=False,
+                 top_nn_activation=None):
+
+    x = base_network(x, training, conv_drop_rate, fc_drop_rate,
+                     conv_filters, conv_kernel_size,
+                     max_pool_positions, max_pool_sizes, max_pool_strides,
+                     fc_units,
+                     batch_norm,
+                     dropout)
+
     with tf.variable_scope("out"):
         x = _dense_batch_norm_dropout(x, 1, training,
                                       batch_norm=False,
                                       dropout=False,
                                       drop_rate=top_nn_drop_rate,
-                                      activation=None)
+                                      activation=top_nn_activation)
         #variable_summaries(x)
 
     with tf.variable_scope('logits'):
-        logits = tf.reshape(x, shape=[-1], name='logits')
+        logits = tf.identity(x, name='logits')
         #variable_summaries(logits)
 
-    x = tf.Print(x, [tf.shape(x)],
+    logits = tf.Print(logits, [tf.shape(logits)],
          message="Output: ",
          first_n=1, summarize=10)
 
-    return x
+    return logits
+
+
+def siamese_model(x, training, conv_drop_rate, fc_drop_rate, top_nn_drop_rate,
+                 conv_filters, conv_kernel_size,
+                 max_pool_positions, max_pool_sizes, max_pool_strides,
+                 fc_units,
+                 top_fc_units,
+                 batch_norm=True,
+                 dropout=False,
+                 top_nn_activation=None):
+
+    grid_left = x[:, 0]
+    grid_right = x[:, 1]
+
+    with tf.variable_scope('base_networks', reuse=tf.AUTO_REUSE):
+        processed_left = base_network(
+            grid_left, training, conv_drop_rate, fc_drop_rate,
+            conv_filters, conv_kernel_size,
+            max_pool_positions, max_pool_sizes, max_pool_strides,
+            fc_units,
+            batch_norm, dropout)
+
+    with tf.variable_scope('base_networks', reuse=tf.AUTO_REUSE):
+        processed_right = base_network(
+            grid_right, training, conv_drop_rate, fc_drop_rate,
+            conv_filters, conv_kernel_size,
+            max_pool_positions, max_pool_sizes, max_pool_strides,
+            fc_units,
+            batch_norm, dropout)
+
+    x = tf.concat([processed_left, processed_right], 1, name='concat')
+
+    # Deep non-siamese.
+    with tf.variable_scope("top_nn"):
+        for layer, units in enumerate(top_fc_units):
+            with tf.variable_scope("fc{:d}".format(layer)):
+                x = _dense_batch_norm_dropout(x, units, training, batch_norm,
+                                              dropout, top_nn_drop_rate,
+                                              activation='relu')
+        #variable_summaries(x)
+
+    x = tf.identity(x, name='embedding')
+
+    with tf.variable_scope("out"):
+        x = _dense_batch_norm_dropout(x, 1, training,
+                                      batch_norm=False,
+                                      dropout=False,
+                                      drop_rate=top_nn_drop_rate,
+                                      activation=top_nn_activation)
+        #variable_summaries(x)
+
+    with tf.variable_scope('logits'):
+        logits = tf.identity(x, name='logits')
+        #variable_summaries(logits)
+
+    logits = tf.Print(logits, [tf.shape(logits)],
+         message="Output: ",
+         first_n=1, summarize=10)
+
+    return logits
 
 
 def training(loss, learning_rate):
     optimizer = tf.train.AdamOptimizer(learning_rate, beta1=0.9)
     #optimizer = tf.train.RMSPropOptimizer(learning_rate, decay = 0.999)
-    global_step = tf.Variable(0, name='global_step', trainable=False)
 
+    # Update moving_mean and moving_variance of batch norm
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    with tf.control_dependencies(update_ops):
-        train_op = optimizer.minimize(loss, global_step=global_step)
+    
+    tf_step = tf.train.get_or_create_global_step()
+    train_op = optimizer.minimize(loss, global_step=tf_step)
+    train_op = tf.group([train_op, update_ops], name='train_op')
 
     return train_op
 

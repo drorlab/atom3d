@@ -162,7 +162,7 @@ def form_seq_filter_against(sharded, cutoff):
     """
     blast_db_path = f'{sharded:}.db'
     all_chain_sequences = []
-    for shard in sh.iter_shards(sharded):
+    for _, shard in sh.iter_shards(sharded):
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
     seq.write_to_blast_db(all_chain_sequences, blast_db_path)
 

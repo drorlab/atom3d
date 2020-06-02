@@ -13,8 +13,9 @@ def rot_mats(config):
     return rot_mats._rot_mats
 
 
-def gen_rot_matrix(config):
-    np.random.seed(config.random_seed)
+def gen_rot_matrix(config, random_seed=None, reset_seed=False):
+    if reset_seed:
+        np.random.seed(random_seed)
 
     size = grid_size(config)
     true_radius = size * config.resolution / 2.0

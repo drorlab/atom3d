@@ -6,6 +6,7 @@ import json
 import logging
 import math
 import os
+import random
 import tqdm
 
 import numpy as np
@@ -22,14 +23,17 @@ import examples.cnn3d.feature_pdbbind as feature_pdbbind
 import examples.cnn3d.subgrid_gen as subgrid_gen
 
 
-def compute_global_correlations(results):
-    # Save metrics.
+def compute_stats(results):
+    # Drop duplicated data
+    #results = results.drop_duplicates(subset=['structure'], keep='first')
     res = {}
     all_true = results['true'].astype(float)
     all_pred = results['pred'].astype(float)
     res['all_pearson'] = all_true.corr(all_pred, method='pearson')
     res['all_kendall'] = all_true.corr(all_pred, method='kendall')
     res['all_spearman'] = all_true.corr(all_pred, method='spearman')
+    # Compute RMSE
+    res['rmse'] = ((all_true - all_pred)**2).mean()**0.5
     return res
 
 
@@ -44,7 +48,7 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     max_pool_strides = [2]*num_conv
     fc_units = [512]
 
-    output = model.scoring_model(
+    output = model.single_model(
         feature,
         is_training,
         conv_drop_rate,
@@ -55,10 +59,10 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
         max_pool_sizes, max_pool_strides,
         fc_units,
         batch_norm=args.use_batch_norm,
-        dropout=not args.no_dropout)
+        dropout=not args.no_dropout,
+        top_nn_activation=args.top_nn_activation)
 
-    # Predict global score
-    #predict = tf.reduce_mean(output, keepdims=True, name='predict')
+    # Prediction
     predict = tf.identity(output, name='predict')
     # Loss
     loss = tf.losses.mean_squared_error(target, predict)
@@ -136,8 +140,8 @@ def train_model(sess, args):
 
         # Loop over all batches (one batch is all feature for 1 protein)
         num_batches = int(math.ceil(float(num_iters)/args.batch_size))
-        print('Running {:} -> {:} iters in {:} batches (batch size: {:})'.format(
-            mode, num_iters, num_batches, args.batch_size))
+        #print('Running {:} -> {:} iters in {:} batches (batch size: {:})'.format(
+        #    mode, num_iters, num_batches, args.batch_size))
         with tqdm.tqdm(total=num_batches, desc=progress_format.format(0)) as t:
             for i in range(num_batches):
                 try:
@@ -186,28 +190,6 @@ def train_model(sess, args):
     ##### Training + validation
     prev_val_loss, best_val_loss = float("inf"), float("inf")
 
-    logging.debug('Creating train generator...')
-    train_generator_callable = functools.partial(
-        feature_pdbbind.dataset_generator,
-        args.data_filename,
-        args.train_split_filename,
-        args.labels_filename,
-        args.grid_config,
-        shuffle=args.shuffle,
-        repeat=args.num_epochs*args.repeat_gen,
-        max_pdbs=args.max_pdbs_train)
-
-    logging.debug('Creating val generator...')
-    val_generator_callable = functools.partial(
-        feature_pdbbind.dataset_generator,
-        args.data_filename,
-        args.val_split_filename,
-        args.labels_filename,
-        args.grid_config,
-        shuffle=args.shuffle,
-        repeat=args.num_epochs*args.repeat_gen,
-        max_pdbs=args.max_pdbs_val)
-
     if (args.max_pdbs_train == None):
         pdbcodes = feature_pdbbind.read_split(args.train_split_filename)
         train_num_structs = len(pdbcodes)
@@ -241,7 +223,33 @@ def train_model(sess, args):
 
     per_epoch_val_losses = []
     for epoch in range(1, args.num_epochs+1):
-        logging.info('Epoch {:}'.format(epoch))
+        random_seed = args.random_seed #random.randint(1, 10e6)
+        logging.info('Epoch {:} - random_seed: {:}'.format(epoch, random_seed))
+
+        logging.debug('Creating train generator...')
+        train_generator_callable = functools.partial(
+            feature_pdbbind.dataset_generator,
+            args.data_filename,
+            args.train_split_filename,
+            args.labels_filename,
+            args.grid_config,
+            shuffle=args.shuffle,
+            repeat=args.repeat_gen,
+            max_pdbs=args.max_pdbs_train,
+            random_seed=random_seed)
+
+        logging.debug('Creating val generator...')
+        val_generator_callable = functools.partial(
+            feature_pdbbind.dataset_generator,
+            args.data_filename,
+            args.val_split_filename,
+            args.labels_filename,
+            args.grid_config,
+            shuffle=args.shuffle,
+            repeat=args.repeat_gen,
+            max_pdbs=args.max_pdbs_val,
+            random_seed=random_seed)
+
         # Training
         train_structs, train_preds, train_labels, _, curr_train_loss = __loop(
             train_generator_callable, 'train', num_iters=train_num_structs)
@@ -253,7 +261,6 @@ def train_model(sess, args):
         __update_and_write_run_info('val_losses', per_epoch_val_losses)
 
         if args.use_best or args.early_stopping:
-            prev_val_loss = curr_val_loss
             if curr_val_loss < best_val_loss:
                 # Found new best epoch.
                 best_val_loss = curr_val_loss
@@ -272,6 +279,12 @@ def train_model(sess, args):
             # Save at every checkpoint
             ckpt = _save()
             logging.info("Saving checkpoint {:}".format(ckpt))
+
+        if args.early_stopping and curr_val_loss >= prev_val_loss:
+            logging.info("Validation loss stopped decreasing, stopping...")
+            break
+        else:
+            prev_val_loss = curr_val_loss
 
     logging.info("Finished training")
 
@@ -302,8 +315,9 @@ def train_model(sess, args):
         args.labels_filename,
         args.grid_config,
         shuffle=args.shuffle,
-        repeat=args.num_epochs,
-        max_pdbs=args.max_pdbs_test)
+        repeat=1,
+        max_pdbs=args.max_pdbs_test,
+        random_seed=args.random_seed)
 
     if (args.max_pdbs_test == None):
         pdbcodes = feature_pdbbind.read_split(args.test_split_filename)
@@ -325,12 +339,14 @@ def train_model(sess, args):
     test_df.to_pickle(os.path.join(args.output_dir, 'test_result.pkl'))
 
     # Compute global correlations
-    res = compute_global_correlations(test_df)
+    res = compute_stats(test_df)
     logging.info(
-        '\nCorrelations (Pearson, Kendall, Spearman)\n'
-        '    all averaged: ({:.3f}, {:.3f}, {:.3f})'.format(
+        '\nStats\n'
+        '    RMSE: {:.3f}\n'
+        '    Pearson: {:.3f}\n'
+        '    Spearman: {:.3f}'.format(
+        float(res["rmse"]),
         float(res["all_pearson"]),
-        float(res["all_kendall"]),
         float(res["all_spearman"])))
 
 
@@ -346,13 +362,13 @@ def create_train_parser():
 
     parser.add_argument(
         '--train_split_filename', type=str,
-        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/core_split/train_cluster30.txt')
+        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/split_identity60/train_identity60.txt')
     parser.add_argument(
         '--val_split_filename', type=str,
-        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/core_split/val_cluster30.txt')
+        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/split_identity60/val_identity60.txt')
     parser.add_argument(
         '--test_split_filename', type=str,
-        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/core_split/test.txt')
+        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/split_identity60/test_identity60.txt')
 
     parser.add_argument(
         '--output_dir', type=str,
@@ -367,6 +383,7 @@ def create_train_parser():
     parser.add_argument('--conv_drop_rate', type=float, default=0.1)
     parser.add_argument('--fc_drop_rate', type=float, default=0.25)
     parser.add_argument('--top_nn_drop_rate', type=float, default=0.5)
+    parser.add_argument('--top_nn_activation', type=str, default=None)
     parser.add_argument('--num_epochs', type=int, default=5)
     parser.add_argument('--repeat_gen', type=int, default=200)
 
@@ -378,7 +395,7 @@ def create_train_parser():
     parser.add_argument('--shuffle', action='store_true', default=False)
     parser.add_argument('--early_stopping', action='store_true', default=False)
     parser.add_argument('--use_best', action='store_true', default=False)
-    parser.add_argument('--random_seed', type=int, default=131313)
+    parser.add_argument('--random_seed', type=int, default=random.randint(1, 10e6))
     parser.add_argument('--debug', action='store_true', default=False)
     parser.add_argument('--unobserved', action='store_true', default=False)
     parser.add_argument('--save_all_ckpts', action='store_true', default=False)
@@ -421,6 +438,8 @@ def main():
 
     logging.info("Writing all output to {:}".format(args.output_dir))
     with tf.Session() as sess:
+        np.random.seed(args.random_seed)
+        tf.set_random_seed(args.random_seed)
         train_model(sess, args)
 
 

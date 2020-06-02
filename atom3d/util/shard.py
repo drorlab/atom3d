@@ -68,13 +68,13 @@ def iter_shards(sharded):
     """Iterate through shards."""
     num_shards = get_num_shards(sharded)
     for i in range(num_shards):
-        yield read_shard(sharded, i)
+        yield i, read_shard(sharded, i)
 
 
-def read_shard(sharded, shard_num):
+def read_shard(sharded, shard_num, key='structures'):
     """Read a single shard of a sharded dataset."""
     shard = _get_shard(sharded, shard_num)
-    return pd.read_hdf(shard, 'structures')
+    return pd.read_hdf(shard, key)
 
 
 def read_ensemble(sharded, name):
@@ -112,7 +112,7 @@ def get_num_ensembles(sharded):
 def get_num_structures(sharded):
     """Get number of structures in sharded dataset."""
     num_structs = 0
-    for df in iter_shards(sharded):
+    for _, df in iter_shards(sharded):
         num_structs += df.groupby(['ensemble', 'subunit']).ngroups
     return num_structs
 

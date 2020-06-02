@@ -17,14 +17,13 @@ grid_config = util.dotdict({
         'F': 4,
     },
     # Radius of the grids to generate, in angstroms.
-    'radius': 18.0,
+    'radius': 20.0,
     # Resolution of each voxel, in angstroms.
-    'resolution': 0.6,
+    'resolution': 1.0,
     # Number of directions to apply for data augmentation.
     'num_directions': 20,
     # Number of rolls to apply for data augmentation.
     'num_rolls': 20,
-    'random_seed': 131313,
 })
 
 
@@ -46,21 +45,22 @@ def read_split(split_filename):
     return pdbcodes
 
 
-def df_to_feature(struct_df, grid_config):
+def df_to_feature(struct_df, grid_config, random_seed=None):
     pos = struct_df[['x', 'y', 'z']].astype(np.float32)
     # Use center of ligand for subgrid center
     ligand_pos = struct_df[struct_df.chain == 'LIG'][['x', 'y', 'z']].astype(
         np.float32)
     ligand_center = util.get_center(ligand_pos)
 
-    rot_mat = subgrid_gen.gen_rot_matrix(grid_config)
+    rot_mat = subgrid_gen.gen_rot_matrix(grid_config, random_seed=random_seed)
     grid = subgrid_gen.get_grid(
         struct_df, ligand_center, config=grid_config, rot_mat=rot_mat)
     return grid
 
 
 def dataset_generator(data_filename, split_filename, labels_filename,
-                      grid_config, shuffle=True, repeat=None, max_pdbs=None):
+                      grid_config, shuffle=True, repeat=None, max_pdbs=None,
+                      random_seed=None):
     all_pdbcodes = read_split(split_filename)
     labels_df = read_labels(labels_filename, all_pdbcodes)
 
@@ -70,7 +70,7 @@ def dataset_generator(data_filename, split_filename, labels_filename,
     data_df = pd.read_hdf(data_filename, 'structures')
     data_df = data_df[data_df.ensemble.isin(all_pdbcodes)]
 
-    np.random.seed(grid_config.random_seed)
+    #np.random.seed(random_seed)
     if repeat == None:
         repeat = 1
     for epoch in range(repeat):
@@ -82,7 +82,7 @@ def dataset_generator(data_filename, split_filename, labels_filename,
         for i, pdbcode in enumerate(pdbcodes):
             struct_df = data_df[data_df.ensemble == pdbcode]
 
-            feature = df_to_feature(struct_df, grid_config)
+            feature = df_to_feature(struct_df, grid_config, random_seed)
             label = labels_df[labels_df.pdb == pdbcode].label.values
 
             #print('Complex {:} ({:}/{:}) -> feature {:}, label {:}'.format(
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     labels_filename = '/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/pdbbind_refined_set_labels.csv'
     split_filename = '/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/core_split/test.txt'
 
-    #data_stats_df = get_data_stats(data_filename)
+    data_stats_df = get_data_stats(data_filename)
 
     print('Testing pdbbind feature generator')
     gen = dataset_generator(

@@ -5,12 +5,14 @@ import functools
 import json
 import logging
 import math
-import random
 import os
+import random
 import tqdm
 
 import numpy as np
 import pandas as pd
+import sklearn.metrics as sm
+
 import tensorflow as tf
 try:
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -18,69 +20,58 @@ except:
     pass
 
 import atom3d.util.shard as sh
-import atom3d.psp.util as psp_util
 import examples.cnn3d.model as model
-import examples.cnn3d.feature_psp as feature_psp
+import examples.cnn3d.feature_ppi as feature_ppi
 import examples.cnn3d.subgrid_gen as subgrid_gen
+
 import examples.cnn3d.util as util
 
 
-def compute_global_correlations(results):
-    # Drop duplicated data
-    results = results.drop_duplicates(subset=['structure'], keep='first')
-
-    per_target = []
-    for key, val in results.groupby(['target']):
-        # Ignore target with 2 decoys only since the correlations are
-        # not really meaningful.
-        if val.shape[0] < 3:
-            continue
-        true = val['true'].astype(float)
-        pred = val['pred'].astype(float)
-        pearson = true.corr(pred, method='pearson')
-        kendall = true.corr(pred, method='kendall')
-        spearman = true.corr(pred, method='spearman')
-        per_target.append((key, pearson, kendall, spearman))
-    per_target = pd.DataFrame(
-        data=per_target,
-        columns=['target', 'pearson', 'kendall', 'spearman'])
-
+def compute_perf(results):
     res = {}
-    all_true = results['true'].astype(float)
-    all_pred = results['pred'].astype(float)
-    res['all_pearson'] = all_true.corr(all_pred, method='pearson')
-    res['all_kendall'] = all_true.corr(all_pred, method='kendall')
-    res['all_spearman'] = all_true.corr(all_pred, method='spearman')
-
-    res['per_target_mean_pearson'] = per_target['pearson'].mean()
-    res['per_target_mean_kendall'] = per_target['kendall'].mean()
-    res['per_target_mean_spearman'] = per_target['spearman'].mean()
-
-    res['per_target_median_pearson'] = per_target['pearson'].median()
-    res['per_target_median_kendall'] = per_target['kendall'].median()
-    res['per_target_median_spearman'] = per_target['spearman'].median()
+    all_trues = results['true'].astype(np.int8)
+    all_preds = results['pred'].astype(np.int8)
+    res['all_ap'] = sm.average_precision_score(all_trues, all_preds)
+    res['all_auroc'] = sm.roc_auc_score(all_trues, all_preds)
+    res['all_acc'] = sm.accuracy_score(all_trues, all_preds.round())
+    res['all_bal_acc'] = \
+        sm.balanced_accuracy_score(all_trues, all_preds.round())
+    res['all_loss'] = sm.log_loss(all_trues, all_preds)
     return res
 
 
 def __stats(mode, df):
-    # Compute global correlations
-    res = compute_global_correlations(df)
+    # Compute stats
+    res = compute_perf(df)
     logging.info(
         '\n{:}\n'
-        'Correlations (Pearson, Kendall, Spearman)\n'
-        '    per-target averaged median: ({:.3f}, {:.3f}, {:.3f})\n'
-        '    per-target averaged mean: ({:.3f}, {:.3f}, {:.3f})\n'
-        '    all averaged: ({:.3f}, {:.3f}, {:.3f})'.format(
+        #'{:}\n'
+        'Perf Metrics:\n'
+        '    AP: {:.3f}\n'
+        '    AUROC: {:.3f}\n'
+        '    Accuracy: {:.3f}\n'
+        '    Balanced Accuracy: {:.3f}\n'
+        '    Log loss: {:.3f}'.format(
         mode,
-        float(res["per_target_median_pearson"]),
-        float(res["per_target_median_kendall"]),
-        float(res["per_target_median_spearman"]),
-        float(res["per_target_mean_pearson"]),
-        float(res["per_target_mean_kendall"]),
-        float(res["per_target_mean_spearman"]),
-        float(res["all_pearson"]),
-        float(res["all_kendall"]),
-        float(res["all_spearman"])))
+        #df.groupby(['true', 'pred']).size(),
+        float(res["all_ap"]),
+        float(res["all_auroc"]),
+        float(res["all_acc"]),
+        float(res["all_bal_acc"]),
+        float(res["all_loss"])))
+
+
+def compute_accuracy(true_y, predicted_y):
+    true_y = tf.cast(true_y, tf.float32)
+    correct_prediction =  \
+        tf.logical_or(
+            tf.logical_and(
+                tf.less_equal(predicted_y, 0.5),
+                tf.less_equal(true_y, 0.5)),
+            tf.logical_and(
+                tf.greater(predicted_y, 0.5),
+                tf.greater(true_y, 0.5)))
+    return tf.cast(correct_prediction, tf.float32, name='accuracy')
 
 
 # Construct model and loss
@@ -90,12 +81,13 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     conv_filters = [32 * (2**n) for n in range(num_conv)]
     conv_kernel_size = 3
     max_pool_positions = [0, 1]*int((num_conv+1)/2)
-    max_pool_sizes = [4]*num_conv
-    max_pool_strides = [4]*num_conv
+    max_pool_sizes = [2]*num_conv
+    max_pool_strides = [2]*num_conv
     fc_units = [512]
+    top_fc_units = [512]*args.num_final_fc_layers
 
-    output = model.single_model(
-        feature,
+    '''logits = model.single_model(
+        tf.concat([feature[:,0], feature[:,1]], 1),
         is_training,
         conv_drop_rate,
         fc_drop_rate,
@@ -106,13 +98,43 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
         fc_units,
         batch_norm=args.use_batch_norm,
         dropout=not args.no_dropout,
+        top_nn_activation=args.top_nn_activation)'''
+
+    logits = model.siamese_model(
+        feature,
+        is_training,
+        conv_drop_rate,
+        fc_drop_rate,
+        top_nn_drop_rate,
+        conv_filters, conv_kernel_size,
+        max_pool_positions,
+        max_pool_sizes, max_pool_strides,
+        fc_units,
+        top_fc_units,
+        batch_norm=args.use_batch_norm,
+        dropout=not args.no_dropout,
         top_nn_activation=args.top_nn_activation)
 
     # Prediction
-    predict = tf.identity(output, name='predict')
+    predict = tf.round(tf.nn.sigmoid(logits), name='predict')
+
     # Loss
-    loss = tf.losses.mean_squared_error(target, predict)
-    return predict, loss
+    with tf.variable_scope('loss'):
+        loss = tf.nn.weighted_cross_entropy_with_logits(
+            targets=tf.cast(target, tf.float32), logits=logits,
+            pos_weight=args.grid_config.neg_to_pos_ratio)
+        # We reweight the losses so that the mean is comparable across
+        # different neg to pos ratios.
+        batch_size = tf.cast(tf.shape(target)[0], tf.float32)
+        num_pos = tf.count_nonzero(target, dtype=tf.float32)
+        num_neg = batch_size - num_pos
+        effective_weight = num_pos * args.grid_config.neg_to_pos_ratio + num_neg
+        loss = loss / tf.cast(effective_weight, tf.float32) * batch_size
+        loss = tf.identity(loss, name='cross_entropy')
+
+    # Accuracy
+    accuracy = compute_accuracy(target, predict)
+    return logits, predict, loss, accuracy
 
 
 def batch_dataset_generator(gen, args, is_testing=False):
@@ -121,7 +143,7 @@ def batch_dataset_generator(gen, args, is_testing=False):
     dataset = tf.data.Dataset.from_generator(
         gen,
         output_types=(tf.string, tf.float32, tf.float32),
-        output_shapes=((), (grid_size, grid_size, grid_size, channel_size), (1,))
+        output_shapes=((), (2, grid_size, grid_size, grid_size, channel_size), (1,))
         )
 
     # Shuffle dataset
@@ -148,7 +170,7 @@ def train_model(sess, args):
     channel_size = subgrid_gen.num_channels(args.grid_config)
     feature_placeholder = tf.placeholder(
         tf.float32,
-        [None, grid_size, grid_size, grid_size, channel_size],
+        [None, 2, grid_size, grid_size, grid_size, channel_size],
         name='main_input')
     label_placeholder = tf.placeholder(tf.float32, [None, 1], 'label')
 
@@ -160,7 +182,7 @@ def train_model(sess, args):
 
     # Define loss and optimizer
     logging.debug('Define loss and optimizer...')
-    predict_op, loss_op = conv_model(
+    logits_op, predict_op, loss_op, accuracy_op = conv_model(
         feature_placeholder, label_placeholder, training_placeholder,
         conv_drop_rate_placeholder, fc_drop_rate_placeholder,
         top_nn_drop_rate_placeholder, args)
@@ -180,20 +202,21 @@ def train_model(sess, args):
         tf_dataset, next_element = batch_dataset_generator(
             generator, args, is_testing=(mode=='test'))
 
-        structs, losses, preds, labels = [], [], [], []
+        structures, losses, logits, preds, labels = [], [], [], [], []
         epoch_loss = 0
-        progress_format = mode + ' loss: {:6.6f}'
+        epoch_acc = 0
+        progress_format = mode + ' loss: {:6.6f}' + '; acc: {:6.4f}'
 
         # Loop over all batches (one batch is all feature for 1 protein)
         num_batches = int(math.ceil(float(num_iters)/args.batch_size))
         #print('Running {:} -> {:} iters in {:} batches (batch size: {:})'.format(
         #    mode, num_iters, num_batches, args.batch_size))
-        with tqdm.tqdm(total=num_batches, desc=progress_format.format(0)) as t:
+        with tqdm.tqdm(total=num_batches, desc=progress_format.format(0, 0)) as t:
             for i in range(num_batches):
                 try:
-                    struct_, feature_, label_ = sess.run(next_element)
-                    _, pred, loss = sess.run(
-                        [train_op, predict_op, loss_op],
+                    structure_, feature_, label_ = sess.run(next_element)
+                    _, logit, pred, loss, accuracy = sess.run(
+                        [train_op, logits_op, predict_op, loss_op, accuracy_op],
                         feed_dict={feature_placeholder: feature_,
                                    label_placeholder: label_,
                                    training_placeholder: (mode == 'train'),
@@ -203,16 +226,19 @@ def train_model(sess, args):
                                        args.fc_drop_rate if mode == 'train' else 0.0,
                                    top_nn_drop_rate_placeholder:
                                        args.top_nn_drop_rate if mode == 'train' else 0.0})
+                    #print('logit: {:}, predict: {:}, loss: {:.3f}, actual: {:}'.format(logit, pred, loss, label_))
                     epoch_loss += (np.mean(loss) - epoch_loss) / (i + 1)
-                    structs.extend(struct_.astype(str))
+                    epoch_acc += (np.mean(accuracy) - epoch_acc) / (i + 1)
+                    structures.extend(structure_.astype(str))
                     losses.append(loss)
-                    preds.extend(pred)
-                    labels.extend(label_)
+                    logits.extend(logit.astype(np.float))
+                    preds.extend(pred.astype(np.int8))
+                    labels.extend(label_.astype(np.int8))
 
-                    t.set_description(progress_format.format(epoch_loss))
+                    t.set_description(progress_format.format(epoch_loss, epoch_acc))
                     t.update(1)
                 except (tf.errors.OutOfRangeError, StopIteration):
-                    logging.info("\nEnd of dataset at iteration {:}".format(i))
+                    logging.info("\nEnd of {:} dataset at iteration {:}".format(mode, i))
                     break
 
         def __concatenate(array):
@@ -222,12 +248,12 @@ def train_model(sess, args):
             except:
                 return array
 
-        structs = __concatenate(structs)
+        structures = __concatenate(structures)
+        logits = __concatenate(logits)
         preds = __concatenate(preds)
         labels = __concatenate(labels)
         losses = __concatenate(losses)
-        return structs, preds, labels, losses, epoch_loss
-
+        return structures, logits, preds, labels, losses, epoch_loss
 
     # Run the initializer
     logging.debug('Running initializer...')
@@ -235,33 +261,35 @@ def train_model(sess, args):
     logging.debug('Finished running initializer...')
 
     ##### Training + validation
+    def __count_num_structs(gen):
+        return np.sum(list(gen))
+
     if not args.test_only:
         prev_val_loss, best_val_loss = float("inf"), float("inf")
 
-        if (args.max_targets_train == None) and (args.max_decoys_train == None):
-            train_num_structs = sh.get_num_structures(args.train_sharded)
-        elif (args.max_targets_train == None):
-            train_num_structs = sh.get_num_ensembles(args.train_sharded) * args.max_decoys_train
-        elif (args.max_decoys_train == None):
-            assert False
+        if ((args.grid_config.max_pos_regions_per_ensemble > 0) and
+            (args.grid_config.neg_to_pos_ratio > 0)):
+
+            multiplier = args.grid_config.max_pos_regions_per_ensemble * int(
+                1 + args.grid_config.neg_to_pos_ratio)
+
+            if (args.max_num_ensembles_train == None):
+                train_num_structures = sh.get_num_ensembles(args.train_sharded)
+            else:
+                train_num_structures = args.max_num_ensembles_train
+
+            if (args.max_num_ensembles_val == None):
+                val_num_structures = sh.get_num_ensembles(args.val_sharded)
+            else:
+                val_num_structures = args.max_num_ensembles_val
+
+            train_num_structures *= args.repeat_gen * multiplier
+            val_num_structures *= args.repeat_gen * multiplier
         else:
-            train_num_structs = args.max_targets_train * args.max_decoys_train
-
-
-        if (args.max_targets_val == None) and (args.max_decoys_val == None):
-            val_num_structs = sh.get_num_structures(args.val_sharded)
-        elif (args.max_targets_val == None):
-            val_num_structs = sh.get_num_ensembles(args.val_sharded) * args.max_decoys_val
-        elif (args.max_decoys_val == None):
             assert False
-        else:
-            val_num_structs = args.max_targets_val * args.max_decoys_val
 
-        train_num_structs *= args.repeat_gen
-        #val_num_structs *= args.repeat_gen
-
-        logging.info("Start training with {:} structs for train and {:} structs for val per epoch".format(
-            train_num_structs, val_num_structs))
+        logging.info("Start training with {:} structures for train and {:} structures for val per epoch".format(
+        train_num_structures, val_num_structures))
 
 
         def _save():
@@ -279,38 +307,37 @@ def train_model(sess, args):
         per_epoch_val_losses = []
         for epoch in range(1, args.num_epochs+1):
             random_seed = args.random_seed #random.randint(1, 10e6)
+
             logging.info('Epoch {:} - random_seed: {:}'.format(epoch, random_seed))
 
             logging.debug('Creating train generator...')
             train_generator_callable = functools.partial(
-                feature_psp.dataset_generator,
-                args.train_sharded, args.scores_dir, args.grid_config,
-                score_type=args.score_type,
+                feature_ppi.dataset_generator,
+                args.train_sharded,
+                args.grid_config,
                 shuffle=args.shuffle,
                 repeat=args.repeat_gen,
-                max_targets=args.max_targets_train,
-                max_decoys=args.max_decoys_train,
-                max_dist_threshold=300.0,
+                max_num_ensembles=args.max_num_ensembles_train,
+                testing=False,
                 random_seed=random_seed)
 
             logging.debug('Creating val generator...')
             val_generator_callable = functools.partial(
-                feature_psp.dataset_generator,
-                args.val_sharded, args.scores_dir, args.grid_config,
-                score_type=args.score_type,
+                feature_ppi.dataset_generator,
+                args.val_sharded,
+                args.grid_config,
                 shuffle=args.shuffle,
-                repeat=1,#*args.repeat_gen,
-                max_targets=args.max_targets_val,
-                max_decoys=args.max_decoys_val,
-                max_dist_threshold=300.0,
+                repeat=args.repeat_gen,
+                max_num_ensembles=args.max_num_ensembles_val,
+                testing=False,
                 random_seed=random_seed)
 
             # Training
-            train_structs, train_preds, train_labels, _, curr_train_loss = __loop(
-                train_generator_callable, 'train', num_iters=train_num_structs)
+            train_structures, train_logits, train_preds, train_labels, _, curr_train_loss = __loop(
+                train_generator_callable, 'train', num_iters=train_num_structures)
             # Validation
-            val_structs, val_preds, val_labels, _, curr_val_loss = __loop(
-                val_generator_callable, 'val', num_iters=val_num_structs)
+            val_structures, val_logits, val_preds, val_labels, _, curr_val_loss = __loop(
+                val_generator_callable, 'val', num_iters=val_num_structures)
 
             per_epoch_val_losses.append(curr_val_loss)
             __update_and_write_run_info('val_losses', per_epoch_val_losses)
@@ -335,23 +362,23 @@ def train_model(sess, args):
                 ckpt = _save()
                 logging.info("Saving checkpoint {:}".format(ckpt))
 
-            ## Save last train and val results
+            ## Save train and val results
+            logging.info("Saving train and val results")
             train_df = pd.DataFrame(
-                np.array([train_structs, train_labels, train_preds]).T,
-                columns=['structure', 'true', 'pred'],
+                np.array([train_structures, train_labels, train_preds, train_logits]).T,
+                columns=['structure', 'true', 'pred', 'logits'],
                 )
-            train_df['target'] = train_df.structure.apply(
-                lambda x: psp_util.get_target_name(x))
+            train_df[['ensemble', 'res0', 'res1']] = train_df.structure.str.split('/', expand=True)
             train_df.to_pickle(os.path.join(args.output_dir, 'train_result-{:}.pkl'.format(epoch)))
-            __stats('Train Epoch {:}'.format(epoch), train_df)
 
             val_df = pd.DataFrame(
-                np.array([val_structs, val_labels, val_preds]).T,
-                columns=['structure', 'true', 'pred'],
+                np.array([val_structures, val_labels, val_preds, val_logits]).T,
+                columns=['structure', 'true', 'pred', 'logits'],
                 )
-            val_df['target'] = val_df.structure.apply(
-                lambda x: psp_util.get_target_name(x))
+            val_df[['ensemble', 'res0', 'res1']] = val_df.structure.str.split('/', expand=True)
             val_df.to_pickle(os.path.join(args.output_dir, 'val_result-{:}.pkl'.format(epoch)))
+
+            __stats('Train Epoch {:}'.format(epoch), train_df)
             __stats('Val Epoch {:}'.format(epoch), val_df)
 
             if args.early_stopping and curr_val_loss >= prev_val_loss:
@@ -360,7 +387,7 @@ def train_model(sess, args):
             else:
                 prev_val_loss = curr_val_loss
 
-        logging.info("Finished training")
+    logging.info("Finished training")
 
     ##### Testing
     logging.debug("Run testing")
@@ -376,74 +403,68 @@ def train_model(sess, args):
     saver.restore(sess, to_use)
 
     test_generator_callable = functools.partial(
-        feature_psp.dataset_generator,
-        args.test_sharded, args.scores_dir, args.grid_config,
-        score_type=args.score_type,
+        feature_ppi.dataset_generator,
+        args.test_sharded,
+        args.grid_config,
         shuffle=args.shuffle,
         repeat=1,
-        max_targets=args.max_targets_test,
-        max_decoys=args.max_decoys_test,
-        max_dist_threshold=None,
+        max_num_ensembles=args.max_num_ensembles_test,
+        testing=True,
+        use_shard_nums=args.use_shard_nums,
         random_seed=args.random_seed)
 
-    if (args.max_targets_test == None) and (args.max_decoys_test == None):
-        test_num_structs = sh.get_num_structures(args.test_sharded)
-    elif (args.max_targets_test == None):
-        test_num_structs = sh.get_num_ensembles(args.test_sharded) * args.max_decoys_test
-    elif (args.max_decoys_test == None):
-        assert False
+    if ((not args.grid_config.full_test) and
+        (args.grid_config.max_pos_regions_per_ensemble_testing > 0) and
+        (args.grid_config.neg_to_pos_ratio_testing > 0)):
+
+        multiplier = args.grid_config.max_pos_regions_per_ensemble_testing * int(
+            1 + args.grid_config.neg_to_pos_ratio_testing)
+
+        if (args.max_num_ensembles_test == None):
+            test_num_structures = sh.get_num_ensembles(args.test_sharded)
+        else:
+            test_num_structures = args.max_num_ensembles_test
+
+        test_num_structures *= multiplier
     else:
-        test_num_structs = args.max_targets_test * args.max_decoys_test
+        assert False
+    logging.info("Start testing with {:} structures".format(test_num_structures))
 
-    logging.info("Start testing with {:} structs".format(test_num_structs))
-
-
-    test_structs, test_preds, test_labels, _, test_loss = __loop(
-        test_generator_callable, 'test', num_iters=test_num_structs)
+    test_structures, test_logits, test_preds, test_labels, _, test_loss = __loop(
+        test_generator_callable, 'test', num_iters=test_num_structures)
     logging.info("Finished testing")
 
     test_df = pd.DataFrame(
-        np.array([test_structs, test_labels, test_preds]).T,
-        columns=['structure', 'true', 'pred'],
+        np.array([test_structures, test_labels, test_preds, test_logits]).T,
+        columns=['structure', 'true', 'pred', 'logits'],
         )
-
-    test_df.to_pickle(os.path.join(args.output_dir, 'test_result.pkl'))
-    test_df['target'] = test_df.structure.apply(
-        lambda x: psp_util.get_target_name(x))
+    test_df[['ensemble', 'res0', 'res1']] = test_df.structure.str.split('/', expand=True)
     test_df.to_pickle(os.path.join(args.output_dir, 'test_result.pkl'))
     __stats('Test', test_df)
+    print(test_df.groupby(['true', 'pred']).size())
 
 
 def create_train_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--scores_dir', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/labels/scores')
-    parser.add_argument(
         '--train_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/train_decoy_50@508')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/train_decoy_20@508')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_train@1000')
     parser.add_argument(
         '--val_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/val_decoy_50@56')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/val_decoy_20@56')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_val@1000')
     parser.add_argument(
         '--test_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/test_decoy_all@85')
+        default='/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DB5/sharded/pairs@10')
+
     parser.add_argument(
         '--output_dir', type=str,
         default='/scratch/users/psuriana/atom3d/model')
 
     # Training parameters
-    parser.add_argument('--max_targets_train', type=int, default=None)
-    parser.add_argument('--max_targets_val', type=int, default=None)
-    parser.add_argument('--max_targets_test', type=int, default=None)
-
-    parser.add_argument('--max_decoys_train', type=int, default=None)
-    parser.add_argument('--max_decoys_val', type=int, default=None)
-    parser.add_argument('--max_decoys_test', type=int, default=None)
+    parser.add_argument('--max_num_ensembles_train', type=int, default=None)
+    parser.add_argument('--max_num_ensembles_val', type=int, default=None)
+    parser.add_argument('--max_num_ensembles_test', type=int, default=None)
 
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--conv_drop_rate', type=float, default=0.1)
@@ -454,6 +475,7 @@ def create_train_parser():
     parser.add_argument('--repeat_gen', type=int, default=1)
 
     parser.add_argument('--num_conv', type=int, default=4)
+    parser.add_argument('--num_final_fc_layers', type=int, default=2)
     parser.add_argument('--use_batch_norm', action='store_true', default=False)
     parser.add_argument('--no_dropout', action='store_true', default=False)
 
@@ -462,16 +484,19 @@ def create_train_parser():
     parser.add_argument('--early_stopping', action='store_true', default=False)
     parser.add_argument('--use_best', action='store_true', default=False)
     parser.add_argument('--random_seed', type=int, default=random.randint(1, 10e6))
+    parser.add_argument('--max_pos_regions_per_ensemble', type=int, default=70)
+    parser.add_argument('--max_pos_regions_per_ensemble_testing', type=int, default=-1)
+    parser.add_argument('--neg_to_pos_ratio', type=int, default=1)
+    parser.add_argument('--neg_to_pos_ratio_testing', type=int, default=1)
     parser.add_argument('--debug', action='store_true', default=False)
     parser.add_argument('--unobserved', action='store_true', default=False)
     parser.add_argument('--save_all_ckpts', action='store_true', default=False)
 
-    # Model parameters
-    parser.add_argument('--score_type', type=str, default='gdt_ts')
-
     # Test only
     parser.add_argument('--test_only', action='store_true', default=False)
+    parser.add_argument('--full_test', action='store_true', default=False)
     parser.add_argument('--model_dir', type=str, default=None)
+    parser.add_argument('--use_shard_nums', type=int, nargs='*', default=None)
 
     return parser
 
@@ -480,7 +505,7 @@ def main():
     parser = create_train_parser()
     args = parser.parse_args()
 
-    args.__dict__['grid_config'] = feature_psp.grid_config
+    args.__dict__['grid_config'] = feature_ppi.grid_config
 
     if args.test_only:
         with open(os.path.join(args.model_dir, 'config.json')) as f:
@@ -491,12 +516,18 @@ def main():
                 args.__dict__['grid_config'] = util.dotdict(
                     model_config['grid_config'])
 
+    args.__dict__['grid_config'].max_pos_regions_per_ensemble = args.max_pos_regions_per_ensemble
+    args.__dict__['grid_config'].max_pos_regions_per_ensemble_testing = args.max_pos_regions_per_ensemble_testing
+    args.__dict__['grid_config'].neg_to_pos_ratio = args.neg_to_pos_ratio
+    args.__dict__['grid_config'].neg_to_pos_ratio_testing = args.neg_to_pos_ratio_testing
+    args.__dict__['grid_config'].full_test = args.full_test
+
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     if args.debug:
         logging.basicConfig(level=logging.DEBUG, format=log_fmt)
     else:
         logging.basicConfig(level=logging.INFO, format=log_fmt)
-    logging.info("Running 3D CNN PSP training...")
+    logging.info("Running 3D CNN PPI training...")
 
     if args.unobserved:
         args.output_dir = os.path.join(args.output_dir, 'None')

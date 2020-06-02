@@ -21,7 +21,7 @@ def split(input_sharded, output_root):
     """Split by sequence identity."""
     all_chain_sequences = []
     logger.info('Loading chain sequences')
-    for shard in sh.iter_shards(input_sharded):
+    for _, shard in sh.iter_shards(input_sharded):
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
 
     logger.info('Splitting by cluster')
@@ -54,7 +54,7 @@ def form_scop_pair_filter_against(sharded, level):
     scop_index = scop.get_scop_index()[level]
 
     scop_pairs = []
-    for shard in sh.iter_shards(sharded):
+    for _, shard in sh.iter_shards(sharded):
         for e, ensemble in shard.groupby(['ensemble']):
             names, (bdf0, bdf1, udf0, udf1) = nb.get_subunits(ensemble)
             chains0 = bdf0[['structure', 'chain']].drop_duplicates()

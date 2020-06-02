@@ -20,14 +20,39 @@ except:
 import atom3d.util.shard as sh
 import atom3d.psp.util as psp_util
 import examples.cnn3d.model as model
-import examples.cnn3d.feature_psp as feature_psp
+import examples.cnn3d.feature_rna as feature_rna
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
 
+def plot_scatter(df):
+    import seaborn as sns; sns.set()
+    import matplotlib.pyplot as plt
+    df['true'] = df['true'].astype(float)
+    df['pred'] = df['pred'].astype(float)
+    g = sns.relplot(x='true', y='pred', hue='type', col='target', kind='scatter', data=df, height=2.8, aspect=1.5, col_wrap=4)
+    plt.show()
+
+
+def get_best_n(df, best_n=10):
+    """ Return the best_n models per target based on the predicted RMSD score.
+    """
+    df['true'] = df['true'].astype(float)
+    df['pred'] = df['pred'].astype(float)
+    df = df.sort_values(['target', 'true']).reset_index(drop=True)
+    # Sort the decoys per target in descending order based on col_name.
+    df = df.groupby('target') \
+           .apply(lambda x: x.sort_values(['pred'], ascending=True)) \
+           .reset_index(drop=True)
+    # Get the best_n models per target
+    best_df = df.groupby('target').head(best_n).reset_index(drop=True)
+    # Get the min actual RMSD per target
+    return best_df.groupby('target')['true'].min()
+
+
 def compute_global_correlations(results):
     # Drop duplicated data
-    results = results.drop_duplicates(subset=['structure'], keep='first')
+    #results = results.drop_duplicates(subset=['structure'], keep='first')
 
     per_target = []
     for key, val in results.groupby(['target']):
@@ -111,6 +136,9 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     # Prediction
     predict = tf.identity(output, name='predict')
     # Loss
+    if args.log_transform:
+        target = tf.log(target + 5)
+        predict = tf.log(predict + 5)
     loss = tf.losses.mean_squared_error(target, predict)
     return predict, loss
 
@@ -238,24 +266,23 @@ def train_model(sess, args):
     if not args.test_only:
         prev_val_loss, best_val_loss = float("inf"), float("inf")
 
-        if (args.max_targets_train == None) and (args.max_decoys_train == None):
+        if (args.max_shards_train == None) and (args.max_decoys_train == None):
             train_num_structs = sh.get_num_structures(args.train_sharded)
-        elif (args.max_targets_train == None):
+        elif (args.max_shards_train == None):
             train_num_structs = sh.get_num_ensembles(args.train_sharded) * args.max_decoys_train
         elif (args.max_decoys_train == None):
             assert False
         else:
-            train_num_structs = args.max_targets_train * args.max_decoys_train
+            train_num_structs = args.max_shards_train * args.max_decoys_train
 
-
-        if (args.max_targets_val == None) and (args.max_decoys_val == None):
+        if (args.max_shards_val == None) and (args.max_decoys_val == None):
             val_num_structs = sh.get_num_structures(args.val_sharded)
-        elif (args.max_targets_val == None):
+        elif (args.max_shards_val == None):
             val_num_structs = sh.get_num_ensembles(args.val_sharded) * args.max_decoys_val
         elif (args.max_decoys_val == None):
             assert False
         else:
-            val_num_structs = args.max_targets_val * args.max_decoys_val
+            val_num_structs = args.max_shards_val * args.max_decoys_val
 
         train_num_structs *= args.repeat_gen
         #val_num_structs *= args.repeat_gen
@@ -283,26 +310,24 @@ def train_model(sess, args):
 
             logging.debug('Creating train generator...')
             train_generator_callable = functools.partial(
-                feature_psp.dataset_generator,
-                args.train_sharded, args.scores_dir, args.grid_config,
-                score_type=args.score_type,
+                feature_rna.dataset_generator,
+                args.train_sharded,
+                args.grid_config,
                 shuffle=args.shuffle,
                 repeat=args.repeat_gen,
-                max_targets=args.max_targets_train,
+                max_shards=args.max_shards_train,
                 max_decoys=args.max_decoys_train,
-                max_dist_threshold=300.0,
                 random_seed=random_seed)
 
             logging.debug('Creating val generator...')
             val_generator_callable = functools.partial(
-                feature_psp.dataset_generator,
-                args.val_sharded, args.scores_dir, args.grid_config,
-                score_type=args.score_type,
+                feature_rna.dataset_generator,
+                args.val_sharded,
+                args.grid_config,
                 shuffle=args.shuffle,
                 repeat=1,#*args.repeat_gen,
-                max_targets=args.max_targets_val,
+                max_shards=args.max_shards_val,
                 max_decoys=args.max_decoys_val,
-                max_dist_threshold=300.0,
                 random_seed=random_seed)
 
             # Training
@@ -376,24 +401,23 @@ def train_model(sess, args):
     saver.restore(sess, to_use)
 
     test_generator_callable = functools.partial(
-        feature_psp.dataset_generator,
-        args.test_sharded, args.scores_dir, args.grid_config,
-        score_type=args.score_type,
+        feature_rna.dataset_generator,
+        args.test_sharded,
+        args.grid_config,
         shuffle=args.shuffle,
         repeat=1,
-        max_targets=args.max_targets_test,
+        max_shards=args.max_shards_test,
         max_decoys=args.max_decoys_test,
-        max_dist_threshold=None,
         random_seed=args.random_seed)
 
-    if (args.max_targets_test == None) and (args.max_decoys_test == None):
+    if (args.max_shards_test == None) and (args.max_decoys_test == None):
         test_num_structs = sh.get_num_structures(args.test_sharded)
-    elif (args.max_targets_test == None):
+    elif (args.max_shards_test == None):
         test_num_structs = sh.get_num_ensembles(args.test_sharded) * args.max_decoys_test
     elif (args.max_decoys_test == None):
         assert False
     else:
-        test_num_structs = args.max_targets_test * args.max_decoys_test
+        test_num_structs = args.max_shards_test * args.max_decoys_test
 
     logging.info("Start testing with {:} structs".format(test_num_structs))
 
@@ -418,28 +442,22 @@ def create_train_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--scores_dir', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/labels/scores')
-    parser.add_argument(
         '--train_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/train_decoy_50@508')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/train_decoy_20@508')
+        default='/oak/stanford/groups/rondror/projects/atom3d/rna_structure_prediction/split/structures_train@10')
     parser.add_argument(
         '--val_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/val_decoy_50@56')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/val_decoy_20@56')
+        default='/oak/stanford/groups/rondror/projects/atom3d/rna_structure_prediction/split/structures_val@10')
     parser.add_argument(
         '--test_sharded', type=str,
-        #default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/test_decoy_all@85')
+        default='/oak/stanford/groups/rondror/projects/atom3d/rna_structure_prediction/split/structures_test@10')
     parser.add_argument(
         '--output_dir', type=str,
         default='/scratch/users/psuriana/atom3d/model')
 
     # Training parameters
-    parser.add_argument('--max_targets_train', type=int, default=None)
-    parser.add_argument('--max_targets_val', type=int, default=None)
-    parser.add_argument('--max_targets_test', type=int, default=None)
+    parser.add_argument('--max_shards_train', type=int, default=None)
+    parser.add_argument('--max_shards_val', type=int, default=None)
+    parser.add_argument('--max_shards_test', type=int, default=None)
 
     parser.add_argument('--max_decoys_train', type=int, default=None)
     parser.add_argument('--max_decoys_val', type=int, default=None)
@@ -456,6 +474,7 @@ def create_train_parser():
     parser.add_argument('--num_conv', type=int, default=4)
     parser.add_argument('--use_batch_norm', action='store_true', default=False)
     parser.add_argument('--no_dropout', action='store_true', default=False)
+    parser.add_argument('--log_transform', action='store_true', default=False)
 
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--shuffle', action='store_true', default=False)
@@ -465,9 +484,6 @@ def create_train_parser():
     parser.add_argument('--debug', action='store_true', default=False)
     parser.add_argument('--unobserved', action='store_true', default=False)
     parser.add_argument('--save_all_ckpts', action='store_true', default=False)
-
-    # Model parameters
-    parser.add_argument('--score_type', type=str, default='gdt_ts')
 
     # Test only
     parser.add_argument('--test_only', action='store_true', default=False)
@@ -480,7 +496,7 @@ def main():
     parser = create_train_parser()
     args = parser.parse_args()
 
-    args.__dict__['grid_config'] = feature_psp.grid_config
+    args.__dict__['grid_config'] = feature_rna.grid_config
 
     if args.test_only:
         with open(os.path.join(args.model_dir, 'config.json')) as f:
@@ -496,7 +512,7 @@ def main():
         logging.basicConfig(level=logging.DEBUG, format=log_fmt)
     else:
         logging.basicConfig(level=logging.INFO, format=log_fmt)
-    logging.info("Running 3D CNN PSP training...")
+    logging.info("Running 3D CNN RNA training...")
 
     if args.unobserved:
         args.output_dir = os.path.join(args.output_dir, 'None')

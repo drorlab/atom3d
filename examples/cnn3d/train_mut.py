@@ -11,6 +11,8 @@ import tqdm
 
 import numpy as np
 import pandas as pd
+import sklearn.metrics as sm
+
 import tensorflow as tf
 try:
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -19,30 +21,82 @@ except:
 
 import atom3d.util.shard as sh
 import examples.cnn3d.model as model
-import examples.cnn3d.feature_qm9 as feature_qm9
+import examples.cnn3d.feature_mut as feature_mut
 import examples.cnn3d.subgrid_gen as subgrid_gen
 
 
-def compute_global_correlations(results):
+def compute_perf(results):
     # Drop duplicated data
-    #results = results.drop_duplicates(subset=['structure'], keep='first')
+    #results = results.drop_duplicates(subset=['ensembles'], keep='first')
+
     res = {}
-    all_true = results['true'].astype(float)
-    all_pred = results['pred'].astype(float)
-    res['all_pearson'] = all_true.corr(all_pred, method='pearson')
-    res['all_kendall'] = all_true.corr(all_pred, method='kendall')
-    res['all_spearman'] = all_true.corr(all_pred, method='spearman')
+    all_trues = results['true'].astype(np.int8)
+    all_preds = results['pred'].astype(np.int8)
+    res['all_ap'] = sm.average_precision_score(all_trues, all_preds)
+    res['all_auroc'] = sm.roc_auc_score(all_trues, all_preds)
+    res['all_acc'] = sm.accuracy_score(all_trues, all_preds.round())
+    res['all_bal_acc'] = \
+        sm.balanced_accuracy_score(all_trues, all_preds.round())
+    res['all_loss'] = sm.log_loss(all_trues, all_preds)
     return res
 
 
-def compute_mean_absolute_error(results):
-    # Drop duplicated data
-    results = results.drop_duplicates(subset=['structure'], keep='first')
+def __stats(mode, df):
+    # Compute stats
+    res = compute_perf(df)
+    logging.info(
+        '\n{:}\n'
+        'Perf Metrics:\n'
+        '    AP: {:.3f}\n'
+        '    AUROC: {:.3f}\n'
+        '    Accuracy: {:.3f}\n'
+        '    Balanced Accuracy: {:.3f}\n'
+        '    Log loss: {:.3f}'.format(
+        mode,
+        float(res["all_ap"]),
+        float(res["all_auroc"]),
+        float(res["all_acc"]),
+        float(res["all_bal_acc"]),
+        float(res["all_loss"])))
 
-    all_true = results['true'].astype(float)
-    all_pred = results['pred'].astype(float)
-    mae = np.abs(all_true-all_pred).mean()
-    return mae
+
+def __channel_size(args):
+    size = subgrid_gen.num_channels(args.grid_config)
+    if args.add_flag:
+        size += 1
+    return size
+
+
+def compute_accuracy(true_y, predicted_y):
+    true_y = tf.cast(true_y, tf.float32)
+    correct_prediction =  \
+        tf.logical_or(
+            tf.logical_and(
+                tf.less_equal(predicted_y, 0.5),
+                tf.less_equal(true_y, 0.5)),
+            tf.logical_and(
+                tf.greater(predicted_y, 0.5),
+                tf.greater(true_y, 0.5)))
+    return tf.cast(correct_prediction, tf.float32, name='accuracy')
+
+
+def balanced_loss(true_y, logits, pos_weight):
+    with tf.variable_scope('loss'):
+        # losses : [B]
+        losses = tf.nn.weighted_cross_entropy_with_logits(
+            targets=tf.cast(true_y, tf.float32), logits=logits,
+            pos_weight=pos_weight)
+
+        # We reweight the losses so that the mean is comparable across
+        # different neg to pos ratios.
+        batch_size = tf.cast(tf.shape(true_y)[0], tf.float32)
+        num_pos = tf.count_nonzero(true_y, dtype=tf.float32)
+        num_neg = batch_size - num_pos
+        effective_weight = num_pos * pos_weight + num_neg
+        losses = losses / tf.cast(effective_weight, tf.float32) * \
+            tf.cast(batch_size, tf.float32)
+        losses = tf.identity(losses, name='cross_entropy')
+    return losses
 
 
 # Construct model and loss
@@ -55,8 +109,9 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     max_pool_sizes = [2]*num_conv
     max_pool_strides = [2]*num_conv
     fc_units = [512]
+    top_fc_units = [512]*args.num_final_fc_layers
 
-    output = model.single_model(
+    logits = model.siamese_model(
         feature,
         is_training,
         conv_drop_rate,
@@ -66,24 +121,30 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
         max_pool_positions,
         max_pool_sizes, max_pool_strides,
         fc_units,
+        top_fc_units,
         batch_norm=args.use_batch_norm,
         dropout=not args.no_dropout,
         top_nn_activation=args.top_nn_activation)
 
     # Prediction
-    predict = tf.identity(output, name='predict')
+    predict = tf.round(tf.nn.sigmoid(logits), name='predict')
+
     # Loss
-    loss = tf.losses.mean_squared_error(target, predict)
-    return predict, loss
+    #loss = tf.losses.sigmoid_cross_entropy(target, logits)
+    loss = balanced_loss(target, logits, args.grid_config.neg_to_pos_ratio)
+
+    # Accuracy
+    accuracy = compute_accuracy(target, predict)
+    return logits, predict, loss, accuracy
 
 
 def batch_dataset_generator(gen, args, is_testing=False):
     grid_size = subgrid_gen.grid_size(args.grid_config)
-    channel_size = subgrid_gen.num_channels(args.grid_config)
+    channel_size = __channel_size(args)
     dataset = tf.data.Dataset.from_generator(
         gen,
         output_types=(tf.string, tf.float32, tf.float32),
-        output_shapes=((), (grid_size, grid_size, grid_size, channel_size), (1,))
+        output_shapes=((), (2, grid_size, grid_size, grid_size, channel_size), (1,))
         )
 
     # Shuffle dataset
@@ -107,12 +168,12 @@ def train_model(sess, args):
     # Subgrid maps for each residue in a protein
     logging.debug('Create input placeholder...')
     grid_size = subgrid_gen.grid_size(args.grid_config)
-    channel_size = subgrid_gen.num_channels(args.grid_config)
+    channel_size = __channel_size(args)
     feature_placeholder = tf.placeholder(
         tf.float32,
-        [None, grid_size, grid_size, grid_size, channel_size],
+        [None, 2, grid_size, grid_size, grid_size, channel_size],
         name='main_input')
-    label_placeholder = tf.placeholder(tf.float32, [None, 1], 'label')
+    label_placeholder = tf.placeholder(tf.int8, [None, 1], 'label')
 
     # Placeholder for model parameters
     training_placeholder = tf.placeholder(tf.bool, shape=[], name='is_training')
@@ -122,7 +183,7 @@ def train_model(sess, args):
 
     # Define loss and optimizer
     logging.debug('Define loss and optimizer...')
-    predict_op, loss_op = conv_model(
+    logits_op, predict_op, loss_op, accuracy_op = conv_model(
         feature_placeholder, label_placeholder, training_placeholder,
         conv_drop_rate_placeholder, fc_drop_rate_placeholder,
         top_nn_drop_rate_placeholder, args)
@@ -142,20 +203,21 @@ def train_model(sess, args):
         tf_dataset, next_element = batch_dataset_generator(
             generator, args, is_testing=(mode=='test'))
 
-        structs, losses, preds, labels = [], [], [], []
+        ensembles, losses, logits, preds, labels = [], [], [], [], []
         epoch_loss = 0
-        progress_format = mode + ' loss: {:6.6f}'
+        epoch_acc = 0
+        progress_format = mode + ' loss: {:6.6f}' + '; acc: {:6.4f}'
 
         # Loop over all batches (one batch is all feature for 1 protein)
         num_batches = int(math.ceil(float(num_iters)/args.batch_size))
-        #print('Running {:} -> {:} iters in {:} batches (batch size: {:})'.format(
+        #print('\nRunning {:} -> {:} iters in {:} batches (batch size: {:})'.format(
         #    mode, num_iters, num_batches, args.batch_size))
-        with tqdm.tqdm(total=num_batches, desc=progress_format.format(0)) as t:
+        with tqdm.tqdm(total=num_batches, desc=progress_format.format(0, 0)) as t:
             for i in range(num_batches):
                 try:
-                    struct_, feature_, label_ = sess.run(next_element)
-                    _, pred, loss = sess.run(
-                        [train_op, predict_op, loss_op],
+                    ensemble_, feature_, label_ = sess.run(next_element)
+                    _, logit, pred, loss, accuracy = sess.run(
+                        [train_op, logits_op, predict_op, loss_op, accuracy_op],
                         feed_dict={feature_placeholder: feature_,
                                    label_placeholder: label_,
                                    training_placeholder: (mode == 'train'),
@@ -165,16 +227,19 @@ def train_model(sess, args):
                                        args.fc_drop_rate if mode == 'train' else 0.0,
                                    top_nn_drop_rate_placeholder:
                                        args.top_nn_drop_rate if mode == 'train' else 0.0})
+                    #print('logit: {:}, predict: {:}, loss: {:.3f}, actual: {:}'.format(logit, pred, loss, label_))
                     epoch_loss += (np.mean(loss) - epoch_loss) / (i + 1)
-                    structs.extend(struct_)
+                    epoch_acc += (np.mean(accuracy) - epoch_acc) / (i + 1)
+                    ensembles.extend(ensemble_.astype(str))
                     losses.append(loss)
-                    preds.extend(pred)
-                    labels.extend(label_)
+                    logits.extend(logit.astype(np.float))
+                    preds.extend(pred.astype(np.int8))
+                    labels.extend(label_.astype(np.int8))
 
-                    t.set_description(progress_format.format(epoch_loss))
+                    t.set_description(progress_format.format(epoch_loss, epoch_acc))
                     t.update(1)
-                except StopIteration:
-                    logging.info("\nEnd of dataset at iteration {:}".format(i))
+                except (tf.errors.OutOfRangeError, StopIteration):
+                    logging.info("\nEnd of {:} dataset at iteration {:}".format(mode, i))
                     break
 
         def __concatenate(array):
@@ -184,11 +249,12 @@ def train_model(sess, args):
             except:
                 return array
 
-        structs = __concatenate(structs)
+        ensembles = __concatenate(ensembles)
+        logits = __concatenate(logits)
         preds = __concatenate(preds)
         labels = __concatenate(labels)
         losses = __concatenate(losses)
-        return structs, preds, labels, losses, epoch_loss
+        return ensembles, logits, preds, labels, losses, epoch_loss
 
     # Run the initializer
     logging.debug('Running initializer...')
@@ -198,20 +264,14 @@ def train_model(sess, args):
     ##### Training + validation
     prev_val_loss, best_val_loss = float("inf"), float("inf")
 
-    if (args.max_mols_train == None):
-        df = pd.read_hdf(args.train_data_filename, 'structures')
-        train_num_structs = len(df.structure.unique())
-    else:
-        train_num_structs = args.max_mols_train
+    multiplier = args.grid_config.max_pos_per_shard * int(
+        1 + args.grid_config.neg_to_pos_ratio)
+    train_num_ensembles = sh.get_num_shards(args.train_sharded)*multiplier
+    train_num_ensembles *= args.repeat_gen
 
-    if (args.max_mols_val == None):
-        df = pd.read_hdf(args.val_data_filename, 'structures')
-        val_num_structs = len(df.structure.unique())
-    else:
-        val_num_structs = args.max_mols_val
-
-    logging.info("Start training with {:} structs for train and {:} structs for val per epoch".format(
-        train_num_structs, val_num_structs))
+    val_num_ensembles = sh.get_num_ensembles(args.val_sharded)
+    logging.info("Start training with {:} ensembles for train and {:} ensembles for val per epoch".format(
+        train_num_ensembles, val_num_ensembles))
 
 
     def _save():
@@ -233,34 +293,34 @@ def train_model(sess, args):
 
         logging.debug('Creating train generator...')
         train_generator_callable = functools.partial(
-            feature_qm9.dataset_generator,
-            args.train_data_filename,
-            args.train_labels_filename,
+            feature_mut.dataset_generator,
+            args.train_sharded,
             args.grid_config,
-            label_type=args.label_type,
             shuffle=args.shuffle,
-            repeat=1,
-            max_mols=args.max_mols_train,
+            repeat=args.repeat_gen,
+            add_flag=args.add_flag,
+            center_at_mut=args.center_at_mut,
+            testing=False,
             random_seed=random_seed)
 
         logging.debug('Creating val generator...')
         val_generator_callable = functools.partial(
-            feature_qm9.dataset_generator,
-            args.val_data_filename,
-            args.val_labels_filename,
+            feature_mut.dataset_generator,
+            args.val_sharded,
             args.grid_config,
-            label_type=args.label_type,
             shuffle=args.shuffle,
-            repeat=1,
-            max_mols=args.max_mols_val,
+            repeat=args.repeat_gen,
+            add_flag=args.add_flag,
+            center_at_mut=args.center_at_mut,
+            testing=False,
             random_seed=random_seed)
 
         # Training
-        train_structs, train_preds, train_labels, _, curr_train_loss = __loop(
-            train_generator_callable, 'train', num_iters=train_num_structs)
+        train_ensembles, train_logits, train_preds, train_labels, _, curr_train_loss = __loop(
+            train_generator_callable, 'train', num_iters=train_num_ensembles)
         # Validation
-        val_structs, val_preds, val_labels, _, curr_val_loss = __loop(
-            val_generator_callable, 'val', num_iters=val_num_structs)
+        val_ensembles, val_logits, val_preds, val_labels, _, curr_val_loss = __loop(
+            val_generator_callable, 'val', num_iters=val_num_ensembles)
 
         per_epoch_val_losses.append(curr_val_loss)
         __update_and_write_run_info('val_losses', per_epoch_val_losses)
@@ -285,6 +345,23 @@ def train_model(sess, args):
             ckpt = _save()
             logging.info("Saving checkpoint {:}".format(ckpt))
 
+        ## Save train and val results
+        logging.info("Saving train and val results")
+        train_df = pd.DataFrame(
+            np.array([train_ensembles, train_labels, train_preds, train_logits]).T,
+            columns=['ensembles', 'true', 'pred', 'logits'],
+            )
+        train_df.to_pickle(os.path.join(args.output_dir, 'train_result-{:}.pkl'.format(epoch)))
+
+        val_df = pd.DataFrame(
+            np.array([val_ensembles, val_labels, val_preds, val_logits]).T,
+            columns=['ensembles', 'true', 'pred', 'logits'],
+            )
+        val_df.to_pickle(os.path.join(args.output_dir, 'val_result-{:}.pkl'.format(epoch)))
+
+        __stats('Train Epoch {:}'.format(epoch), train_df)
+        __stats('Val Epoch {:}'.format(epoch), val_df)
+
         if args.early_stopping and curr_val_loss >= prev_val_loss:
             logging.info("Validation loss stopped decreasing, stopping...")
             break
@@ -293,101 +370,57 @@ def train_model(sess, args):
 
     logging.info("Finished training")
 
-    ## Save last train and val results
-    logging.info("Saving train and val results")
-    train_df = pd.DataFrame(
-        np.array([train_structs, train_labels, train_preds]).T,
-        columns=['structure', 'true', 'pred'],
-        )
-    train_df.to_pickle(os.path.join(args.output_dir, 'train_result.pkl'))
-
-    val_df = pd.DataFrame(
-        np.array([val_structs, val_labels, val_preds]).T,
-        columns=['structure', 'true', 'pred'],
-        )
-    val_df.to_pickle(os.path.join(args.output_dir, 'val_result.pkl'))
-
-
     ##### Testing
     to_use = run_info['best_ckpt'] if args.use_best else ckpt
     logging.info("Using {:} for testing".format(to_use))
     saver.restore(sess, to_use)
 
     test_generator_callable = functools.partial(
-        feature_qm9.dataset_generator,
-        args.test_data_filename,
-        args.test_labels_filename,
+        feature_mut.dataset_generator,
+        args.test_sharded,
         args.grid_config,
-        label_type=args.label_type,
         shuffle=args.shuffle,
         repeat=1,
-        max_mols=args.max_mols_test,
+        add_flag=args.add_flag,
+        center_at_mut=args.center_at_mut,
+        testing=True,
         random_seed=args.random_seed)
 
-    if (args.max_mols_test == None):
-        df = pd.read_hdf(args.test_data_filename, 'structures')
-        test_num_structs = len(df.structure.unique())
-    else:
-        test_num_structs = args.max_mols_test
+    test_num_ensembles = sh.get_num_ensembles(args.test_sharded)
+    logging.info("Start testing with {:} ensembles".format(test_num_ensembles))
 
-    logging.info("Start testing with {:} structs".format(test_num_structs))
-
-    test_structs, test_preds, test_labels, _, test_loss = __loop(
-        test_generator_callable, 'test', num_iters=test_num_structs)
+    test_ensembles, test_logits, test_preds, test_labels, _, test_loss = __loop(
+        test_generator_callable, 'test', num_iters=test_num_ensembles)
     logging.info("Finished testing")
 
     test_df = pd.DataFrame(
-        np.array([test_structs, test_labels, test_preds]).T,
-        columns=['structure', 'true', 'pred'],
+        np.array([test_ensembles, test_labels, test_preds, test_logits]).T,
+        columns=['ensembles', 'true', 'pred', 'logits'],
         )
     test_df.to_pickle(os.path.join(args.output_dir, 'test_result.pkl'))
-
-    # Compute global correlations
-    res = compute_global_correlations(test_df)
-    logging.info(
-        '\nCorrelations (Pearson, Kendall, Spearman)\n'
-        '    all averaged: ({:.3f}, {:.3f}, {:.3f})'.format(
-        float(res["all_pearson"]),
-        float(res["all_kendall"]),
-        float(res["all_spearman"])))
-
-    # Compute mean absolute error
-    mae = compute_mean_absolute_error(test_df)
-    logging.info('Mean absolute error: {:.4f}'.format(mae))
+    __stats('Test', test_df)
 
 
 def create_train_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--train_data_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/train.h5')
+        '--train_sharded', type=str,
+        default='/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_train@40')
     parser.add_argument(
-        '--train_labels_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/train.csv')
-
+        '--val_sharded', type=str,
+        default='/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_val@40')
     parser.add_argument(
-        '--val_data_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/valid.h5')
-    parser.add_argument(
-        '--val_labels_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/valid.csv')
-
-    parser.add_argument(
-        '--test_data_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/test.h5')
-    parser.add_argument(
-        '--test_labels_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/test.csv')
+        '--test_sharded', type=str,
+        default='/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_test@40')
 
     parser.add_argument(
         '--output_dir', type=str,
         default='/scratch/users/psuriana/atom3d/model')
 
     # Training parameters
-    parser.add_argument('--max_mols_train', type=int, default=None)
-    parser.add_argument('--max_mols_val', type=int, default=None)
-    parser.add_argument('--max_mols_test', type=int, default=None)
+    parser.add_argument('--max_pos_per_shard', type=int, default=20)
+    parser.add_argument('--neg_to_pos_ratio', type=float, default=1.0)
 
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--conv_drop_rate', type=float, default=0.1)
@@ -395,8 +428,13 @@ def create_train_parser():
     parser.add_argument('--top_nn_drop_rate', type=float, default=0.5)
     parser.add_argument('--top_nn_activation', type=str, default=None)
     parser.add_argument('--num_epochs', type=int, default=5)
+    parser.add_argument('--repeat_gen', type=int, default=1)
+
+    parser.add_argument('--add_flag', action='store_true', default=False)
+    parser.add_argument('--center_at_mut', action='store_true', default=False)
 
     parser.add_argument('--num_conv', type=int, default=4)
+    parser.add_argument('--num_final_fc_layers', type=int, default=2)
     parser.add_argument('--use_batch_norm', action='store_true', default=False)
     parser.add_argument('--no_dropout', action='store_true', default=False)
 
@@ -408,9 +446,6 @@ def create_train_parser():
     parser.add_argument('--debug', action='store_true', default=False)
     parser.add_argument('--unobserved', action='store_true', default=False)
     parser.add_argument('--save_all_ckpts', action='store_true', default=False)
-
-    # Model parameters
-    parser.add_argument('--label_type', type=str, default='alpha')
 
     return parser
 
@@ -424,7 +459,7 @@ def main():
         logging.basicConfig(level=logging.DEBUG, format=log_fmt)
     else:
         logging.basicConfig(level=logging.INFO, format=log_fmt)
-    logging.info("Running 3D CNN QM9 training...")
+    logging.info("Running 3D CNN Mutation training...")
 
     if args.unobserved:
         args.output_dir = os.path.join(args.output_dir, 'None')
@@ -441,7 +476,10 @@ def main():
                 os.mkdir(args.output_dir)
                 break
 
-    args.__dict__['grid_config'] = feature_qm9.grid_config
+    args.__dict__['grid_config'] = feature_mut.grid_config
+    args.__dict__['grid_config'].neg_to_pos_ratio = args.neg_to_pos_ratio
+    args.__dict__['grid_config'].max_pos_per_shard = args.max_pos_per_shard
+
     logging.info("\n" + str(json.dumps(args.__dict__, indent=4)) + "\n")
 
     # Save config
@@ -450,6 +488,7 @@ def main():
 
     logging.info("Writing all output to {:}".format(args.output_dir))
     with tf.Session() as sess:
+        np.random.seed(args.random_seed)
         tf.set_random_seed(args.random_seed)
         train_model(sess, args)
 
