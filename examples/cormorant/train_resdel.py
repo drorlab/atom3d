@@ -1,5 +1,5 @@
 #
-# Cormorant PDBBind training script
+# Cormorant training script for the residue deletion dataset
 #
 
 import torch
@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from math import sqrt
 
-from cormorant_pdbbind import CormorantPDBBind
+from cormorant_resdel import CormorantResDel
 from cormorant.models.autotest import cormorant_tests
 
 from cormorant.engine import Engine
@@ -58,6 +58,7 @@ def main():
                              args.weight_init, args.level_gain, args.charge_power, args.basis_set,
                              charge_scale, args.gaussian_mask,
                              args.top, args.input, args.num_mpnn_levels,
+                             num_classes=20,
                              device=device, dtype=dtype)
 
     # Initialize the scheduler and optimizer
@@ -71,8 +72,8 @@ def main():
     cormorant_tests(model, dataloaders['train'], args, charge_scale=charge_scale)
 
     # Instantiate the training class
-    trainer = Engine(args, dataloaders, model, loss_fn, optimizer, scheduler, restart_epochs, device, dtype, task='classification', clip_value=0.1)
-    print('Initialized a',task,'trainer with clip value',trainer.clip_value)
+    trainer = Engine(args, dataloaders, model, loss_fn, optimizer, scheduler, restart_epochs, device, dtype, task='classification', clip_value=5)
+    print('Initialized a',trainer.task,'trainer with clip value',trainer.clip_value)
 
     # Load from checkpoint file. If no checkpoint file exists, automatically does nothing.
     trainer.load_checkpoint()
