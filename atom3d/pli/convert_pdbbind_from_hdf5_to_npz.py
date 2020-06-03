@@ -311,12 +311,12 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=Non
         pass
 
     # Save the data sets as compressed numpy files
-    te_file_name = out_dir_name+'/test.npz'
-    va_file_name = out_dir_name+'/valid.npz'
     tr_file_name = out_dir_name+'/train.npz'
-    ds_te.write_compressed(te_file_name, datatypes=datatypes )
-    ds_va.write_compressed(va_file_name, datatypes=datatypes )
+    va_file_name = out_dir_name+'/valid.npz'
+    te_file_name = out_dir_name+'/test.npz'
     ds_tr.write_compressed(tr_file_name, datatypes=datatypes )
+    ds_va.write_compressed(va_file_name, datatypes=datatypes )
+    ds_te.write_compressed(te_file_name, datatypes=datatypes )
         
     return ds_tr, ds_va, ds_te
 

@@ -43,8 +43,7 @@ class CormorantPDBBind(CGModule):
     def __init__(self, maxl, max_sh, num_cg_levels, num_channels, num_species,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
                  weight_init, level_gain, charge_power, basis_set,
-                 charge_scale, gaussian_mask,
-                 top, input, num_mpnn_layers, activation='leakyrelu',
+                 charge_scale, gaussian_mask, top, input, 
                  device=None, dtype=None, cg_dict=None):
 
         logging.info('Initializing network!')
@@ -88,6 +87,9 @@ class CormorantPDBBind(CGModule):
         num_scalars_in = self.num_species * (self.charge_power + 1)
         num_scalars_out = num_channels[0]
 
+#        self.input_func_atom = InputMPNN(num_scalars_in, num_scalars_out, num_mpnn_layers,
+#                                         soft_cut_rad[0], soft_cut_width[0], hard_cut_rad[0],
+#                                         activation=activation, device=self.device, dtype=self.dtype)
         self.input_func_atom = InputLinear(num_scalars_in, num_scalars_out,
                                            device=self.device, dtype=self.dtype)
         self.input_func_edge = NoLayer()
