@@ -28,7 +28,7 @@ KCALMOL2EV = 0.04336414
 
 conversion = torch.tensor([
     1., 1., HAR2EV, HAR2EV, HAR2EV, 1., HAR2EV, HAR2EV, HAR2EV, HAR2EV, HAR2EV,
-    1., KCALMOL2EV, KCALMOL2EV, KCALMOL2EV, KCALMOL2EV, 1., 1., 1.
+    1., KCALMOL2EV, KCALMOL2EV, KCALMOL2EV, KCALMOL2EV, 1., 1., 1., 1.
 ])
 
 
@@ -82,6 +82,8 @@ class GraphQM9(InMemoryDataset):
     +--------+----------------------------------+-----------------------------------------------------------------------------------+---------------------------------------------+
     | 18     | :math:`C`                        | Rotational constant                                                               | :math:`\textrm{GHz}`                        |
     +--------+----------------------------------+-----------------------------------------------------------------------------------+---------------------------------------------+
+    | 19     | :math:`c_{\textrm{v}}^{\textrm{ATOM}}`                                                                               | :math:`\textrm{GHz}`                        |
+    +--------+----------------------------------+-----------------------------------------------------------------------------------+---------------------------------------------+
 
     Args:
         root (string): Root directory where the dataset should be saved.
@@ -118,7 +120,7 @@ class GraphQM9(InMemoryDataset):
         if rdkit is None:
             return 'qm9.pt'
         else:
-            return ['gdb9.sdf', 'gdb9.sdf.csv', 'uncharacterized.txt']
+            return ['gdb9.sdf', 'gdb9_with_cv_atom.csv', 'uncharacterized.txt']
 
     @property
     def processed_file_names(self):

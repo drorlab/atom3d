@@ -155,7 +155,7 @@ def convert_sdfcsv_to_npz(in_dir_name, out_dir_name, split_indices=None, datatyp
     
     seed = 42
 
-    csv_file = in_dir_name+'/gdb9.sdf.csv'
+    csv_file = in_dir_name+'/gdb9_with_cv_atom.csv'
     sdf_file = in_dir_name+'/gdb9.sdf'
     unc_file = in_dir_name+'/uncharacterized.txt'
 
