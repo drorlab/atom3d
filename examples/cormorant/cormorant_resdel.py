@@ -43,7 +43,7 @@ class CormorantResDel(CGModule):
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
                  weight_init, level_gain, charge_power, basis_set,
                  charge_scale, gaussian_mask,
-                 top, input, num_mpnn_layers, activation='leakyrelu',
+                 top, input, num_mpnn_layers, num_classes=2, activation='leakyrelu',
                  device=None, dtype=None, cg_dict=None):
 
         logging.info('Initializing network!')
@@ -108,8 +108,8 @@ class CormorantResDel(CGModule):
         num_scalars_atom = self.get_scalars_atom.num_scalars
         num_scalars_edge = self.get_scalars_edge.num_scalars
 
-        self.output_layer_atom = OutputSoftmax(num_scalars_atom, activation=activation,
-                                               device=self.device, dtype=self.dtype)
+        self.output_layer_atom = OutputSoftmax(num_scalars_atom, num_classes, bias=True,
+                                               device=self.device, dtype=self.dtype) 
         self.output_layer_edge = NoLayer()
 
         logging.info('Model initialized. Number of parameters: {}'.format(
