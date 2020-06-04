@@ -8,13 +8,12 @@ from cormorant.cg_lib import CGModule, SphericalHarmonicsRel
 from cormorant.models.cormorant_cg import CormorantCG
 
 from cormorant.nn import RadialFilters
-from cormorant.nn import InputMPNN, InputLinear
-from cormorant.nn import OutputPMLP, OutputLinear, GetScalarsAtom
+from cormorant.nn import InputLinear, InputMPNN
+from cormorant.nn import OutputLinear, OutputPMLP, OutputSoftmax, GetScalarsAtom
 from cormorant.nn import NoLayer
 
 
-
-class CormorantPDBBind(CGModule):
+class CormorantMutation(CGModule):
     """
     Basic Cormorant Network used to train on BDBBind.
 
@@ -43,7 +42,7 @@ class CormorantPDBBind(CGModule):
     def __init__(self, maxl, max_sh, num_cg_levels, num_channels, num_species,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
                  weight_init, level_gain, charge_power, basis_set,
-                 charge_scale, gaussian_mask, top, input, 
+                 charge_scale, gaussian_mask, num_classes=2, 
                  device=None, dtype=None, cg_dict=None):
 
         logging.info('Initializing network!')
@@ -67,8 +66,6 @@ class CormorantPDBBind(CGModule):
         super().__init__(maxl=max(maxl+max_sh), device=device, dtype=dtype, cg_dict=cg_dict)
         device, dtype, cg_dict = self.device, self.dtype, self.cg_dict
 
-        print('CGDICT', cg_dict.maxl)
-
         self.num_cg_levels = num_cg_levels
         self.num_channels = num_channels
         self.charge_power = charge_power
@@ -87,9 +84,6 @@ class CormorantPDBBind(CGModule):
         num_scalars_in = self.num_species * (self.charge_power + 1)
         num_scalars_out = num_channels[0]
 
-#        self.input_func_atom = InputMPNN(num_scalars_in, num_scalars_out, num_mpnn_layers,
-#                                         soft_cut_rad[0], soft_cut_width[0], hard_cut_rad[0],
-#                                         activation=activation, device=self.device, dtype=self.dtype)
         self.input_func_atom = InputLinear(num_scalars_in, num_scalars_out,
                                            device=self.device, dtype=self.dtype)
         self.input_func_edge = NoLayer()
@@ -113,16 +107,17 @@ class CormorantPDBBind(CGModule):
         num_scalars_atom = self.get_scalars_atom.num_scalars
         num_scalars_edge = self.get_scalars_edge.num_scalars
 
-        self.output_layer_atom = OutputLinear(num_scalars_atom, bias=True,
-                                              device=self.device, dtype=self.dtype)
+        self.output_layer_atom = OutputSoftmax(num_scalars_atom, num_classes, bias=True,
+                                               device=self.device, dtype=self.dtype) 
         self.output_layer_edge = NoLayer()
 
         logging.info('Model initialized. Number of parameters: {}'.format(
             sum([p.nelement() for p in self.parameters()])))
 
-    def forward(self, data, covariance_test=False):
+
+    def forward_once(self, data):
         """
-        Runs a forward pass of the network.
+        Runs a single forward pass of the network.
 
         Parameters
         ----------
@@ -159,11 +154,54 @@ class CormorantPDBBind(CGModule):
         # it more general here.
         prediction = self.output_layer_atom(atom_scalars, atom_mask)
 
+        return prediction, atoms_all, edges_all
+ 
+
+    def forward(self, data, covariance_test=False):
+        """
+        Runs a single forward pass of the network.
+
+        Parameters
+        ----------
+        data : :obj:`dict`
+            Dictionary of data to pass to the network.
+        covariance_test : :obj:`bool`, optional
+            If true, returns all of the atom-level representations twice.
+
+        Returns
+        -------
+        prediction1 : :obj:`torch.Tensor`
+            The output of the first network
+        prediction2 : :obj:`torch.Tensor`
+            The output of the second network
+        """
+
+        data1 = {}
+        data2 = {}
+        data1['label'] = data['label']
+        data2['label'] = data['label']
+        data1['charges']   = data['charges1']
+        data2['charges']   = data['charges2']
+        data1['positions'] = data['positions1']
+        data2['positions'] = data['positions2']
+        data1['one_hot']   = data['one_hot1']
+        data2['one_hot']   = data['one_hot2']
+        data1['atom_mask'] = data['atom_mask1']
+        data2['atom_mask'] = data['atom_mask2']
+        data1['edge_mask'] = data['edge_mask1']
+        data2['edge_mask'] = data['edge_mask2']
+
+        prediction1, atoms_all1, edges_all1 = self.forward_once(data1)
+        prediction2, atoms_all2, edges_all2 = self.forward_once(data2)
+
+        prediction = (prediction2 - prediction1)**2
+
         # Covariance test
         if covariance_test:
-            return prediction, atoms_all, atoms_all
+            return prediction, atoms_all1, edges_all1
         else:
             return prediction
+
 
     def prepare_input(self, data):
         """
@@ -202,6 +240,7 @@ class CormorantPDBBind(CGModule):
 
         return atom_scalars, atom_mask, edge_scalars, edge_mask, atom_positions
 
+
 def expand_var_list(var, num_cg_levels):
     if type(var) is list:
         var_list = var + (num_cg_levels-len(var))*[var[-1]]
@@ -210,3 +249,5 @@ def expand_var_list(var, num_cg_levels):
     else:
         raise ValueError('Incorrect type {}'.format(type(var)))
     return var_list
+
+

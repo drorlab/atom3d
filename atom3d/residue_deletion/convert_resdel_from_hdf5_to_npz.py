@@ -177,8 +177,9 @@ class MoleculesDataset():
 # --- CONVERSION ---
 
 
-def convert_hdf5_to_npz(in_dir_name, out_dir_name, datatypes=None, 
-                        shuffle=False, num_sampled_shards=None, max_num_atoms=None):
+def convert_hdf5_to_npz(in_dir_name, out_dir_name, datatypes=None, shuffle=False, 
+                        num_sampled_shards_tr=10, num_sampled_shards_va=4, num_sampled_shards_te=5, 
+                        max_num_atoms=None):
     """Converts a data set given as hdf5 to npz train/validation/test sets.
         
     Args:
@@ -195,9 +196,15 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, datatypes=None,
     te_env_fn = in_dir_name+'/split/test_envs@100'
 
     # Create the internal data sets
-    ds_tr = MoleculesDataset(tr_env_fn, shuffle=shuffle, max_num_atoms=max_num_atoms, num_sampled_shards=int(num_sampled_shards),    name='training')
-    ds_va = MoleculesDataset(va_env_fn, shuffle=False,   max_num_atoms=max_num_atoms, num_sampled_shards=int(num_sampled_shards/10), name='validation')
-    ds_te = MoleculesDataset(te_env_fn, shuffle=False,   max_num_atoms=max_num_atoms, num_sampled_shards=int(num_sampled_shards/10), name='test')
+    ds_tr = MoleculesDataset(tr_env_fn, shuffle=shuffle, max_num_atoms=max_num_atoms, num_sampled_shards=int(num_sampled_shards_tr), name='training')
+    ds_va = MoleculesDataset(va_env_fn, shuffle=False,   max_num_atoms=max_num_atoms, num_sampled_shards=int(num_sampled_shards_va), name='validation')
+    ds_te = MoleculesDataset(te_env_fn, shuffle=False,   max_num_atoms=max_num_atoms, num_sampled_shards=int(num_sampled_shards_te), name='test')
+
+    types_tr = np.unique(np.concatenate(ds_tr.charges))
+    types_te = np.unique(np.concatenate(ds_te.charges))
+    types_va = np.unique(np.concatenate(ds_va.charges))
+
+    assert np.all(types_tr==types_te) and np.all(types_va==types_te)
 
     print('Training: %i molecules. Validation: %i molecules. Test: %i molecules.'%(len(ds_tr),len(ds_va),len(ds_te)))
 
@@ -208,12 +215,12 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, datatypes=None,
         pass
 
     # Save the data sets as compressed numpy files
-    te_file_name = out_dir_name+'/test.npz'
-    va_file_name = out_dir_name+'/valid.npz'
     tr_file_name = out_dir_name+'/train.npz'
-    ds_tr.write_compressed(te_file_name, datatypes=datatypes )
+    va_file_name = out_dir_name+'/valid.npz'
+    te_file_name = out_dir_name+'/test.npz'
+    ds_tr.write_compressed(tr_file_name, datatypes=datatypes )
     ds_va.write_compressed(va_file_name, datatypes=datatypes )
-    ds_te.write_compressed(tr_file_name, datatypes=datatypes )
+    ds_te.write_compressed(te_file_name, datatypes=datatypes )
 
     return ds_tr, ds_va, ds_te
 
@@ -228,12 +235,14 @@ if __name__ == "__main__":
     parser.add_argument('in_dir', type=str, help='directory with the raw data')
     parser.add_argument('out_dir', type=str, help='directory to write npz files')
     parser.add_argument('--maxnumat', dest='maxnumat', type=float, default=None, help='drop all structures with more than this number of atoms')
-    parser.add_argument('--numshards', dest='numshards', type=int, default=1000, help='number of shards to sample')
+    parser.add_argument('--numshards_tr', dest='numshards_tr', type=int, default=10, help='number of shards to sample for training')
+    parser.add_argument('--numshards_va', dest='numshards_va', type=int, default=4,  help='number of shards to sample for validation')
+    parser.add_argument('--numshards_te', dest='numshards_te', type=int, default=5,  help='number of shards to sample for testing')
     args = parser.parse_args()
     
     cormorant_datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
 
-    ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir, datatypes=cormorant_datatypes, 
-                                              max_num_atoms=args.maxnumat, num_sampled_shards=args.numshards)
+    ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir, datatypes=cormorant_datatypes, max_num_atoms=args.maxnumat, 
+                                              num_sampled_shards_tr=args.numshards_tr, num_sampled_shards_va=args.numshards_va, num_sampled_shards_te=args.numshards_te)
 
 

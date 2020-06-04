@@ -56,8 +56,7 @@ def main():
     model = CormorantPDBBind(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
                              args.cutoff_type, args.hard_cut_rad, args.soft_cut_rad, args.soft_cut_width,
                              args.weight_init, args.level_gain, args.charge_power, args.basis_set,
-                             charge_scale, args.gaussian_mask,
-                             args.top, args.input, args.num_mpnn_levels,
+                             charge_scale, args.gaussian_mask, args.top, args.input,
                              device=device, dtype=dtype)
 
     # Initialize the scheduler and optimizer
