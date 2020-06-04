@@ -176,8 +176,6 @@ class CormorantMutation(CGModule):
             The output of the second network
         """
 
-        print('Data:', data.keys())
-
         data1 = {}
         data2 = {}
         data1['label'] = data['label']
@@ -193,22 +191,8 @@ class CormorantMutation(CGModule):
         data1['edge_mask'] = data['edge_mask1']
         data2['edge_mask'] = data['edge_mask2']
 
-        print('charges 1:',   data1['charges'].shape)
-        print('charges 2:',   data2['charges'].shape)
-        print('positions 1:', data1['positions'].shape)
-        print('positions 2:', data2['positions'].shape)
-        print('one_hot 1:',   data1['one_hot'].shape)
-        print('one_hot 2:',   data2['one_hot'].shape)
-        print('atom_mask 1:', data1['atom_mask'].shape)
-        print('atom_mask 2:', data2['atom_mask'].shape)
-        print('edge_mask 1:', data1['edge_mask'].shape)
-        print('edge_mask 2:', data2['edge_mask'].shape)
-
         prediction1, atoms_all1, edges_all1 = self.forward_once(data1)
         prediction2, atoms_all2, edges_all2 = self.forward_once(data2)
-
-        print('prediction1:', prediction1)
-        print('prediction2:', prediction2)
 
         prediction = (prediction2 - prediction1)**2
 
