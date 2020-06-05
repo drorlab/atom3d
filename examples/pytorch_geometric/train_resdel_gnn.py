@@ -45,7 +45,7 @@ class GCN(torch.nn.Module):
         self.fc2 = Linear(hidden_dim*2, 20)
 
 
-    def forward(self, x, edge_index, edge_weight, batch):
+    def forward(self, x, edge_index, edge_weight, ca_idx, batch):
         x = self.conv1(x, edge_index, edge_weight)
         x = F.relu(x)
         x = self.bn1(x)
@@ -60,7 +60,8 @@ class GCN(torch.nn.Module):
         x = F.relu(x)
         x = self.conv5(x, edge_index, edge_weight)
         x = self.bn5(x)
-        x = global_add_pool(x, batch)
+        # x = global_add_pool(x, batch)
+        x = torch.index_select(x, 0, ca_idx)
         x = F.relu(x)
         x = F.relu(self.fc1(x))
         x = F.dropout(x, p=0.25, training=self.training)
@@ -87,6 +88,14 @@ def get_top_k_acc(output, target, k=3):
         #res.append(correct_k.mul_(100.0 / batch_size))
         return correct_k.mul_(1.0 / batch_size).item()
 
+def adjust_graph_indices(graph):
+    batch_size = len(graph.n_nodes)
+    total_n = 0
+    for i in range(batch_size-1):
+        n_nodes = graph.n_nodes[i].item()
+        total_n += n_nodes
+        graph.ca_idx[i+1] += total_n
+    return graph
 
 @torch.no_grad()
 def test(model, loader, criterion, device):
@@ -97,7 +106,11 @@ def test(model, loader, criterion, device):
     avg_top_k_acc = []
     for i, graph in enumerate(loader):
         graph = graph.to(device)
-        out = model(graph.x, graph.edge_index, graph.edge_attr.view(-1), graph.batch)
+        if len(graph.ca_idx) != batch_size:
+            # print(f'skipping batch, {len(graph1.ca_idx)} CA atoms with batch size {batch_size}')
+            continue
+        graph = adjust_graph_indices(graph)
+        out = model(graph.x, graph.edge_index, graph.edge_attr.view(-1), graph.ca_idx graph.batch)
         loss = criterion(out, graph.y)
         acc = get_acc(out, graph.y)
         top_k_acc = get_top_k_acc(out, graph.y, k=3)
@@ -159,8 +172,12 @@ def train(data_dir, device, log_dir, checkpoint, seed=None, test_mode=False):
 
         for it, graph in enumerate(train_loader):
             graph = graph.to(device)
+            if len(graph.ca_idx) != batch_size:
+                # print(f'skipping batch, {len(graph1.ca_idx)} CA atoms with batch size {batch_size}')
+                continue
+            graph = adjust_graph_indices(graph)
             optimizer.zero_grad()
-            out = model(graph.x, graph.edge_index, graph.edge_attr.view(-1), graph.batch)
+            out = model(graph.x, graph.edge_index, graph.edge_attr.view(-1), graph.ca_idx, graph.batch)
             train_loss = criterion(out, graph.y)
             train_loss.backward()
             optimizer.step()

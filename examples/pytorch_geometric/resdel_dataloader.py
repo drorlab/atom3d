@@ -41,7 +41,7 @@ class Resdel_Dataset_PTG(Dataset):
     @property
     def processed_file_names(self):
         return ['data_1.pt']
-
+        
 
     def len(self):
         return len(os.listdir(self.processed_dir))
@@ -92,6 +92,7 @@ class Collater(object):
 class DataLoader(data.DataLoader):
     r"""Data loader which merges data objects from a
     :class:`torch_geometric.data.dataset` to a mini-batch.
+
     Args:
         dataset (Dataset): The dataset from which to load the data.
         batch_size (int, optional): How many samples per batch to load.
@@ -176,7 +177,7 @@ def _save_graphs(sharded, shard_num, out_dir):
     print(f'Processing shard {shard_num:}')
     shard = sharded.read_shard(shard_num)
     for i, (e, target_df) in enumerate(shard.groupby(['ensemble', 'subunit'])):
-
+        
         subunit = e[1]
         res_name = subunit.split('_')[-1]
         label = res_label_dict[res_name]
@@ -204,3 +205,4 @@ if __name__ == "__main__":
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir)
     save_graphs(sharded, graph_dir, num=1000, num_threads=num_cores)
+

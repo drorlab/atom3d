@@ -89,6 +89,7 @@ def pdbbind_dataloader(batch_size, data_dir='../../data/pdbbind', split_file=Non
     if split_file is None:
         return DataLoader(dataset, batch_size, shuffle=True)
     indices = sp.read_split_file(split_file)
+    print(indices)
 
     # if split specifies pdb ids, convert to indices
     if isinstance(indices[0], str):
