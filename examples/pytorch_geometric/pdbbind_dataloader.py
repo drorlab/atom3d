@@ -6,6 +6,7 @@ sys.path.append('../..')
 from atom3d.util import datatypes as dt
 from atom3d.util import file as fi
 from atom3d.util import splits as sp
+from atom3d.protein_ligand.get_labels import get_label
 from atom3d.util import graph
 import os
 import torch
@@ -17,13 +18,13 @@ import pdb
 
 # loader for pytorch-geometric
 
-class GraphResDel(Dataset):
+class GraphPDBBind(Dataset):
     """
-    Residue Deletion dataset in pytorch-geometric format. 
+    PDBBind dataset in pytorch-geometric format. 
     Ref: https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/data/dataset.html#Dataset
     """
     def __init__(self, root, transform=None, pre_transform=None):
-        super(GraphResDel, self).__init__(root, transform, pre_transform)
+        super(GraphPDBBind, self).__init__(root, transform, pre_transform)
 
         self.pdb_idx_dict = self.get_idx_mapping()
         self.idx_pdb_dict = {v:k for k,v in self.pdb_idx_dict.items()}
@@ -34,7 +35,7 @@ class GraphResDel(Dataset):
 
     @property
     def processed_file_names(self):
-        num_samples = len(self.raw_file_names)
+        num_samples = len(self.raw_file_names) // 3 # each example has protein/pocket/ligand files
         return [f'data_{i}.pt' for i in range(num_samples)]
 
     def get_idx_mapping(self):
@@ -78,11 +79,17 @@ class GraphResDel(Dataset):
         return data
 
 
-def resdel_dataloader(batch_size, data_dir='../../data/residue_deletion', split=None):
+def pdbbind_dataloader(batch_size, data_dir='../../data/pdbbind', split_file=None):
     """
-    Creates dataloader for PDBBind dataset with specified split (train/test/val). 
+    Creates dataloader for PDBBind dataset with specified split. 
+    Assumes pre-computed split in 'split_file', which is used to index Dataset object
+    TODO: implement on-the-fly splitting using split functions
     """
-    dataset = GraphResDel(root=os.path.join(data_dir, split))
+    dataset = GraphPDBBind(root=data_dir)
+    if split_file is None:
+        return DataLoader(dataset, batch_size, shuffle=True)
+    indices = sp.read_split_file(split_file)
+    print(indices)
 
     # if split specifies pdb ids, convert to indices
     if isinstance(indices[0], str):
@@ -91,4 +98,7 @@ def resdel_dataloader(batch_size, data_dir='../../data/residue_deletion', split=
     return DataLoader(dataset.index_select(indices), batch_size, shuffle=True)
 
 if __name__=="__main__":
-    dataset = GraphResDel(root='../../data/residue_deletion')
+    dataset = GraphPDBBind(root='../../data/pdbbind')
+
+
+

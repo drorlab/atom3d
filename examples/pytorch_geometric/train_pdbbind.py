@@ -1,6 +1,4 @@
 #
-# GCN torch-geometric training script for PDBBind
-# based on https://github.com/rusty1s/pytorch_geometric/blob/master/examples/gcn.py
 
 import os
 import time
@@ -28,16 +26,16 @@ class GCN(torch.nn.Module):
         super(GCN, self).__init__()
         self.conv1 = GCNConv(num_features, hidden_dim)
         self.bn1 = torch.nn.BatchNorm1d(hidden_dim)
-        self.conv2 = GCNConv(hidden_dim, hidden_dim)
-        self.bn2 = torch.nn.BatchNorm1d(hidden_dim)
-        self.conv3 = GCNConv(hidden_dim, hidden_dim)
-        self.bn3 = torch.nn.BatchNorm1d(hidden_dim)
-        self.conv4 = GCNConv(hidden_dim, hidden_dim)
-        self.bn4 = torch.nn.BatchNorm1d(hidden_dim)
-        self.conv5 = GCNConv(hidden_dim, hidden_dim)
-        self.bn5 = torch.nn.BatchNorm1d(hidden_dim)
-        self.fc1 = Linear(hidden_dim, hidden_dim)
-        self.fc2 = Linear(hidden_dim, 1)
+        self.conv2 = GCNConv(hidden_dim, hidden_dim*2)
+        self.bn2 = torch.nn.BatchNorm1d(hidden_dim*2)
+        self.conv3 = GCNConv(hidden_dim*2, hidden_dim*4)
+        self.bn3 = torch.nn.BatchNorm1d(hidden_dim*4)
+        self.conv4 = GCNConv(hidden_dim*4, hidden_dim*4)
+        self.bn4 = torch.nn.BatchNorm1d(hidden_dim*4)
+        self.conv5 = GCNConv(hidden_dim*4, hidden_dim*8)
+        self.bn5 = torch.nn.BatchNorm1d(hidden_dim*8)
+        self.fc1 = Linear(hidden_dim*8, hidden_dim*4)
+        self.fc2 = Linear(hidden_dim*4, 1)
 
 
     def forward(self, x, edge_index, edge_weight, batch):
@@ -178,7 +176,7 @@ def train_pdbbind(split, architecture, base_dir, device, log_dir, seed=None, tes
     # logger.basicConfig(filename=os.path.join(log_dir, f'train_{split}_cv{fold}.log'),level=logging.INFO)
 
     num_epochs = 100
-    batch_size = 32
+    batch_size = 1
     hidden_dim = 64
     learning_rate = 1e-4
     split_dir = os.path.join(os.getcwd(), base_dir, 'splits')
@@ -188,6 +186,8 @@ def train_pdbbind(split, architecture, base_dir, device, log_dir, seed=None, tes
     train_loader = pdbbind_dataloader(batch_size, split_file=train_split)
     val_loader = pdbbind_dataloader(batch_size, split_file=val_split)
     test_loader = pdbbind_dataloader(batch_size, split_file=test_split)
+    with open(train_split) as f:
+        print(len(f.readlines()))
 
     if not os.path.exists(os.path.join(log_dir, 'params.txt')):
         with open(os.path.join(log_dir, 'params.txt'), 'w') as f:

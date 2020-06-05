@@ -1,11 +1,13 @@
 import os
 import subprocess
 from tqdm import tqdm
-import pdb
+import parallel as par
+import multiprocessing
 
 import numpy as np
 import pandas as pd
-from scipy.stats import multivariate_normal as mvn
+import random
+import torch
 
 import dotenv as de
 de.load_dotenv(de.find_dotenv(usecwd=True))
@@ -15,6 +17,7 @@ sys.path.append('../..')
 
 import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
+from atom3d.residue_deletion.util import *
 
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
@@ -23,9 +26,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 
-label_res_dict={0:'HIS',1:'LYS',2:'ARG',3:'ASP',4:'GLU',5:'SER',6:'THR',7:'ASN',8:'GLN',9:'ALA',10:'VAL',11:'LEU',12:'ILE',13:'MET',14:'PHE',15:'TYR',16:'TRP',17:'PRO',18:'GLY',19:'CYS'}
-res_label_dict={'HIS':0,'LYS':1,'ARG':2,'ASP':3,'GLU':4,'SER':5,'THR':6,'ASN':7,'GLN':8,'ALA':9,'VAL':10,'LEU':11,'ILE':12,'MET':13,'PHE':14,'TYR':15,'TRP':16,'PRO':17,'GLY':18,'CYS':19}
-bb_atoms = ['N', 'CA', 'C', 'O']
 
 gly_CB_mu = np.array([-0.5311191 , -0.75842446,  1.2198311 ], dtype=np.float32)
 gly_CB_sigma = np.array([[1.63731114e-03, 2.40018381e-04, 6.38361679e-04],
@@ -77,30 +77,16 @@ def df_to_feature(struct_df, chain_res, grid_config):
     struct_df: Dataframe with entire structure
     grid_config: defined config
     """
-    res_df = struct_df.loc[chain_res]
-    if not np.all([b in res_df['name'].to_list() for b in bb_atoms]):
-        # print('residue missing atoms... skipping')
-        return
+    chain, resnum, _ = chain_res.split('_')
+    res_df = struct_df[(struct_df.chain == chain) & (struct_df.residue == int(resnum))]
+
     CA_pos = res_df[res_df['name']=='CA'][['x', 'y', 'z']].astype(np.float32).to_numpy()[0]
     N_pos = res_df[res_df['name']=='N'][['x', 'y', 'z']].astype(np.float32).to_numpy()[0]
     C_pos = res_df[res_df['name']=='C'][['x', 'y', 'z']].astype(np.float32).to_numpy()[0]
 
-    # if label == 'GLY':
-    #     #sample CB position
-    #     CB_pos = mvn.rvs(mean=gly_CB_mu, cov=gly_CB_sigma)
-    # else:
-    # try:
-        # CB_pos = res_df[res_df['name']=='CB'][['x', 'y', 'z']].astype(np.float32).to_numpy()[0]
-    # except IndexError:
     CB_pos = CA_pos + (np.ones_like(CA_pos) * gly_CB_mu)
 
     rot_mat = get_rot_matrix(CA_pos, N_pos, C_pos, CB_pos)
-
-    # remove current residue from structure
-    struct_df = struct_df.drop(index=chain_res)
-    # add backbone atoms back in
-    res_bb = res_df['name'].isin(bb_atoms)
-    struct_df = pd.concat([struct_df, res_bb])
 
     grid = subgrid_gen.get_voxels(struct_df, CB_pos, config=grid_config, rot_mat=rot_mat)
     return grid.transpose(3, 0, 1, 2)
@@ -111,68 +97,73 @@ def dataset_generator(sharded, shard_indices, grid_config=grid_config, shuffle=T
     Generate grids from sharded dataset
     """
 
-    # if shuffle:
-    #     p = np.random.permutation(len(all_target_names))
-    #     all_target_names = all_target_names[p]
+    np.random.seed(grid_config.random_seed)
+    random.seed(grid_config.random_seed)
 
     for shard_idx in shard_indices:
         shard = sharded.read_shard(shard_idx)
-        shard = shard[shard['hetero'].str.strip()=='']
-
-        for e, target_df in shard.groupby(['ensemble']):
-            target_df = target_df.set_index(['chain', 'residue', 'resname'])
-
-            # #shuffle residues
-            # residues = np.unique(target_df.index.values)
-            # if shuffle:
-            #     np.random.shuffle(residues)
-
-            for i, res_df in target_df.groupby(['chain', 'residue', 'resname']):
-
-                chain_res = res_df.index.values[0]
-                res_name = chain_res[-1]
-                # only train on canonical residues
-                if res_name not in res_label_dict:
-                    continue
-                label = res_label_dict[res_name]
-                # print(res_name)
-                feature = df_to_feature(target_df, chain_res, grid_config)
-                if feature is None:
-                    continue
-
-                yield feature, label
-
-def sample_generator(sharded, target_names, shuffle=True):
-    """
-    Generate grids from subset of sharded dataset, specified by target_names
-    """
-    # if shuffle:
-    #     p = np.random.permutation(len(target_names))
-    #     target_names = target_names.iloc[p]
-
-    for i, target_name in enumerate(target_names):
-        target_df = sh.read_ensemble(sharded, target_name)
-        target_df = target_df[target_df['hetero'].str.strip()=='']
-        target_df = target_df.set_index(['chain', 'residue'])
-
-        residues = np.unique(target_df.index.values)
         if shuffle:
-            np.random.shuffle(residues)
+            groups = [df for _, df in shard.groupby(['ensemble', 'subunit'])]
+            random.shuffle(groups)
+            shard = pd.concat(groups).reset_index(drop=True)
 
-
-        for j, res in enumerate(residues):
-
-            res_name = target_df.loc[res]['resname'].unique()[0]
-            # only train on canonical residues
-            if res_name not in res_label_dict:
-                continue
+        for e, target_df in shard.groupby(['ensemble', 'subunit']):
+            subunit = e[1]
+            res_name = subunit.split('_')[-1]
             label = res_label_dict[res_name]
             # print(res_name)
-            feature = df_to_feature(target_df, res_name, res, grid_config)
+            feature = df_to_feature(target_df, subunit, grid_config)
             if feature is None:
                 continue
 
             yield feature, label
+
+def save_graphs(sharded, out_dir, num, num_threads=8):
+    num_shards = sharded.get_num_shards()
+    inputs = [(sharded, shard_num, out_dir)
+              for shard_num in range(num)]
+
+    # with multiprocessing.Pool(processes=num_threads) as pool:
+    #     pool.starmap(_shard_envs, inputs)
+    # par.submit_jobs(_save_graphs, inputs, num_threads)
+    _rename(out_dir)
+
+def _rename(in_dir):
+    import glob
+    curr_idx = 0 #3530580
+    in_files = glob.glob(os.path.join(in_dir, 'label_*.pt'))
+    # in_files = os.listdir(in_dir)
+    print([os.path.basename(f) for f in in_files[:100]])
+    return
+    
+    for f in tqdm(in_files):
+        fpath = os.path.join(in_dir, f)
+        outpath = os.path.join(in_dir, f'data_{curr_idx}.pt')
+        os.rename(fpath, outpath)
+        root = os.path.basename(f)[5:]
+        label_file = os.path.join(in_dir, f'label_{root}')
+        label_outpath = os.path.join(in_dir, f'label_{curr_idx}.pt')
+        os.rename(label_file, label_outpath)
+        curr_idx += 1
+
+
+def _save_graphs(sharded, shard_num, out_dir):
+    print(f'Processing shard {shard_num:}')
+    shard = sharded.read_shard(shard_num)
+    curr_idx = 0
+    for e, target_df in shard.groupby(['ensemble', 'subunit']):
+        subunit = e[1]
+        res_name = subunit.split('_')[-1]
+        label = res_label_dict[res_name]
+        # print(res_name)
+        feature = df_to_feature(target_df, subunit, grid_config)
+        if feature is None:
+            continue
+
+        torch.save(feature, os.path.join(out_dir, f'data_{shard_num}_{curr_idx}.pt'))
+        torch.save(label, os.path.join(out_dir, f'label_{shard_num}_{curr_idx}.pt'))
+        curr_idx+=1
+
 
 def normalize_plot(arr):
     arr_min = np.min(arr)
@@ -211,14 +202,11 @@ def get_all_labels(sharded):
     import json
     cts = {k:0 for k in res_label_dict.keys()}
     total = 0
-    for shard in sharded.iter_shards():
-        shard = shard.set_index(['chain', 'residue', 'resname'])
-        residues = np.unique(shard.index.values)
-        for r in residues:
-            resname = r[2]
-            if resname not in res_label_dict:
-                continue
-            cts[resname] += 1
+    for shard in tqdm(sharded.iter_shards()):
+        for e, target_df in shard.groupby(['ensemble', 'subunit']):
+            subunit = e[1]
+            res_name = subunit.split('_')[-1]
+            cts[res_name] += 1
             total += 1
     pcts = {k:0 for k in res_label_dict.keys()}
     min_ct = np.inf
@@ -237,9 +225,17 @@ def get_all_labels(sharded):
             f.write(f'{res}\t{float(cts[min_res])/ct}\n')
     return cts, pcts
 
+def get_residue_weights():
+    res_wt_dict={}
+    with open('train_res_weights') as f:
+        for line in f:
+            res, wt = line.strip().split()
+            res_wt_dict[res] = float(wt)
+    return res_wt_dict
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     sharded = sh.load_sharded('/oak/stanford/groups/rbaltman/aderry/atom3d/data/residue_deletion/test_pdbs@100/test_pdbs@100')
     cts, pcts = get_all_labels(sharded)
     print(cts)
@@ -255,3 +251,33 @@ if __name__ == "__main__":
         plot_cube(feature.transpose(1,2,3,0)[:,:,:,0], f'test_car_{label}.png')
         if i == 9:
             break
+=======
+    sharded = sh.load_sharded(O_DIR + 'atom3d/data/residue_deletion/split/train_envs@1000')
+
+    if False:
+        cts, pcts = get_all_labels(sharded)
+        print(pcts)
+        
+        total_ct = 0
+        for res, ct in cts.items():
+            total_ct += int(ct)
+                
+        print(total_ct, 'total residues')
+        # print('Testing residue deletion generator')
+        # gen = dataset_generator(sharded, range(sharded.get_num_shards()), grid_config=grid_config)
+        gen = dataset_generator(sharded, range(sharded.get_num_shards()), grid_config=grid_config)
+
+        for i, (feature, label) in tqdm(enumerate(gen)):
+            print('Generating sample {:} -> feature {:}, label {:}'.format(
+                i, feature.shape, label))
+        #     plot_cube(feature.transpose(1,2,3,0)[:,:,:,0], f'test_car_{label}.png')
+        #     if i == 9:
+        #         break
+    num_cores = multiprocessing.cpu_count()
+
+    graph_dir = SC_DIR + 'atom3d/residue_deletion/cube_pt/train'
+    if not os.path.exists(graph_dir):
+        os.makedirs(graph_dir)
+    save_graphs(sharded, graph_dir, num=1000, num_threads=num_cores)
+
+>>>>>>> GNN training code
