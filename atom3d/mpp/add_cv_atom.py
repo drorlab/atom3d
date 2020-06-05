@@ -33,5 +33,5 @@ print('cv_atom:')
 print(' mean:', np.mean(df['cv_atom']))
 print(' sdev:', np.std(df['cv_atom']))
 
-df.to_csv(out_file)
+df.to_csv(out_file, index=False)
 

@@ -164,7 +164,7 @@ class GraphQM9(InMemoryDataset):
 
         with open(self.raw_paths[1], 'r') as f:
             target = f.read().split('\n')[1:-1]
-            target = [[float(x) for x in line.split(',')[1:20]]
+            target = [[float(x) for x in line.split(',')[1:21]]
                       for line in target]
             target = torch.tensor(target, dtype=torch.float)
             target = torch.cat([target[:, 3:], target[:, :3]], dim=-1)
