@@ -100,7 +100,7 @@ def dataset_generator(sharded, shard_indices, shuffle=True):
 
 
 if __name__ == "__main__":
-    sharded = sh.load_sharded('/oak/stanford/groups/rbaltman/aderry/atom3d/data/residue_deletion/test_pdbs@100/test_pdbs@100')
+    sharded = sh.load_sharded(O_DIR+'atom3d/data/residue_deletion/test_pdbs@100/test_pdbs@100')
 
     print('Testing residue deletion generator')
     gen = dataset_generator(
