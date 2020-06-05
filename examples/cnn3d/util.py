@@ -4,6 +4,7 @@ import operator
 import numpy as  np
 import pandas as pd
 
+
 class dotdict(dict):
     """ dot.notation access to dictionary attributes """
     __getattr__ = dict.get

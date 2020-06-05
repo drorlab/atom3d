@@ -23,8 +23,10 @@ import atom3d.util.shard as sh
 import examples.cnn3d.model as model
 import examples.cnn3d.feature_ppi as feature_ppi
 import examples.cnn3d.subgrid_gen as subgrid_gen
-
 import examples.cnn3d.util as util
+
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
 
 
 def compute_perf(results):
@@ -432,17 +434,17 @@ def create_train_parser():
 
     parser.add_argument(
         '--train_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_train@1000')
+        default=os.environ['PPI_TRAIN_SHARDED'])
     parser.add_argument(
         '--val_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_val@1000')
+        default=os.environ['PPI_VAL_SHARDED'])
     parser.add_argument(
         '--test_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DB5/sharded/pairs@10')
+        default=os.environ['PPI_TEST_SHARDED'])
 
     parser.add_argument(
         '--output_dir', type=str,
-        default='/scratch/users/psuriana/atom3d/model')
+        default=os.environ['MODEL_DIR'])
 
     # Training parameters
     parser.add_argument('--max_num_ensembles_train', type=int, default=None)

@@ -23,6 +23,9 @@ import examples.cnn3d.feature_pdbbind as feature_pdbbind
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 def compute_stats(results):
     res = {}
@@ -364,24 +367,24 @@ def create_train_parser():
 
     parser.add_argument(
         '--data_filename', type=str,
-        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/pdbbind_3dcnn.h5')
+        default=os.environ['PDBBIND_DATA_FILENAME'])
     parser.add_argument(
         '--labels_filename', type=str,
-        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/pdbbind_refined_set_labels.csv')
+        default=os.environ['PDBBIND_LABELS_FILENAME'])
 
     parser.add_argument(
         '--train_split_filename', type=str,
-        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/split_identity60/train_identity60.txt')
+        default=os.environ['PDBBIND_TRAIN_SPLIT_FILENAME'])
     parser.add_argument(
         '--val_split_filename', type=str,
-        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/split_identity60/val_identity60.txt')
+        default=os.environ['PDBBIND_VAL_SPLIT_FILENAME'])
     parser.add_argument(
         '--test_split_filename', type=str,
-        default='/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/split_identity60/test_identity60.txt')
+        default=os.environ['PDBBIND_TEST_SPLIT_FILENAME'])
 
     parser.add_argument(
         '--output_dir', type=str,
-        default='/scratch/users/psuriana/atom3d/model')
+        default=os.environ['MODEL_DIR'])
 
     # Training parameters
     parser.add_argument('--max_pdbs_train', type=int, default=None)

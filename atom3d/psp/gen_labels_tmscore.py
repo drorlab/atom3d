@@ -10,6 +10,9 @@ import parallel as par
 import atom3d.psp.util as util
 import atom3d.util.file as fi
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 def run_tmscore_per_structure(tmscore_exe, decoy, native):
     '''
@@ -73,8 +76,7 @@ def run_tmscore_per_target(tmscore_exe, output_filename, target_name,
 @click.option('--struct_format', '-ext', default='pdb')
 @click.option('--num_cpus', '-c', default=1)
 @click.option('--overwrite', '-ow', is_flag=True)
-@click.option('--tmscore_exe', '-tm',
-              default='/oak/stanford/groups/rondror/projects/atom3d/software/tmscore/TMscore')
+@click.option('--tmscore_exe', '-tm', default=os.environ['TMSCORE_EXE'])
 def main(data_dir, target_list, labels_dir, struct_format,
          num_cpus, overwrite, tmscore_exe):
     """ Compute rmsd, tm-score, gdt-ts, gdt-ha of decoy structures

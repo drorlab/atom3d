@@ -25,6 +25,9 @@ import examples.cnn3d.feature_activity as feature_activity
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 def major_vote(results):
     data = []
@@ -429,17 +432,17 @@ def create_train_parser():
 
     parser.add_argument(
         '--train_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/ligand_activity_prediction/split-20200528/pairs_train@10')
+        default=os.environ['ACTIVITY_TRAIN_SHARDED'])
     parser.add_argument(
         '--val_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/ligand_activity_prediction/split-20200528/pairs_val@10')
+        default=os.environ['ACTIVITY_VAL_SHARDED'])
     parser.add_argument(
         '--test_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/ligand_activity_prediction/split-20200528/pairs_test@10')
+        default=os.environ['ACTIVITY_TEST_SHARDED'])
 
     parser.add_argument(
         '--output_dir', type=str,
-        default='/scratch/users/psuriana/atom3d/model')
+        default=os.environ['MODEL_DIR'])
 
     # Training parameters
     parser.add_argument('--max_shards_train', type=int, default=None)

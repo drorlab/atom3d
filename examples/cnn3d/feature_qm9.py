@@ -7,6 +7,9 @@ import pandas as pd
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 grid_config = util.dotdict({
     # Mapping from elements to position in channel dimension.
@@ -100,9 +103,8 @@ def get_data_stats(data_filename):
 
 
 if __name__ == "__main__":
-    base_filename = '/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/test'
-    data_filename = base_filename + '.h5'
-    labels_filename = base_filename + '.csv'
+    data_filename = os.environ['QM9_TEST_DATA_FILENAME']
+    labels_filename = os.environ['QM9_TEST_LABELS_FILENAME']
 
     data_stats_df = get_data_stats(data_filename)
 

@@ -1,10 +1,13 @@
-import tqdm
+import os
 
 import numpy as np
 import pandas as pd
 
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
+
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
 
 
 grid_config = util.dotdict({
@@ -116,9 +119,9 @@ def get_data_stats(data_filename):
 
 
 if __name__ == "__main__":
-    data_filename = '/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/pdbbind_3dcnn.h5'
-    labels_filename = '/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/pdbbind_refined_set_labels.csv'
-    split_filename = '/home/users/psuriana/atom3d/examples/cnn3d/data/pdbbind/splits/core_split/test.txt'
+    data_filename = os.environ['PDBBIND_DATA_FILENAME']
+    labels_filename = os.environ['PDBBIND_LABELS_FILENAME']
+    split_filename = os.environ['PDBBIND_TEST_SPLIT_FILENAME']
 
     data_stats_df = get_data_stats(data_filename)
 

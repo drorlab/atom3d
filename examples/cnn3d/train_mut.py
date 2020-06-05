@@ -25,6 +25,9 @@ import examples.cnn3d.feature_mut as feature_mut
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 def major_vote(results):
     data = []
@@ -141,7 +144,6 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     predict = tf.round(tf.nn.sigmoid(logits), name='predict')
 
     # Loss
-    #loss = tf.losses.sigmoid_cross_entropy(target, logits)
     loss = balanced_loss(target, logits, args.grid_config.neg_to_pos_ratio)
 
     # Accuracy
@@ -434,17 +436,17 @@ def create_train_parser():
 
     parser.add_argument(
         '--train_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_train@40')
+        default=os.environ['MUT_TRAIN_SHARDED'])
     parser.add_argument(
         '--val_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_val@40')
+        default=os.environ['MUT_VAL_SHARDED'])
     parser.add_argument(
         '--test_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_test@40')
+        default=os.environ['MUT_TEST_SHARDED'])
 
     parser.add_argument(
         '--output_dir', type=str,
-        default='/scratch/users/psuriana/atom3d/model')
+        default=os.environ['MODEL_DIR'])
 
     # Training parameters
     parser.add_argument('--max_pos_per_shard', type=int, default=20)

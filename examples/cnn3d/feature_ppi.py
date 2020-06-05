@@ -1,15 +1,12 @@
 import math
 import os
-import subprocess
-import tqdm
-import warnings
 
 import collections as col
 import numpy as np
 import pandas as pd
 
 import dotenv as de
-de.load_dotenv(de.find_dotenv())
+de.load_dotenv(de.find_dotenv(usecwd=True))
 
 import atom3d.util.datatypes as dt
 import atom3d.ppi.neighbors as nb
@@ -221,10 +218,9 @@ def get_data_stats(sharded_list):
 
 if __name__ == "__main__":
     sharded_path_list = [
-        #'/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_train@1000',
-        #'/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_val@1000',
-        #'/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_test@1000',
-        '/oak/stanford/groups/rondror/projects/atom3d/protein_interface_prediction/DB5/sharded/pairs@10'
+        #os.environ['PPI_TRAIN_SHARDED'],
+        #os.environ['PPI_VAL_SHARDED'],
+        os.environ['PPI_TEST_SHARDED'],
         ]
     sharded_list = [sh.load_sharded(path) for path in sharded_path_list]
 

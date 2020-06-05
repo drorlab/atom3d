@@ -12,6 +12,9 @@ import parallel as par
 
 import atom3d.util.file as fi
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 def __subprocess_run(cmd):
     try:
@@ -29,8 +32,6 @@ def parse_ss2_file(ss2_filename, secstructs_dir, target):
     df = pd.read_csv(ss2_filename, delimiter='\s*', skiprows=[0], header=None,
                      names=['residue', 'resname', 'ss', 'coil', 'helix', 'strand'],
                      engine='python').dropna()
-    # Convert 1-letter to 3-letter AA code
-    #df['resname'] = df['resname'].apply(lambda x: Bio.SeqUtils.seq3(x).upper())
     # Insert target name
     df.insert(0, 'target', target)
     # Write to file
@@ -136,11 +137,11 @@ def run_psipred(blast_path, nr_path, psipred_path, pssms_dir, psfms_dir,
 @click.option('--tmp_dir', '-tmp', default='/tmp/psipred/')
 @click.option('--num_cpus', '-c', default=1)
 @click.option('--blast_path', '-bl',
-              default='/oak/stanford/groups/rondror/projects/atom3d/software/blast/bin')
+              default=os.environ['BLAST_BIN'])
 @click.option('--nr_path', '-nr',
-              default='/oak/stanford/groups/rondror/projects/atom3d/software/non-redundant/nr')
+              default=os.environ['NR_BIN'])
 @click.option('--psipred_path', '-psi',
-              default='/oak/stanford/groups/rondror/projects/atom3d/software/psipred')
+              default=os.environ['PSIPRERD_PATH'])
 def main(data_dir, target_list, fastas_dir, pssms_dir, psfms_dir,
          secstructs_dir, num_cpus, blast_path, nr_path, psipred_path):
     """ Run psipreds to generate the PSSMs and secondary structure predictions
@@ -180,7 +181,6 @@ def main(data_dir, target_list, fastas_dir, pssms_dir, psfms_dir,
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
-    #logging.basicConfig(level=logging.DEBUG, format=log_fmt)
+    logging.basicConfig(level=logging.DEBUG, format=log_fmt)
 
     main()

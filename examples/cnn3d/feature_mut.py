@@ -1,14 +1,11 @@
 import math
 import os
-import subprocess
-import tqdm
-import warnings
 
 import numpy as np
 import pandas as pd
 
 import dotenv as de
-de.load_dotenv(de.find_dotenv())
+de.load_dotenv(de.find_dotenv(usecwd=True))
 
 import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
@@ -205,9 +202,10 @@ def get_data_stats(sharded_list, center_at_mut=True):
 
 if __name__ == "__main__":
     sharded_path_list = [
-        #'/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_train@40',
-        #'/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_val@40',
-        '/oak/stanford/groups/rondror/projects/atom3d/mutation_prediction/split/pairs_test@40']
+        #os.environ['MUT_TRAIN_SHARDED'],
+        #os.environ['MUT_VAL_SHARDED'],
+        os.environ['MUT_TEST_SHARDED'],
+        ]
     sharded_list = [sh.load_sharded(path) for path in sharded_path_list]
 
     data_stats_df = get_data_stats(sharded_list, center_at_mut=True)

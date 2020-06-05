@@ -24,6 +24,9 @@ import examples.cnn3d.feature_rna as feature_rna
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 def plot_scatter(df):
     import seaborn as sns; sns.set()
@@ -440,16 +443,16 @@ def create_train_parser():
 
     parser.add_argument(
         '--train_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/rna_structure_prediction/split/structures_train@10')
+        default=os.environ['RNA_TRAIN_SHARDED'])
     parser.add_argument(
         '--val_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/rna_structure_prediction/split/structures_val@10')
+        default=os.environ['RNA_VAL_SHARDED'])
     parser.add_argument(
         '--test_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/rna_structure_prediction/split/structures_test@10')
+        default=os.environ['RNA_TEST_SHARDED'])
     parser.add_argument(
         '--output_dir', type=str,
-        default='/scratch/users/psuriana/atom3d/model')
+        default=os.environ['MODEL_DIR'])
 
     # Training parameters
     parser.add_argument('--max_shards_train', type=int, default=None)

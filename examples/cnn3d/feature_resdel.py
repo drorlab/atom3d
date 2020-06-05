@@ -8,7 +8,7 @@ import pandas as pd
 from scipy.stats import multivariate_normal as mvn
 
 import dotenv as de
-de.load_dotenv(de.find_dotenv())
+de.load_dotenv(de.find_dotenv(usecwd=True))
 
 import sys
 sys.path.append('../..')

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 import dotenv as de
-de.load_dotenv(de.find_dotenv())
+de.load_dotenv(de.find_dotenv(usecwd=True))
 
 import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
@@ -121,10 +121,6 @@ def dataset_generator(sharded, scores_dir, grid_config, score_type='gdt_ts',
                                   (scores_df.decoy == decoy_name)][score_type].values
                 num_decoys += 1
 
-                #print('Target {:} ({:}/{:}): decoy {:} ({:}/{:}) -> feature {:}, score {:}'.format(
-                #    target_name, i+1, len(target_names), decoy_name, j+1,
-                #    len(decoy_names), feature.shape, score.shape))
-
                 yield '{:}/{:}.pdb'.format(target_name, decoy_name), feature, score
 
 
@@ -154,13 +150,13 @@ def get_data_stats(sharded_list):
 
 if __name__ == "__main__":
     sharded_path_list = [
-        #'/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/train_decoy_20@508',
-        #'/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/val_decoy_20@56',
-        '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_20/test_decoy_all@85',
+        #os.environ['PSP_TRAIN_SHARDED'],
+        #os.environ['PSP_VAL_SHARDED'],
+        os.environ['PSP_TEST_SHARDED'],
     ]
     sharded_list = [sh.load_sharded(path) for path in sharded_path_list]
 
-    scores_dir = '/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/labels/scores'
+    scores_dir = os.environ['PSP_SCORES_DIR']
 
     data_stats_df = get_data_stats(sharded_list)
 

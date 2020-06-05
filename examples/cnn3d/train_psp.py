@@ -24,6 +24,9 @@ import examples.cnn3d.feature_psp as feature_psp
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 def compute_global_correlations(results):
     per_target = []
@@ -416,19 +419,19 @@ def create_train_parser():
 
     parser.add_argument(
         '--scores_dir', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/labels/scores')
+        default=os.environ['PSP_SCORES_DIR'])
     parser.add_argument(
         '--train_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/train_decoy_50@508')
+        default=os.environ['PSP_TRAIN_SHARDED'])
     parser.add_argument(
         '--val_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/val_decoy_50@56')
+        default=os.environ['PSP_VAL_SHARDED'])
     parser.add_argument(
         '--test_sharded', type=str,
-        default='/oak/stanford/groups/rondror/projects/atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
+        default=os.environ['PSP_TEST_SHARDED'])
     parser.add_argument(
         '--output_dir', type=str,
-        default='/scratch/users/psuriana/atom3d/model')
+        default=os.environ['MODEL_DIR'])
 
     # Training parameters
     parser.add_argument('--max_targets_train', type=int, default=None)

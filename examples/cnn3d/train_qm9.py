@@ -23,10 +23,11 @@ import examples.cnn3d.feature_qm9 as feature_qm9
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
+import dotenv as de
+de.load_dotenv(de.find_dotenv(usecwd=True))
+
 
 def compute_global_correlations(results):
-    # Drop duplicated data
-    #results = results.drop_duplicates(subset=['structure'], keep='first')
     res = {}
     all_true = results['true'].astype(float)
     all_pred = results['pred'].astype(float)
@@ -37,9 +38,6 @@ def compute_global_correlations(results):
 
 
 def compute_mean_absolute_error(results):
-    # Drop duplicated data
-    results = results.drop_duplicates(subset=['structure'], keep='first')
-
     all_true = results['true'].astype(float)
     all_pred = results['pred'].astype(float)
     mae = np.abs(all_true-all_pred).mean()
@@ -241,7 +239,7 @@ def train_model(sess, args):
 
         per_epoch_val_losses = []
         for epoch in range(1, args.num_epochs+1):
-            random_seed = args.random_seed #random.randint(1, 10e6)
+            random_seed = args.random_seed
             logging.info('Epoch {:} - random_seed: {:}'.format(epoch, args.random_seed))
 
             logging.debug('Creating train generator...')
@@ -383,28 +381,28 @@ def create_train_parser():
 
     parser.add_argument(
         '--train_data_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/train.h5')
+        default=os.environ['QM9_TRAIN_DATA_FILENAME'])
     parser.add_argument(
         '--train_labels_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/train.csv')
+        default=os.environ['QM9_TRAIN_LABELS_FILENAME'])
 
     parser.add_argument(
         '--val_data_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/valid.h5')
+        default=os.environ['QM9_VAL_DATA_FILENAME'])
     parser.add_argument(
         '--val_labels_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/valid.csv')
+        default=os.environ['QM9_VAL_LABELS_FILENAME'])
 
     parser.add_argument(
         '--test_data_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/test.h5')
+        default=os.environ['QM9_TEST_DATA_FILENAME'])
     parser.add_argument(
         '--test_labels_filename', type=str,
-        default='/oak/stanford/groups/rondror/users/mvoegele/atom3d/data/qm9/hdf5/test.csv')
+        default=os.environ['QM9_TEST_LABELS_FILENAME'])
 
     parser.add_argument(
         '--output_dir', type=str,
-        default='/scratch/users/psuriana/atom3d/model')
+        default=os.environ['MODEL_DIR'])
 
     # Training parameters
     parser.add_argument('--max_mols_train', type=int, default=None)
@@ -449,15 +447,6 @@ def main():
     args = parser.parse_args()
 
     args.__dict__['grid_config'] = feature_qm9.grid_config
-
-    '''if args.test_only:
-        with open(os.path.join(args.model_dir, 'config.json')) as f:
-            model_config = json.load(f)
-            args.num_conv = model_config['num_conv']
-            args.use_batch_norm = model_config['use_batch_norm']
-            if 'grid_config' in model_config:
-                args.__dict__['grid_config'] = util.dotdict(
-                    model_config['grid_config'])'''
 
     if args.test_only or args.resume_training:
         test_only = args.test_only
