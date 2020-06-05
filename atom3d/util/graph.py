@@ -7,11 +7,11 @@ import atom3d. util.file as fi
 import torch
 import torch.nn.functional as F
 from scipy.spatial import KDTree
-#from rdkit import Chem
+from rdkit import Chem
 
 
-# PDB atom names -- these include co-crystallized metals with >5 occurrences in PDBBind
-prot_atoms = ['C', 'H', 'O', 'N', 'S', 'P', 'ZN', 'NA', 'FE', 'CA', 'MN', 'NI', 'CO', 'MG', 'CU', 'X'] 
+# PDB atom names -- these include co-crystallized metals
+prot_atoms = ['C', 'H', 'O', 'N', 'S', 'P', 'ZN', 'NA', 'FE', 'CA', 'MN', 'NI', 'CO', 'MG', 'CU', 'CL', 'SE', 'F', 'X'] 
 # RDKit molecule atom names
 mol_atoms = ['C', 'N', 'O', 'S', 'F', 'Si', 'P', 'Cl', 'Br', 'Mg', 'Na',
                                        'Ca', 'Fe', 'As', 'Al', 'I', 'B', 'V', 'K', 'Tl', 'Yb',
@@ -41,7 +41,7 @@ def prot_df_to_graph(df, edge_dist_cutoff=4.5):
 	edges = torch.LongTensor(edge_tuples).t().contiguous()
 
 	node_feats = torch.FloatTensor([one_of_k_encoding_unk(e, prot_atoms) for e in df['element']])
-	edge_feats = torch.FloatTensor([np.linalg.norm(node_pos[i]-node_pos[j]) for i,j in edge_tuples]).view(-1,1)
+	edge_feats = torch.FloatTensor([1.0 / (np.linalg.norm(node_pos[i]-node_pos[j]) + 1e-5) for i,j in edge_tuples]).view(-1,1)
 	# feats = F.one_hot(elems, num_classes=len(atom_int_dict))
 
 	return node_feats, edges, edge_feats, node_pos
@@ -61,7 +61,7 @@ def prot_df_to_res_graph(df, edge_dist_cutoff=9.0):
         node_pos (FloatTensor): x-y-z coordinates of each node
     """
     # PDB atom names -- these include co-crystallized metals with >5 occurrences in PDBBind
-    prot_atoms = ['ALA', 'CYS', 'ASP', 'GLU', 'PHE', 'GLY', 'HIS', 'ILE', 'LYS', 'LEU', 'MET', 'ASN', 'PRO', 'GLN', 'ARG', 'SER', 'THR', 'VAL', 'TRP', 'TYR'] 
+    residues = ['ALA', 'CYS', 'ASP', 'GLU', 'PHE', 'GLY', 'HIS', 'ILE', 'LYS', 'LEU', 'MET', 'ASN', 'PRO', 'GLN', 'ARG', 'SER', 'THR', 'VAL', 'TRP', 'TYR'] 
     
     df = df[df['name']=='CA']
     node_pos = torch.FloatTensor(df[['x', 'y', 'z']].to_numpy())
@@ -70,8 +70,8 @@ def prot_df_to_res_graph(df, edge_dist_cutoff=9.0):
     edge_tuples = list(kd_tree.query_pairs(edge_dist_cutoff))
     edges = torch.LongTensor(edge_tuples).t().contiguous()
 
-    node_feats = torch.FloatTensor([one_of_k_encoding_unk(e, prot_atoms) for e in df['resname']])
-    edge_feats = torch.FloatTensor([np.linalg.norm(node_pos[i]-node_pos[j]) for i,j in edge_tuples]).view(-1,1)
+    node_feats = torch.FloatTensor([one_of_k_encoding(e, residues) for e in df['resname']])
+    edge_feats = torch.FloatTensor([1.0 / np.linalg.norm(node_pos[i]-node_pos[j]) for i,j in edge_tuples]).view(-1,1)
     # feats = F.one_hot(elems, num_classes=len(atom_int_dict))
 
     return node_feats, edges, edge_feats, node_pos
@@ -145,7 +145,7 @@ def edges_between_graphs(pos1, pos2):
     edge_weights = torch.FloatTensor(edge_weights).view(-1,1)
     return edges, edge_weights
 
-
+## adapted from DeepChem repository:
 def one_of_k_encoding(x, allowable_set):
     if x not in allowable_set:
         raise Exception("input {0} not in allowable set{1}:".format(x, allowable_set))

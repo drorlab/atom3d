@@ -52,8 +52,6 @@ def get_grid(df, center, config, rot_mat=np.eye(3, 3)):
     # Apply rotation matrix.
     at = np.dot(at, rot_mat)
     at = (np.around((at + true_radius) / config.resolution - 0.5)).astype(np.int16)
-    # bins = np.linspace(-true_radius, true_radius, size+1)
-    # at_bins = np.digitize(at, bins)
 
     # Prune out atoms outside of grid as well as non-existent atoms.
     sel = np.all(at >= 0, axis=1) & np.all(at < size, axis=1) & (elements != '')
@@ -87,8 +85,6 @@ def get_voxels(df, center, config, rot_mat=np.eye(3, 3)):
     """
     size = grid_size(config)
     true_radius = size * config.resolution / 2.0
-
-    df = df.dropna(subset=['x','y','z'])
 
     # Select valid atoms.
     at = df[['x', 'y', 'z']].values.astype(np.float32)
