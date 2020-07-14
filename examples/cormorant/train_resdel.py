@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from math import sqrt
 
-from cormorant_resdel import CormorantResDel
+from cormorant.models import CormorantResDel
 from cormorant.models.autotest import cormorant_tests
 
 from cormorant.engine import Engine
