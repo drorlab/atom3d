@@ -36,20 +36,6 @@ grid_config = util.dotdict({
 })
 
 
-def read_scores(scores_dir, targets):
-    """
-    Return a pandas DataFrame containing scores of all decoys for all targets
-    in <targets>. Search in <scores_dir> for the label files.
-    """
-    frames = []
-    for target in targets:
-        df = pd.read_csv(os.path.join(scores_dir, '{:}.dat'.format(target)),
-                         delimiter='\s+', engine='python').dropna()
-        frames.append(df)
-    scores_df = dt.merge_dfs(frames)
-    return scores_df
-
-
 def df_to_feature(struct_df, grid_config, random_seed=None):
     pos = struct_df[['x', 'y', 'z']].astype(np.float32)
     center = util.get_center(pos)
@@ -60,13 +46,12 @@ def df_to_feature(struct_df, grid_config, random_seed=None):
     return grid
 
 
-def dataset_generator(sharded, scores_dir, grid_config, score_type='gdt_ts',
+def dataset_generator(sharded, grid_config, score_type='gdt_ts',
                       shuffle=True, repeat=None, max_targets=None,
                       max_decoys=None, max_dist_threshold=300.0,
                       random_seed=None):
 
     all_target_names = np.squeeze(sharded.get_names())
-    scores_df = read_scores(scores_dir, all_target_names)
 
     num_shards = sharded.get_num_shards()
     all_shard_nums = np.arange(num_shards)
@@ -85,6 +70,7 @@ def dataset_generator(sharded, scores_dir, grid_config, score_type='gdt_ts',
         shard_nums = all_shard_nums if max_targets is None else all_shard_nums[:max_targets]
 
         for i, shard_num in enumerate(shard_nums):
+            scores_df = sharded.read_shard(shard_num, key='labels')
             target_df = sharded.read_shard(shard_num, key='structures')
             target_name = target_df.ensemble.unique()[0]
 
@@ -117,8 +103,8 @@ def dataset_generator(sharded, scores_dir, grid_config, score_type='gdt_ts',
                         continue'''
 
                 feature = df_to_feature(struct_df, grid_config, random_seed)
-                score = scores_df[(scores_df.target == target_name) & \
-                                  (scores_df.decoy == decoy_name)][score_type].values
+                score = scores_df[(scores_df.ensemble == target_name) & \
+                                  (scores_df.subunit == decoy_name)][score_type].values
                 num_decoys += 1
 
                 yield '{:}/{:}.pdb'.format(target_name, decoy_name), feature, score
@@ -151,19 +137,17 @@ def get_data_stats(sharded_list):
 if __name__ == "__main__":
     sharded_path_list = [
         #os.environ['PSP_TRAIN_SHARDED'],
-        #os.environ['PSP_VAL_SHARDED'],
-        os.environ['PSP_TEST_SHARDED'],
+        os.environ['PSP_VAL_SHARDED'],
+        #os.environ['PSP_TEST_SHARDED'],
     ]
     sharded_list = [sh.load_sharded(path) for path in sharded_path_list]
 
-    scores_dir = os.environ['PSP_SCORES_DIR']
-
-    data_stats_df = get_data_stats(sharded_list)
+    #data_stats_df = get_data_stats(sharded_list)
 
     print('\nTesting PSP feature generator')
     gen = dataset_generator(
-        sharded_list[-1], scores_dir, grid_config, score_type='gdt_ts',
-        shuffle=True, repeat=25, max_targets=None, max_decoys=1,
+        sharded_list[-1], grid_config, score_type='gdt_ts',
+        shuffle=True, repeat=5, max_targets=None, max_decoys=1,
         max_dist_threshold=150.0)
 
     for i, (struct_name, feature, score) in enumerate(gen):

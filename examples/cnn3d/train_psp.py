@@ -284,7 +284,7 @@ def train_model(sess, args):
             logging.debug('Creating train generator...')
             train_generator_callable = functools.partial(
                 feature_psp.dataset_generator,
-                args.train_sharded, args.scores_dir, args.grid_config,
+                args.train_sharded, args.grid_config,
                 score_type=args.score_type,
                 shuffle=args.shuffle,
                 repeat=args.repeat_gen,
@@ -296,7 +296,7 @@ def train_model(sess, args):
             logging.debug('Creating val generator...')
             val_generator_callable = functools.partial(
                 feature_psp.dataset_generator,
-                args.val_sharded, args.scores_dir, args.grid_config,
+                args.val_sharded, args.grid_config,
                 score_type=args.score_type,
                 shuffle=args.shuffle,
                 repeat=1,#*args.repeat_gen,
@@ -377,7 +377,7 @@ def train_model(sess, args):
 
     test_generator_callable = functools.partial(
         feature_psp.dataset_generator,
-        args.test_sharded, args.scores_dir, args.grid_config,
+        args.test_sharded, args.grid_config,
         score_type=args.score_type,
         shuffle=args.shuffle,
         repeat=1,
@@ -417,9 +417,6 @@ def train_model(sess, args):
 def create_train_parser():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        '--scores_dir', type=str,
-        default=os.environ['PSP_SCORES_DIR'])
     parser.add_argument(
         '--train_sharded', type=str,
         default=os.environ['PSP_TRAIN_SHARDED'])

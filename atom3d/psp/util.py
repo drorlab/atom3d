@@ -1,6 +1,9 @@
 import os
 
 import collections as col
+import pandas as pd
+
+import atom3d.util.file as fi
 
 
 def get_target_name(filename):
@@ -41,7 +44,8 @@ def read_labels(labels_dir, ext='dat'):
     frames = []
     for filename in files:
         target_name = get_target_name(filename)
-        df = pd.read_csv(filename, delimiter='\s*', engine='python').dropna()
+        df = pd.read_csv(filename, delimiter='\s*', engine='python',
+                         index_col=[0, 1]).dropna()
         frames.append(df)
-    all_df = pd.concat(frames, sort=False).reset_index(drop=True)
+    all_df = pd.concat(frames, sort=False)
     return all_df

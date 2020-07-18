@@ -55,6 +55,10 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     max_pool_strides = [2]*num_conv
     fc_units = [512]
 
+    feature = tf.Print(feature, [tf.shape(feature)],
+         message="feature: ",
+         first_n=1, summarize=10)
+
     output = model.single_model(
         feature,
         is_training,
