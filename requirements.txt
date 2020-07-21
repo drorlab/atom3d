@@ -1,13 +1,5 @@
-argparse
-biopython
-click
-easy-parallel
-h5py
-numpy
-pandas
-python-dotenv>=0.5.1
-scipy
-sklearn
-tables
-torch
-tqdm
+# local package
+-e .
+
+# external requirements
+sphinx

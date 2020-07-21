@@ -1,18 +1,26 @@
+.PHONY: clean data lint requirements
+
+#################################################################################
+# GLOBALS                                                                       #
+#################################################################################
+
+PYTHON_INTERPRETER = python3
+
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
 
 ## Install Python Dependencies
 requirements:
-	conda install -c conda-forge -y rdkit
-	pip install -r requirements.txt
+	$(PYTHON_INTERPRETER) -m pip install -U pip setuptools wheel
+	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
 
-# Setup environment file.
-env:
-	cp -n .env.template .env
+## Delete all compiled Python files
+clean:
+	find . -type f -name "*.py[co]" -delete
+	find . -type d -name "__pycache__" -delete
+	find . -type f -name ".*.swp" -delete
 
-tensorflow-gpu:
-	pip install tensorflow-gpu==1.15.0
-
-tensorflow:
-	pip install tensorflow==1.15.0
+## Lint using flake8
+lint:
+	flake8 src
