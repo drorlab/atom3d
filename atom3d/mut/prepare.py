@@ -19,7 +19,7 @@ def split(input_sharded, output_root, shuffle_buffer):
 
     all_chain_sequences = []
     logger.info('Loading chain sequences')
-    for shard in input_sharded.iter_shards():
+    for _, shard in input_sharded.iter_shards():
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
 
     logger.info('Splitting by cluster')
