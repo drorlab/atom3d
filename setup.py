@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='atom3d',
-    packages=find_packages(),
+    packages=['atom3d', 'atom3d.util'],
     version='0.1.0',
     description='ATOM3D: Tasks On Molecules in 3 Dimensions',
     author='Raphael Townshend',
