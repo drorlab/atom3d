@@ -4,12 +4,12 @@ import parallel as par
 import numpy as np
 import pandas as pd
 
-import atom3d.psp.util as psp_util
+import atom3d.psr.util as psr_util
 import atom3d.util.log as log
 import atom3d.util.shard as sh
 
 
-logger = log.getLogger('psp_label')
+logger = log.getLogger('psr_label')
 
 
 @click.command(help='Label RSP structures with RMSD, GDT_TS, GDT_HA, TM-label to native.')
@@ -30,7 +30,7 @@ def gen_labels_sharded(sharded_path, label_dir, num_threads, overwrite):
     else:
         produced_shards = []
 
-    labels = psp_util.read_labels(label_dir)
+    labels = psr_util.read_labels(label_dir)
 
     work_shards = set(requested_shards).difference(produced_shards)
     logger.info(f'{len(requested_shards):} requested, '

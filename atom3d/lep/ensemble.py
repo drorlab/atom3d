@@ -1,11 +1,11 @@
-"""Code to ensemble ligand activity prediction (LAP) dataset."""
+"""Code to ensemble ligand efficacy prediction (LEP) dataset."""
 import collections as col
 import os
 
 import pandas as pd
 
 
-def lap_ensembler(pdb_files):
+def lep_ensembler(pdb_files):
     dirs = list(set([os.path.dirname(f) for f in pdb_files]))
     info_files = [os.path.join(x, 'info.csv') for x in dirs]
     labels = pd.concat([pd.read_csv(x) for x in info_files])

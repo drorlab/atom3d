@@ -6,7 +6,7 @@ import tqdm
 import numpy as np
 import pandas as pd
 
-import atom3d.psp.util as util
+import atom3d.psr.util as util
 import atom3d.util.datatypes as dt
 import atom3d.util.ensemble as en
 import atom3d.util.file as fi

@@ -8,7 +8,7 @@ import atom3d.util.log as log
 import atom3d.util.shard as sh
 
 
-logger = log.getLogger('mut_label')
+logger = log.getLogger('msp_label')
 
 
 @click.command(help='Label SKEMPI pairs with good/bad label.')

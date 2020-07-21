@@ -33,7 +33,7 @@ def get_decoy_name(f):
     return os.path.splitext(os.path.basename(f))[0]
 
 
-def rsp_ensembler(pdb_files):
+def rsr_ensembler(pdb_files):
     ensembles = col.defaultdict(dict)
     random.shuffle(pdb_files)
 

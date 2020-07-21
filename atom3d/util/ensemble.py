@@ -3,11 +3,11 @@ import pandas as pd
 import sys
 sys.path.append('../..')
 
-import atom3d.lap.ensemble as lape
-import atom3d.mut.ensemble as mute
+import atom3d.lep.ensemble as lepe
+import atom3d.msp.ensemble as mspe
 import atom3d.ppi.db5 as db5
-import atom3d.psp.casp as casp
-import atom3d.rsp.ensemble as rspe
+import atom3d.psr.casp as casp
+import atom3d.rsr.ensemble as rsre
 import atom3d.util.datatypes as dt
 
 
@@ -21,9 +21,9 @@ def identity_ensembler(pdb_files):
 ensemblers = {
     'db5': db5.db5_ensembler,
     'casp': casp.casp_ensembler,
-    'lap': lape.lap_ensembler,
-    'rsp': rspe.rsp_ensembler,
-    'mut': mute.mut_ensembler,
+    'lep': lepe.lep_ensembler,
+    'rsr': rsre.rsr_ensembler,
+    'msp': mspe.msp_ensembler,
     'none': identity_ensembler,
 }
 

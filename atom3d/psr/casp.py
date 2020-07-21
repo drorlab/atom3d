@@ -2,7 +2,7 @@
 import collections as col
 import os
 
-import atom3d.psp.util as util
+import atom3d.psr.util as util
 
 
 def casp_ensembler(pdb_files):

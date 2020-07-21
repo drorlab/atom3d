@@ -1,4 +1,4 @@
-"""Code for preparing a lap dataset (filtering and splitting)."""
+"""Code for preparing a lep dataset (filtering and splitting)."""
 import click
 import pandas as pd
 
@@ -9,7 +9,7 @@ import atom3d.util.shard_ops as sho
 import atom3d.util.splits as splits
 
 
-logger = log.getLogger('lap_prepare')
+logger = log.getLogger('lep_prepare')
 
 
 def split(input_sharded, output_root, info_csv, shuffle_buffer):
@@ -66,7 +66,7 @@ def split(input_sharded, output_root, info_csv, shuffle_buffer):
         input_sharded, test_sharded, test_filter_fn, shuffle_buffer)
 
 
-@click.command(help='Prepare lap dataset')
+@click.command(help='Prepare lep dataset')
 @click.argument('input_sharded_path', type=click.Path())
 @click.argument('output_root', type=click.Path())
 @click.argument('info_csv', type=click.Path(exists=True))

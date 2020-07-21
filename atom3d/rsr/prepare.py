@@ -1,14 +1,14 @@
-"""Code for preparing rsp dataset (splitting)."""
+"""Code for preparing rsr dataset (splitting)."""
 import click
 
-import atom3d.rsp.score as sc
+import atom3d.rsr.score as sc
 import atom3d.util.filters as filters
 import atom3d.util.log as log
 import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
 
 
-logger = log.getLogger('rsp_prepare')
+logger = log.getLogger('rsr_prepare')
 
 
 # Canonical splits.
@@ -48,7 +48,7 @@ def split(input_sharded, output_root):
     tmp_sharded.delete_files()
 
 
-@click.command(help='Prepare rsp dataset')
+@click.command(help='Prepare rsr dataset')
 @click.argument('input_sharded_path', type=click.Path())
 @click.argument('output_root', type=click.Path())
 @click.option('--score_dir', type=click.Path(exists=True), default=None)
