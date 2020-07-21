@@ -5,7 +5,6 @@ import os
 import re
 
 import Bio.PDB
-from rdkit import Chem
 
 import pandas as pd
 import numpy as np
@@ -254,7 +253,7 @@ def bp_from_xyz_dict(data,struct_name='structure'):
 
 
 def read_sdf_to_mol(sdf_file,sanitize=True, addHs=False, removeHs=True):
-
+    from rdkit import Chem
     suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=removeHs)
     molecules = [mol for mol in suppl]
     if addHs:
@@ -339,6 +338,7 @@ def mol_to_df(mol, addHs=True, structure=None, model=None):
     """
     Convert Mol object to dataframe format (with PDB columns)
     """
+    from rdkit import Chem
     df = col.defaultdict(list)
     if addHs:
         mol = Chem.AddHs(mol, addCoords=True)
@@ -367,11 +367,11 @@ def mol_to_df(mol, addHs=True, structure=None, model=None):
     return df
 
 def get_coordinates_from_df(df):
-    
+
     xyz  = np.empty([len(df),3])
 
     xyz[:,0] = np.array(df.x)
     xyz[:,1] = np.array(df.y)
     xyz[:,2] = np.array(df.z)
-    
+
     return xyz
