@@ -2,7 +2,7 @@
 import os
 
 
-def mut_ensembler(pdb_files):
+def msp_ensembler(pdb_files):
     """We find matching original pdb for each mutated pdb."""
     dirs = list(set([os.path.dirname(f) for f in pdb_files]))
 

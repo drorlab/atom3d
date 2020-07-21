@@ -208,7 +208,7 @@ if __name__ == "__main__":
         ]
     sharded_list = [sh.load_sharded(path) for path in sharded_path_list]
 
-    data_stats_df = get_data_stats(sharded_list, center_at_mut=True)
+    #data_stats_df = get_data_stats(sharded_list, center_at_mut=True)
 
     print('\nTesting Mutation feature generator')
     gen = dataset_generator(
