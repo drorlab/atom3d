@@ -14,6 +14,7 @@ setup(
         'easy-parallel',
         'h5py',
         'numpy',
+        'pandas',
         'python-dotenv>=0.5.1',
         'scipy',
         'tables',
