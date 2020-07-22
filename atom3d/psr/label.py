@@ -6,7 +6,7 @@ import parallel as par
 
 import atom3d.psr.util as psr_util
 import atom3d.util.log as log
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 
 logger = log.get_logger('psr_label')
 

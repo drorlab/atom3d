@@ -19,7 +19,7 @@ try:
 except:
     pass
 
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 import examples.cnn3d.model as model
 import examples.cnn3d.feature_activity as feature_activity
 import examples.cnn3d.subgrid_gen as subgrid_gen

@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 de.load_dotenv(de.find_dotenv(usecwd=True))
 
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 from atom3d.residue_deletion.util import *
 
 import examples.cnn3d.subgrid_gen as subgrid_gen

@@ -18,7 +18,7 @@ try:
 except:
     pass
 
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 import atom3d.psp.util as psp_util
 import examples.cnn3d.model as model
 import examples.cnn3d.feature_rna as feature_rna

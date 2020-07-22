@@ -7,7 +7,7 @@ import pandas as pd
 
 de.load_dotenv(de.find_dotenv(usecwd=True))
 
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util

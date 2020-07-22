@@ -6,7 +6,7 @@ import random
 import tqdm
 
 import atom3d.util.datatypes as dt
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 
 
 def filter_sharded(input_sharded, output_sharded, filter_fn, shuffle_buffer=0):

@@ -9,8 +9,8 @@ import torch
 from util import *
 
 # import atom3d.util.datatypes as dt
-import atom3d.util.shard as sh
-import atom3d.util.shard_ops as sho
+import atom3d.shard.shard as sh
+import atom3d.shard.shard_ops as sho
 
 seed = 131313
 np.random.seed(seed)

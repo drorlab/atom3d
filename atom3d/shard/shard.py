@@ -10,7 +10,7 @@ import pandas as pd
 import tqdm
 
 import atom3d.util.datatypes as dt
-import atom3d.util.ensemble as en
+import atom3d.shard.ensemble as en
 import atom3d.util.file as fi
 
 db_sem = mp.Semaphore()

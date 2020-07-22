@@ -5,7 +5,7 @@ import pandas as pd
 import scipy.spatial as spa
 
 import atom3d.util.log as log
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 
 logger = log.get_logger('neighbors')
 

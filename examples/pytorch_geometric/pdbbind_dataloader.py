@@ -7,7 +7,7 @@ from torch_geometric.data import Dataset, Data, DataLoader
 
 from atom3d.util import datatypes as dt
 from atom3d.util import file as fi
-from atom3d.util import graph
+from atom3d.torch import graph
 from atom3d.util import splits as sp
 
 

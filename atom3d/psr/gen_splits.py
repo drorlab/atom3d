@@ -5,9 +5,9 @@ import pandas as pd
 
 import atom3d.psr.util as util
 import atom3d.util.datatypes as dt
-import atom3d.util.ensemble as en
+import atom3d.shard.ensemble as en
 import atom3d.util.file as fi
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 import atom3d.util.splits as sp
 
 

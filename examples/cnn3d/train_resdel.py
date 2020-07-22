@@ -15,7 +15,7 @@ import torch.nn as nn
 from torch.utils import data
 
 # import atom3d.util.datatypes as dt
-import atom3d.util.shard as sh
+import atom3d.shard.shard as sh
 import examples.cnn3d.feature_resdel as feat
 
 

@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 de.load_dotenv(de.find_dotenv())
 
-import atom3d.util.shard as sh
-import atom3d.util.graph as gr
+import atom3d.shard.shard as sh
+import atom3d.torch.graph as gr
 
 from atom3d.residue_deletion.util import *
 
