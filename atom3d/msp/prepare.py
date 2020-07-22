@@ -8,7 +8,7 @@ import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
 import atom3d.util.splits as splits
 
-logger = log.getLogger('prepare')
+logger = log.get_logger('prepare')
 
 
 def split(input_sharded, output_root, shuffle_buffer):

@@ -66,6 +66,7 @@ def reshard(input_sharded, output_sharded, shuffle_buffer=0):
     t = tqdm.trange(output_num_shards)
     next_output_shard_num, next_input_shard_num = 0, 0
     to_write, to_consume = [], []
+    df = None
     while True:
         while len(to_consume) < buffer_size and \
                 (next_input_shard_num != input_num_shards):
@@ -94,7 +95,7 @@ def reshard(input_sharded, output_sharded, shuffle_buffer=0):
             next_output_shard_num += 1
             t.update(1)
 
-            if (next_output_shard_num == output_num_shards):
+            if next_output_shard_num == output_num_shards:
                 break
 
 

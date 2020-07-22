@@ -6,7 +6,7 @@ import parallel as par
 import atom3d.util.log as log
 import atom3d.util.shard as sh
 
-logger = log.getLogger('lep_label')
+logger = log.get_logger('lep_label')
 
 
 @click.command(help='Label LEP pairs with inactive/active label.')

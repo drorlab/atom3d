@@ -12,7 +12,7 @@ import atom3d.ppi.neighbors as nb
 import atom3d.util.log as log
 import atom3d.util.shard as sh
 
-logger = log.getLogger('bsa')
+logger = log.get_logger('bsa')
 
 db_sem = mp.Semaphore()
 

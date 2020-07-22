@@ -2,7 +2,7 @@
 import os
 import subprocess
 
-import Bio.PDB.Polypeptide as poly
+import Bio.PDB.Polypeptide as Poly
 import dotenv as de
 import numpy as np
 import tqdm
@@ -14,7 +14,7 @@ import atom3d.util.log as log
 
 project_root = os.path.abspath(os.path.join(__file__, '../../..'))
 de.load_dotenv(os.path.join(project_root, '.env'))
-logger = log.getLogger('sequence')
+logger = log.get_logger('sequence')
 
 
 def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
@@ -133,7 +133,7 @@ def fasta_name_to_tuple(x):
     stuple = tuple(x.split('____')[0].split('___'))
     ctuple = tuple(x.split('____')[1].split('___'))
     stuple = (stuple[0], int(stuple[1]), stuple[2])
-    return (stuple, ctuple)
+    return stuple, ctuple
 
 
 def get_chain_sequences(pdb_file):
@@ -161,8 +161,8 @@ def get_all_chain_sequences_df(df):
     all_chain_sequences = []
     # Keep only CA of standard residues
     df = df[df['name'] == 'CA'].drop_duplicates()
-    df = df[df['resname'].apply(lambda x: poly.is_aa(x, standard=True))]
-    df['resname'] = df['resname'].apply(poly.three_to_one)
+    df = df[df['resname'].apply(lambda x: Poly.is_aa(x, standard=True))]
+    df['resname'] = df['resname'].apply(Poly.three_to_one)
     for s, structure in df.groupby(
             ['ensemble', 'subunit', 'structure']):
         chain_sequences = []

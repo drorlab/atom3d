@@ -7,7 +7,7 @@ import atom3d.rsr.score as sc
 import atom3d.util.log as log
 import atom3d.util.shard as sh
 
-logger = log.getLogger('rsr_label')
+logger = log.get_logger('rsr_label')
 
 
 @click.command(help='Label RSP structures with RMSD to native.')

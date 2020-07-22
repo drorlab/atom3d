@@ -8,7 +8,7 @@ import atom3d.util.file as fi
 import atom3d.util.log as log
 import atom3d.util.sequence as seq
 
-logger = log.getLogger('splits')
+logger = log.get_logger('splits')
 
 
 def read_split_file(split_file):
@@ -39,12 +39,16 @@ def random_split(dataset_size, train_split=None, vali_split=0.1,
 
         Args:
             dataset_size (int): number of elements in the dataset
+            train_split (float):
+                fraction of data used for training. Default: 0.1
             vali_split (float):
                 fraction of data used for validation. Default: 0.1
             test_split (float): fraction of data used for testing. Default: 0.1
             shuffle (bool):     indices are shuffled. Default: True
             random_seed (int):
                 specifies random seed for shuffling. Default: None
+            exclude (np.array of int):  indices to exclude.
+
 
         Returns:
             indices_test (int[]):  indices of the test set.
@@ -174,10 +178,10 @@ def cluster_split(all_chain_sequences, cutoff, val_split=0.1,
 
     logger.info('generating validation set...')
     val_set, all_chain_sequences = create_cluster_split(
-        all_chain_sequences, clusterings, cutoff, val_size, min_fam_in_split)
+        all_chain_sequences, clusterings, val_size, min_fam_in_split)
     logger.info('generating test set...')
     test_set, all_chain_sequences = create_cluster_split(
-        all_chain_sequences, clusterings, cutoff, test_size, min_fam_in_split)
+        all_chain_sequences, clusterings, test_size, min_fam_in_split)
     train_set = all_chain_sequences
 
     train_set = [x[0] for x in train_set]
@@ -191,8 +195,7 @@ def cluster_split(all_chain_sequences, cutoff, val_split=0.1,
     return train_set, val_set, test_set
 
 
-def create_cluster_split(all_chain_sequences, clusterings, cutoff, split_size,
-                         min_fam_in_split):
+def create_cluster_split(all_chain_sequences, clusterings, split_size, min_fam_in_split):
     """
     Create a split while retaining diversity specified by min_fam_in_split.
     Returns split and removes any pdbs in this split from the remaining dataset
@@ -270,10 +273,10 @@ def identity_split(
 
     logger.info('generating validation set...')
     val_set, all_chain_sequences = create_identity_split(
-        all_chain_sequences, cutoff, val_size, min_fam_in_split)
+        all_chain_sequences, cutoff, val_size, min_fam_in_split, blast_db)
     logger.info('generating test set...')
     test_set, all_chain_sequences = create_identity_split(
-        all_chain_sequences, cutoff, test_size, min_fam_in_split)
+        all_chain_sequences, cutoff, test_size, min_fam_in_split, blast_db)
     train_set = all_chain_sequences
 
     train_set = [x[0] for x in train_set]
@@ -288,7 +291,7 @@ def identity_split(
 
 
 def create_identity_split(all_chain_sequences, cutoff, split_size,
-                          min_fam_in_split):
+                          min_fam_in_split, blast_db):
     """
     Create a split while retaining diversity specified by min_fam_in_split.
     Returns split and removes any pdbs in this split from the remaining dataset
@@ -306,7 +309,7 @@ def create_identity_split(all_chain_sequences, cutoff, split_size,
         rstuple = random.sample(to_use, 1)[0]
         rcs = all_chain_sequences[rstuple]
 
-        found = seq.find_similar(rcs, 'blast_db', cutoff, dataset_size)
+        found = seq.find_similar(rcs, blast_db, cutoff, dataset_size)
 
         # Get structure tuples.
         found = set([seq.fasta_name_to_tuple(x)[0] for x in found])

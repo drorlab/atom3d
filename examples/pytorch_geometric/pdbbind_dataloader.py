@@ -55,7 +55,7 @@ class GraphPDBBind(Dataset):
             pdb_code = fi.get_pdb_code(raw_path)
             y = torch.FloatTensor([get_label(pdb_code, label_df)])
             if '_ligand' in raw_path:
-                mol_graph = graph.mol_to_graph(dt.read_sdf_to_mol(raw_path, addHs=True)[0])
+                mol_graph = graph.mol_to_graph(dt.read_sdf_to_mol(raw_path, add_hs=True)[0])
             elif '_pocket' in raw_path:
                 prot_graph = graph.prot_df_to_graph(dt.bp_to_df(dt.read_any(raw_path, name=pdb_code)))
                 node_feats, edge_index, edge_feats, pos = graph.combine_graphs(prot_graph, mol_graph, edges_between=True)

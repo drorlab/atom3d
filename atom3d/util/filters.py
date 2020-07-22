@@ -1,5 +1,5 @@
 """Common filtering functions."""
-import Bio.PDB.Polypeptide as poly
+import Bio.PDB.Polypeptide as Poly
 import numpy as np
 import pandas as pd
 
@@ -11,12 +11,16 @@ PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
 RESOLUTION_FILE = 'metadata/resolu.idx'
 
 
-def form_source_filter(allowed=[], excluded=[]):
+def form_source_filter(allowed=None, excluded=None):
     """
     Filter by experimental source.
 
     Valid entries are diffraction, NMR, EM, other.
     """
+    if excluded is None:
+        excluded = []
+    if allowed is None:
+        allowed = []
     pdb_entry_type = pd.read_csv(PDB_ENTRY_TYPE_FILE, delimiter='\t',
                                  names=['pdb_code', 'molecule_type', 'source'])
     pdb_entry_type['pdb_code'] = \
@@ -37,12 +41,16 @@ def form_source_filter(allowed=[], excluded=[]):
     return filter_fn
 
 
-def form_molecule_type_filter(allowed=[], excluded=[]):
+def form_molecule_type_filter(allowed=None, excluded=None):
     """
     Filter by biomolecule type.
 
     Valid entries are prot, prot-nuc, nuc, carb, other.
     """
+    if allowed is None:
+        allowed = []
+    if excluded is None:
+        excluded = []
     pdb_entry_type = pd.read_csv(PDB_ENTRY_TYPE_FILE, delimiter='\t',
                                  names=['pdb_code', 'molecule_type', 'source'])
     pdb_entry_type['pdb_code'] = \
@@ -105,7 +113,7 @@ def standard_residue_filter(df):
     residues = df[['structure', 'model', 'chain', 'residue', 'resname']] \
         .drop_duplicates()
     sel = residues['resname'].apply(
-        lambda x: poly.is_aa(x, standard=True))
+        lambda x: Poly.is_aa(x, standard=True))
 
     residues['to_keep'] = sel
     residues_to_keep = residues.set_index(
@@ -142,12 +150,16 @@ def single_chain_filter(df):
     return df[to_keep.values]
 
 
-def form_scop_filter(level, allowed=[], excluded=[]):
+def form_scop_filter(level, allowed=None, excluded=None):
     """
     Filter by SCOP classification at a specified level.
 
     Valid levels are type, class, fold, superfamily, family.
     """
+    if allowed is None:
+        allowed = []
+    if excluded is None:
+        excluded = []
     scop_index = scop.get_scop_index()
     scop_index = scop_index[level]
 
@@ -195,9 +207,8 @@ def form_seq_filter_against(sharded, cutoff):
     seq.write_to_blast_db(all_chain_sequences, blast_db_path)
 
     def filter_fn(df):
-        all_chain_sequences = seq.get_all_chain_sequences_df(df)
         to_keep = {}
-        for structure_name, cs in all_chain_sequences:
+        for structure_name, cs in seq.get_all_chain_sequences_df(df):
             hits = seq.find_similar(cs, blast_db_path, cutoff, 1)
             ensemble = structure_name[0]
             to_keep[ensemble] = (len(hits) == 0)
@@ -223,15 +234,17 @@ def form_scop_filter_against(sharded, level, conservative):
     """
     scop_index = scop.get_scop_index()[level]
 
-    scop_against = []
-    for shard in sharded.iter_shards():
-        for (e, su, st), structure in shard.groupby(
-                ['ensemble', 'subunit', 'structure']):
-            pc = fi.get_pdb_code(st).lower()
-            for (m, c), _ in structure.groupby(['model', 'chain']):
-                if (pc, c) in scop_index:
-                    scop_against.append(scop_index.loc[(pc, c)].values)
-    scop_against = np.unique(np.concatenate(scop_against))
+    def form_scop_against():
+        result = []
+        for shard in sharded.iter_shards():
+            for (e, su, st), structure in shard.groupby(
+                    ['ensemble', 'subunit', 'structure']):
+                pc = fi.get_pdb_code(st).lower()
+                for (m, c), _ in structure.groupby(['model', 'chain']):
+                    if (pc, c) in scop_index:
+                        result.append(scop_index.loc[(pc, c)].values)
+        return np.unique(np.concatenate(result))
+    scop_against = form_scop_against()
 
     def filter_fn(df):
         to_keep = {}

@@ -8,7 +8,7 @@ import atom3d.psr.util as psr_util
 import atom3d.util.log as log
 import atom3d.util.shard as sh
 
-logger = log.getLogger('psr_label')
+logger = log.get_logger('psr_label')
 
 
 @click.command(help='Label RSP structures with RMSD, GDT_TS, GDT_HA, TM-label to native.')

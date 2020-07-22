@@ -7,7 +7,7 @@ import scipy.spatial as spa
 import atom3d.util.log as log
 import atom3d.util.shard as sh
 
-logger = log.getLogger('neighbors')
+logger = log.get_logger('neighbors')
 
 
 index_columns = \

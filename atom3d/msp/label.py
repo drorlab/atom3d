@@ -7,7 +7,7 @@ import parallel as par
 import atom3d.util.log as log
 import atom3d.util.shard as sh
 
-logger = log.getLogger('msp_label')
+logger = log.get_logger('msp_label')
 
 
 @click.command(help='Label SKEMPI pairs with good/bad label.')

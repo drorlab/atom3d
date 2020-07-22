@@ -1,10 +1,10 @@
 """Code for sharding structures."""
 import logging
+import multiprocessing as mp
 import os
 import shutil
 
 import click
-import multiprocess as mp
 import numpy as np
 import pandas as pd
 import tqdm
@@ -62,7 +62,6 @@ class Sharded(object):
         shard_ranges = _get_shard_ranges(len(ensemble_map), num_shards)
         shard_size = shard_ranges[0, 1] - shard_ranges[0, 0]
 
-        total = 0
         logging.info(f'Ensembles per shard: {shard_size:}')
         for shard_num in tqdm.trange(num_written, num_shards):
             start, stop = shard_ranges[shard_num]
@@ -257,7 +256,7 @@ def _get_shard_ranges(num_structures, num_shards):
     """Get list of shard starts and ends."""
     base_shard_size = int(num_structures / num_shards)
     excess = num_structures - base_shard_size * num_shards
-    shard_sizes = np.ones((num_shards), dtype=np.int32) * base_shard_size
+    shard_sizes = np.ones(num_shards, dtype=np.int32) * base_shard_size
     shard_sizes[:excess] += 1
     stops = np.cumsum(shard_sizes)
     starts = stops - shard_sizes

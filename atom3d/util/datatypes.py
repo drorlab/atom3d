@@ -4,7 +4,11 @@ import gzip
 import os
 import re
 
-import Bio.PDB
+import Bio.PDB.Structure
+import Bio.PDB.Model
+import Bio.PDB.Chain
+import Bio.PDB.Residue
+import Bio.PDB.Atom
 import numpy as np
 import pandas as pd
 
@@ -97,30 +101,30 @@ def read_xyz(filename):
     with open(filename) as xyzfile:
         # Extract number of atoms
         num_at = int(xyzfile.readline())
-        #print('Reading file', filename, 'with', num_at, 'atoms.')
+        # print('Reading file', filename, 'with', num_at, 'atoms.')
         # Read header
         header = xyzfile.readline()
         # Initialize lists, arrays
-        elements    = []
-        charges     = np.zeros(num_at)
-        coordinates = np.zeros([num_at,3])
+        elements = []
+        charges = np.zeros(num_at)
+        coordinates = np.zeros([num_at, 3])
         # Iterate through all atoms and read info
         for i in range(num_at):
             line = xyzfile.readline()
-            el,x,y,z,q = line.split()
+            el, x, y, z, q = line.split()
             elements.append(el)
             charges[i] = q
-            coordinates[i] = np.array([x,y,z],dtype=float)
+            coordinates[i] = np.array([x, y, z], dtype=float)
         # Read footer
         footer = xyzfile.readline()
         # Read SMILES and InChi
         smiles1, smiles2 = xyzfile.readline().split()
-        inchi1,  inchi2  = xyzfile.readline().split()
+        inchi1, inchi2 = xyzfile.readline().split()
     # Construct the dictionary
-    data = {'smiles':smiles1, 'inchi':inchi1,
-            'header':header, 'footer':footer,
-            'elements':elements, 'charges':charges,
-            'coordinates':coordinates}
+    data = {'smiles': smiles1, 'inchi': inchi1,
+            'header': header, 'footer': footer,
+            'elements': elements, 'charges': charges,
+            'coordinates': coordinates}
     return data
 
 
@@ -207,8 +211,7 @@ def merge_dfs(dfs):
     return pd.concat(dfs).reset_index(drop=True)
 
 
-
-def bp_from_xyz_dict(data,struct_name='structure'):
+def bp_from_xyz_dict(data, struct_name='structure'):
     """Construct a biopython structure from xyz data (stored in a dict)."""
     # Read info from dictionary
     elements = data['elements']
@@ -216,17 +219,17 @@ def bp_from_xyz_dict(data,struct_name='structure'):
     coordinates = data['coordinates']
     # Create a residue
     # (each small molecule is counted as just one residue)
-    r = Bio.PDB.Residue.Residue((' ',1,' '),'res',0)
+    r = Bio.PDB.Residue.Residue((' ', 1, ' '), 'res', 0)
     # Iterate through all atoms and collect info
     for i in range(len(charges)):
-        atom_name = elements[i]+str(i)
-        position  = coordinates[i]
-        full_name = elements[i]+str(i)
-        b_factor  = 0.0
+        atom_name = elements[i] + str(i)
+        position = coordinates[i]
+        full_name = elements[i] + str(i)
+        b_factor = 0.0
         occupancy = 1.0
-        alt_loc   = ' '
-        serial_n  = i
-        element   = elements[i]
+        alt_loc = ' '
+        serial_n = i
+        element = elements[i]
         # Create an atom with the provided information
         a = Bio.PDB.Atom.Atom(atom_name,
                               position,
@@ -250,11 +253,11 @@ def bp_from_xyz_dict(data,struct_name='structure'):
     return s
 
 
-def read_sdf_to_mol(sdf_file,sanitize=True, addHs=False, removeHs=True):
+def read_sdf_to_mol(sdf_file, sanitize=True, add_hs=False, remove_hs=True):
     from rdkit import Chem
-    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=removeHs)
+    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_hs)
     molecules = [mol for mol in suppl]
-    if addHs:
+    if add_hs:
         molecules = [Chem.AddHs(mol, addCoords=True) for mol in suppl]
 
     return molecules
@@ -273,11 +276,11 @@ def get_coordinates_of_conformer(mol):
 
     symb = [a.GetSymbol() for a in mol.GetAtoms()]
     conf = mol.GetConformer()
-    xyz  = np.empty([mol.GetNumAtoms(),3])
+    xyz = np.empty([mol.GetNumAtoms(), 3])
 
     for ia, name in enumerate(symb):
         position = conf.GetAtomPosition(ia)
-        xyz[ia]  = np.array([position.x, position.y, position.z])
+        xyz[ia] = np.array([position.x, position.y, position.z])
 
     return xyz
 
@@ -295,14 +298,14 @@ def get_connectivity_matrix(mol):
 
     # Initialization
     num_at = mol.GetNumAtoms()
-    connect_matrix = np.zeros([num_at,num_at],dtype=int)
+    connect_matrix = np.zeros([num_at, num_at], dtype=int)
 
     # Go through all atom pairs and check for bonds between them
     for a in mol.GetAtoms():
         for b in mol.GetAtoms():
-            bond = mol.GetBondBetweenAtoms(a.GetIdx(),b.GetIdx())
+            bond = mol.GetBondBetweenAtoms(a.GetIdx(), b.GetIdx())
             if bond is not None:
-                connect_matrix[a.GetIdx(),b.GetIdx()] = 1
+                connect_matrix[a.GetIdx(), b.GetIdx()] = 1
 
     return connect_matrix
 
@@ -320,25 +323,26 @@ def get_bonds_matrix(mol):
 
     # Initialization
     num_at = mol.GetNumAtoms()
-    bonds_matrix = np.zeros([num_at,num_at])
+    bonds_matrix = np.zeros([num_at, num_at])
 
     # Go through all atom pairs and check for bonds between them
     for a in mol.GetAtoms():
         for b in mol.GetAtoms():
-            bond = mol.GetBondBetweenAtoms(a.GetIdx(),b.GetIdx())
+            bond = mol.GetBondBetweenAtoms(a.GetIdx(), b.GetIdx())
             if bond is not None:
                 bt = bond.GetBondTypeAsDouble()
-                bonds_matrix[a.GetIdx(),b.GetIdx()] = bt
+                bonds_matrix[a.GetIdx(), b.GetIdx()] = bt
 
     return bonds_matrix
 
-def mol_to_df(mol, addHs=True, structure=None, model=None):
+
+def mol_to_df(mol, add_hs=True, structure=None, model=None):
     """
     Convert Mol object to dataframe format (with PDB columns)
     """
     from rdkit import Chem
     df = col.defaultdict(list)
-    if addHs:
+    if add_hs:
         mol = Chem.AddHs(mol, addCoords=True)
     conf = mol.GetConformer()
     for i, a in enumerate(mol.GetAtoms()):
@@ -364,12 +368,12 @@ def mol_to_df(mol, addHs=True, structure=None, model=None):
     df = pd.DataFrame(df)
     return df
 
+
 def get_coordinates_from_df(df):
+    xyz = np.empty([len(df), 3])
 
-    xyz  = np.empty([len(df),3])
-
-    xyz[:,0] = np.array(df.x)
-    xyz[:,1] = np.array(df.y)
-    xyz[:,2] = np.array(df.z)
+    xyz[:, 0] = np.array(df.x)
+    xyz[:, 1] = np.array(df.y)
+    xyz[:, 2] = np.array(df.z)
 
     return xyz

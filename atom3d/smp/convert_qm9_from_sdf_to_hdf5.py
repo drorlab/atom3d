@@ -42,7 +42,7 @@ class MoleculesDataset():
             
             self.index.append(im+1)
             self.data.append([ col[im] for col in self.raw_data])
-            new_mol_df = dt.mol_to_df(m,addHs=False,structure=df['mol_id'][im])
+            new_mol_df = dt.mol_to_df(m, add_hs=False, structure=df['mol_id'][im])
             self.mol_dfs.append(new_mol_df)
 
         return

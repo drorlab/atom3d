@@ -7,7 +7,7 @@ import atom3d.util.log as log
 import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
 
-logger = log.getLogger('rsr_prepare')
+logger = log.get_logger('rsr_prepare')
 
 
 # Canonical splits.

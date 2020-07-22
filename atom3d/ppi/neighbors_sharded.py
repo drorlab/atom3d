@@ -11,7 +11,7 @@ import atom3d.util.shard as sh
 
 warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
 
-logger = log.getLogger('genLabels')
+logger = log.get_logger('genLabels')
 
 
 @click.command(help='Find neighbors for sharded dataset.')
