@@ -89,7 +89,7 @@ class MoleculesDataset():
         for shard_idx in shard_indices:
                 
             struct_df = sharded_ds.read_shard(shard_idx)
-            labels_df = pd.read_hdf(sharded_ds._get_shard(shard_idx), 'labels')
+            labels_df = sharded_ds.read_shard(shard_idx, 'labels')
             ensembles = labels_df['ensemble']
 
             for i, code in enumerate(ensembles):

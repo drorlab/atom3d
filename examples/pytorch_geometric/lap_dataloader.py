@@ -129,7 +129,7 @@ def dataset_generator(sharded, shard_indices, shuffle=True):
     """
     for shard_idx in shard_indices:
         shard = sharded.read_shard(shard_idx)
-        labels = pd.read_hdf(sharded._get_shard(shard_idx), 'labels')
+        labels = sharded.read_shard(shard_idx, 'labels')
 
         if shuffle:
             groups = [df for _, df in shard.groupby('ensemble')]
@@ -176,7 +176,7 @@ def _rename(in_dir):
 def _save_graphs(sharded, shard_num, out_dir):
     print(f'Processing shard {shard_num:}')
     shard = sharded.read_shard(shard_num)
-    labels = pd.read_hdf(sharded._get_shard(shard_num), 'labels')
+    labels = sharded.read_shard(shard_num, 'labels')
     curr_idx = 0
     for i, (target_name, target_df) in enumerate(shard.groupby(['ensemble'])):
            
