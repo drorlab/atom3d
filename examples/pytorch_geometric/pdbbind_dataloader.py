@@ -5,7 +5,7 @@ import torch
 from atom3d.protein_ligand.get_labels import get_label
 from torch_geometric.data import Dataset, Data, DataLoader
 
-from atom3d.util import datatypes as dt
+from atom3d.util import formats as dt
 from atom3d.util import file as fi
 from atom3d.torch import graph
 from atom3d.util import splits as sp

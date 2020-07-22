@@ -6,7 +6,7 @@ import numpy as np
 
 import atom3d.util.file as fi
 import atom3d.util.log as log
-import atom3d.util.sequence as seq
+import atom3d.protein.sequence as seq
 
 logger = log.get_logger('splits')
 

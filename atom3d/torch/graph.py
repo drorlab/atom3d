@@ -2,7 +2,7 @@ import numpy as np
 import scipy.spatial as ss
 import torch
 
-import atom3d.util.datatypes as dt
+import atom3d.util.formats as dt
 
 # PDB atom names -- these include co-crystallized metals
 prot_atoms = ['C', 'H', 'O', 'N', 'S', 'P', 'ZN', 'NA', 'FE', 'CA', 'MN', 'NI', 'CO', 'MG', 'CU', 'CL', 'SE', 'F', 'X']

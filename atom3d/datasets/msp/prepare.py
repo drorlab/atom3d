@@ -3,7 +3,7 @@ import click
 
 import atom3d.shard.filters as filters
 import atom3d.util.log as log
-import atom3d.util.sequence as seq
+import atom3d.protein.sequence as seq
 import atom3d.shard.shard as sh
 import atom3d.shard.shard_ops as sho
 import atom3d.util.splits as splits

@@ -10,7 +10,7 @@ import tqdm
 
 de.load_dotenv(de.find_dotenv())
 
-import atom3d.util.datatypes as dt
+import atom3d.util.formats as dt
 import atom3d.shard.shard as sh
 import atom3d.torch.graph as gr
 

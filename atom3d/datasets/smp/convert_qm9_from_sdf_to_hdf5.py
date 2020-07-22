@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
-import atom3d.util.datatypes as dt
+import atom3d.util.formats as dt
 import atom3d.util.splits as splits
 
 

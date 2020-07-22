@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from rdkit import Chem
 
-import atom3d.util.datatypes as dt
+import atom3d.util.formats as dt
 import atom3d.shard.shard as shard
 
 label_res_dict={0:'HIS',1:'LYS',2:'ARG',3:'ASP',4:'GLU',5:'SER',6:'THR',7:'ASN',8:'GLN',9:'ALA',10:'VAL',11:'LEU',12:'ILE',13:'MET',14:'PHE',15:'TYR',16:'TRP',17:'PRO',18:'GLY',19:'CYS'}

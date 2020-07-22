@@ -6,7 +6,7 @@ import atom3d.datasets.msp.ensemble as mspe
 import atom3d.datasets.ppi.db5 as db5
 import atom3d.datasets.psr.casp as casp
 import atom3d.datasets.rsr.ensemble as rsre
-import atom3d.util.datatypes as dt
+import atom3d.util.formats as dt
 
 
 def identity_ensembler(pdb_files):

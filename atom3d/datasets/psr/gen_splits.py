@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 import atom3d.datasets.psr.util as util
-import atom3d.util.datatypes as dt
+import atom3d.util.formats as dt
 import atom3d.shard.ensemble as en
 import atom3d.util.file as fi
 import atom3d.shard.shard as sh
