@@ -61,11 +61,7 @@ def form_scop_pair_filter_against(sharded, level):
     scop_index = scop.get_scop_index()[level]
 
     scop_pairs = []
-<<<<<<< HEAD
     for _, shard in sh.iter_shards(sharded):
-=======
-    for shard in sharded.iter_shards():
->>>>>>> 02c35c4f22c32bf47048d55e13d9019c4fc5aaa5
         for e, ensemble in shard.groupby(['ensemble']):
             names, (bdf0, bdf1, udf0, udf1) = nb.get_subunits(ensemble)
             chains0 = bdf0[['structure', 'chain']].drop_duplicates()
