@@ -215,7 +215,7 @@ if __name__ == "__main__":
         os.environ['ACTIVITY_VAL_SHARDED'],
         os.environ['ACTIVITY_TEST_SHARDED'],
     ]
-    sharded_list = [sh.load_sharded(path) for path in sharded_path_list]
+    sharded_list = [sh.Sharded.load(path) for path in sharded_path_list]
 
     data_stats_df = get_data_stats(sharded_list)
 

@@ -34,62 +34,8 @@ def shard_dataset(input_dir, sharded_path, filetype, ensembler):
         os.makedirs(dirname, exist_ok=True)
 
     files = fi.find_files(input_dir, dt.patterns[filetype])
-    ensembles = en.ensemblers[ensembler](files)
-    create_from_ensembles(ensembles, sharded_path)
-
-
-def create_from_ensembles(ensembles, path):
-    sharded = Sharded(path, ['ensemble'])
-
-    num_shards = sharded.get_num_shards()
-
-    # Check if already partly written.  If so, resume from there.
-    metadata_path = sharded._get_metadata()
-    if os.path.exists(metadata_path):
-        metadata = pd.read_hdf(metadata_path, f'metadata')
-        num_written = len(metadata['shard_num'].unique())
-    else:
-        num_written = 0
-
-    shard_ranges = _get_shard_ranges(len(ensembles), num_shards)
-    shard_size = shard_ranges[0, 1] - shard_ranges[0, 0]
-
-    total = 0
-    logging.info(f'Ensembles per shard: {shard_size:}')
-    for shard_num in tqdm.trange(num_written, num_shards):
-        start, stop = shard_ranges[shard_num]
-
-        dfs = []
-        for name in sorted(ensembles.keys())[start:stop]:
-            df = en.parse_ensemble(name, ensembles[name])
-            dfs.append(df)
-        df = dt.merge_dfs(dfs)
-
-        sharded._write_shard(shard_num, df)
-
-
-def load_sharded(sharded_path):
-    """Load a fully written sharded dataset."""
-    keys = get_keys(sharded_path)
-    sharded = Sharded(sharded_path, keys)
-    if not sharded.is_written():
-        raise RuntimeError(
-            f'Sharded loaded from {sharded_path:} not fully written.')
-    return sharded
-
-
-def get_keys(sharded_path):
-    """Return keys used for sharded dataset at path."""
-    sharded = Sharded(sharded_path, None)
-    metadata_path = sharded._get_metadata()
-    if not os.path.exists(metadata_path):
-        raise RuntimeError(f'Metadata for {sharded_path:} does not exist')
-    metadata = pd.read_hdf(metadata_path, f'metadata')
-    keys = metadata.columns.tolist()
-    keys.remove('shard_num')
-    keys.remove('start')
-    keys.remove('stop')
-    return keys
+    ensemble_map = en.ensemblers[ensembler](files)
+    Sharded.create_from_ensemble_map(ensemble_map, sharded_path)
 
 
 class Sharded(object):
@@ -98,6 +44,57 @@ class Sharded(object):
     def __init__(self, path, keys):
         self.path = path
         self._keys = keys
+
+    @classmethod
+    def create_from_ensemble_map(cls, ensemble_map, path):
+        sharded = cls(path, ['ensemble'])
+
+        num_shards = sharded.get_num_shards()
+
+        # Check if already partly written.  If so, resume from there.
+        metadata_path = sharded._get_metadata()
+        if os.path.exists(metadata_path):
+            metadata = pd.read_hdf(metadata_path, f'metadata')
+            num_written = len(metadata['shard_num'].unique())
+        else:
+            num_written = 0
+
+        shard_ranges = _get_shard_ranges(len(ensemble_map), num_shards)
+        shard_size = shard_ranges[0, 1] - shard_ranges[0, 0]
+
+        total = 0
+        logging.info(f'Ensembles per shard: {shard_size:}')
+        for shard_num in tqdm.trange(num_written, num_shards):
+            start, stop = shard_ranges[shard_num]
+
+            dfs = []
+            for name in sorted(ensemble_map.keys())[start:stop]:
+                df = en.parse_ensemble(name, ensemble_map[name])
+                dfs.append(df)
+            df = dt.merge_dfs(dfs)
+
+            sharded._write_shard(shard_num, df)
+
+    @classmethod
+    def load(cls, path):
+        """Load a fully written sharded dataset."""
+
+        # Get keys from metadata file.
+        sharded = cls(path, None)
+        metadata_path = sharded._get_metadata()
+        if not os.path.exists(metadata_path):
+            raise RuntimeError(f'Metadata for {path:} does not exist')
+        metadata = pd.read_hdf(metadata_path, f'metadata')
+        keys = metadata.columns.tolist()
+        keys.remove('shard_num')
+        keys.remove('start')
+        keys.remove('stop')
+
+        sharded = cls(path, keys)
+        if not sharded.is_written():
+            raise RuntimeError(
+                f'Sharded loaded from {path:} not fully written.')
+        return sharded
 
     def is_written(self):
         """Check if metadata files and all data files are there."""

@@ -23,7 +23,7 @@ db_sem = mp.Semaphore()
 @click.option('-n', '--num_threads', default=8,
               help='Number of threads to use for parallel processing.')
 def bsa_db(sharded_path, output_bsa, num_threads):
-    sharded = sh.load_sharded(sharded_path)
+    sharded = sh.Sharded.load(sharded_path)
     num_shards = sharded.get_num_shards()
 
     dirname = os.path.dirname(output_bsa)

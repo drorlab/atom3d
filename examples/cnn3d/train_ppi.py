@@ -535,9 +535,9 @@ def main():
     with open(os.path.join(args.output_dir, 'config.json'), 'w') as f:
         json.dump(args.__dict__, f, indent=4)
 
-    args.train_sharded = sh.load_sharded(args.train_sharded)
-    args.val_sharded = sh.load_sharded(args.val_sharded)
-    args.test_sharded = sh.load_sharded(args.test_sharded)
+    args.train_sharded = sh.Sharded.load(args.train_sharded)
+    args.val_sharded = sh.Sharded.load(args.val_sharded)
+    args.test_sharded = sh.Sharded.load(args.test_sharded)
 
     logging.info("Writing all output to {:}".format(args.output_dir))
     with tf.Session() as sess:

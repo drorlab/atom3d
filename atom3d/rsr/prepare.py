@@ -52,7 +52,7 @@ def split(input_sharded, output_root):
 @click.argument('output_root', type=click.Path())
 @click.option('--score_dir', type=click.Path(exists=True), default=None)
 def prepare(input_sharded_path, output_root, score_dir):
-    input_sharded = sh.load_sharded(input_sharded_path)
+    input_sharded = sh.Sharded.load(input_sharded_path)
     if score_dir is not None:
         prefix = sh.get_prefix(output_root)
         num_shards = sh.get_num_shards(output_root)

@@ -25,7 +25,7 @@ logger = log.getLogger('shard_pairs')
               help='Number of threads to use for parallel processing.')
 def shard_pairs(input_path, output_path, cutoff, cutoff_type,
                 num_threads):
-    input_sharded = sh.load_sharded(input_path)
+    input_sharded = sh.Sharded.load(input_path)
     keys = input_sharded.get_keys()
     if keys != ['ensemble']:
         raise RuntimeError('Can only apply to sharded by ensemble.')

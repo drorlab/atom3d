@@ -49,7 +49,7 @@ class MUT_Dataset_PTG(Dataset):
 
 class MUT_Dataset(data.IterableDataset):
     def __init__(self, sharded, seed=131313):
-        self.sharded = sh.load_sharded(sharded)
+        self.sharded = sh.Sharded.load(sharded)
         self.num_shards = self.sharded.get_num_shards()
         self.seed = seed
         
@@ -222,7 +222,7 @@ def _save_graphs(sharded, shard_num, out_dir):
 if __name__ == "__main__":
 
     split = sys.argv[1]
-    sharded = sh.load_sharded(SC_DIR_R+f'atom3d/mutation_prediction/split/pairs_{split}@40')
+    sharded = sh.Sharded.load(SC_DIR_R + f'atom3d/mutation_prediction/split/pairs_{split}@40')
 
     # print('Testing MUT graph dataloader')
     # gen = dataset_generator(sharded, range(sharded.get_num_shards()), shuffle=True)

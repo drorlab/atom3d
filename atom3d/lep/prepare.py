@@ -73,7 +73,7 @@ def split(input_sharded, output_root, info_csv, shuffle_buffer):
               help='How many shards to use in streaming shuffle. 0 means will '
               'not shuffle.')
 def prepare(input_sharded_path, output_root, info_csv, shuffle_buffer):
-    input_sharded = sh.load_sharded(input_sharded_path)
+    input_sharded = sh.Sharded.load(input_sharded_path)
     split(input_sharded, output_root, info_csv, shuffle_buffer)
 
 

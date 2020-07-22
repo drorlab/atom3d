@@ -48,7 +48,7 @@ class LAP_Dataset_PTG(Dataset):
 
 class LAP_Dataset(data.IterableDataset):
     def __init__(self, sharded, seed=131313):
-        self.sharded = sh.load_sharded(sharded)
+        self.sharded = sh.Sharded.load(sharded)
         self.num_shards = self.sharded.get_num_shards()
         self.seed = seed
         
@@ -202,7 +202,7 @@ def _save_graphs(sharded, shard_num, out_dir):
 
 if __name__ == "__main__":
 
-    sharded = sh.load_sharded(SC_DIR_R+'atom3d/ligand_activity_prediction/split-20200528/pairs_val@10')
+    sharded = sh.Sharded.load(SC_DIR_R + 'atom3d/ligand_activity_prediction/split-20200528/pairs_val@10')
 
     if False:
         print('Testing LAP graph dataloader')

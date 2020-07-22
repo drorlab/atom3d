@@ -48,7 +48,7 @@ class PSP_Dataset_PTG(Dataset):
 
 class PSP_Dataset(data.IterableDataset):
     def __init__(self, sharded, scores_dir, seed=131313):
-        self.sharded = sh.load_sharded(sharded)
+        self.sharded = sh.Sharded.load(sharded)
         self.scores_dir = scores_dir
         self.num_shards = self.sharded.get_num_shards()
         self.seed = seed
@@ -218,7 +218,7 @@ def _save_graphs(sharded, shard_num, out_dir):
             curr_idx += 1
 
 if __name__ == "__main__":
-    sharded = sh.load_sharded(SC_DIR_R+'atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
+    sharded = sh.Sharded.load(SC_DIR_R + 'atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
     scores_dir = SC_DIR_R+'atom3d/protein_structure_prediction/casp/labels/scores'
 
 

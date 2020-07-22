@@ -22,7 +22,7 @@ import examples.cnn3d.feature_resdel as feat
 
 class ResDel_Dataset(data.IterableDataset):
     def __init__(self, sharded, max_shards=None):
-        self.sharded = sh.load_sharded(sharded)
+        self.sharded = sh.Sharded.load(sharded)
         self.num_shards = self.sharded.get_num_shards()
         if max_shards:
             self.max_shards = max_shards

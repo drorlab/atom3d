@@ -43,7 +43,7 @@ class Resdel_Dataset_PTG(Dataset):
 
 class ResDel_Dataset(data.IterableDataset):
     def __init__(self, sharded, max_shards=None):
-        self.sharded = sh.load_sharded(sharded)
+        self.sharded = sh.Sharded.load(sharded)
         self.num_shards = self.sharded.get_num_shards()
         if max_shards:
             self.max_shards = max_shards
@@ -179,7 +179,7 @@ def _save_graphs(sharded, shard_num, out_dir):
         torch.save(graph, os.path.join(out_dir, f'data_{shard_num}_{i}.pt'))
 
 if __name__ == "__main__":
-    sharded = sh.load_sharded(O_DIR+'atom3d/data/residue_deletion/split/train_envs@1000')
+    sharded = sh.Sharded.load(O_DIR + 'atom3d/data/residue_deletion/split/train_envs@1000')
 
     if False:
         print('Testing residue deletion generator')

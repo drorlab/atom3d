@@ -27,7 +27,7 @@ index_columns = \
               'alpha-carbons, heavy is based on any heavy atom.')
 def get_neighbors_main(sharded_path, ensemble, output_labels, cutoff,
                        cutoff_type):
-    sharded = sh.load_sharded(sharded_path)
+    sharded = sh.Sharded.load(sharded_path)
     ensemble = sharded.read_keyed(ensemble)
 
     neighbors = neighbors_from_ensemble(ensemble, cutoff, cutoff_type)

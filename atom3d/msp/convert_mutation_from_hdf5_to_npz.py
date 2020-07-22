@@ -70,7 +70,7 @@ class MoleculesDataset():
         print('Loading',name,'set')
         self.name = name
         
-        sharded_ds = shard.load_sharded(struct_filename)
+        sharded_ds = shard.Sharded.load(struct_filename)
         num_shards = sharded_ds.get_num_shards()
         
         self.num_atoms = []

@@ -63,7 +63,7 @@ def split(input_sharded, output_root, shuffle_buffer):
               'not shuffle.')
 def filter_pairs(input_sharded_path, output_root, bsa, against_path,
                  shuffle_buffer):
-    input_sharded = sh.load_sharded(input_sharded_path)
+    input_sharded = sh.Sharded.load(input_sharded_path)
     keys = input_sharded.get_keys()
     if keys != ['ensemble']:
         raise RuntimeError('Can only apply to sharded by ensemble.')

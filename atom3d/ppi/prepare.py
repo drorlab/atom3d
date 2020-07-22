@@ -149,7 +149,7 @@ def form_bsa_filter(bsa_path, min_area):
               'not shuffle.')
 def filter_pairs(input_sharded_path, output_root, bsa, against_path,
                  shuffle_buffer):
-    input_sharded = sh.load_sharded(input_sharded_path)
+    input_sharded = sh.Sharded.load(input_sharded_path)
     keys = input_sharded.get_keys()
     if keys != ['ensemble']:
         raise RuntimeError('Can only apply to sharded by ensemble.')
@@ -170,7 +170,7 @@ def filter_pairs(input_sharded_path, output_root, bsa, against_path,
         filter_fn = filters.compose(
             form_bsa_filter(bsa, 500), filter_fn)
     if against_path is not None:
-        against = sh.load_sharded(against_path)
+        against = sh.Sharded.load(against_path)
         filter_fn = filters.compose(
             filters.form_seq_filter_against(against, 0.3), filter_fn)
         filter_fn = filters.compose(

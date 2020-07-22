@@ -13,7 +13,7 @@ def identity_ensembler(pdb_files):
     return {x: None for x in pdb_files}
 
 
-# An ensembler maps a list of files to a 2-level dictionary.  First key is
+# An ensembler maps a list of files to an ensemble map (a 2-level dictionary).  First key is
 # name of an ensemble, second key is name of a subunit.  A (ensemble, subunit)
 # pair should map to a single file.
 ensemblers = {

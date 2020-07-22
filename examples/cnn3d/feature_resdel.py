@@ -228,7 +228,7 @@ def get_residue_weights():
 
 if __name__ == "__main__":
 <<<<<<< HEAD
-    sharded = sh.load_sharded('/oak/stanford/groups/rbaltman/aderry/atom3d/data/residue_deletion/test_pdbs@100/test_pdbs@100')
+    sharded = sh.Sharded.load('/oak/stanford/groups/rbaltman/aderry/atom3d/data/residue_deletion/test_pdbs@100/test_pdbs@100')
     cts, pcts = get_all_labels(sharded)
     print(cts)
     print(pcts)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
         if i == 9:
             break
 =======
-    sharded = sh.load_sharded(O_DIR + 'atom3d/data/residue_deletion/split/train_envs@1000')
+    sharded = sh.Sharded.load(O_DIR + 'atom3d/data/residue_deletion/split/train_envs@1000')
 
     if False:
         cts, pcts = get_all_labels(sharded)

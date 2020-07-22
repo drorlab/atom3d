@@ -111,7 +111,7 @@ def generate_train_val_targets_tests(structures_df, targets_train, targets_val,
 
 def create_sharded_dataset(files, sharded_path):
     ensembles = en.ensemblers['casp'](files)
-    sh.create_from_ensembles(ensembles, sharded_path)
+    sh.Sharded.create_from_ensemble_map(ensembles, sharded_path)
 
 
 def create_parser():

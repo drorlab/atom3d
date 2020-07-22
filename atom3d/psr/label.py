@@ -19,7 +19,7 @@ logger = log.getLogger('psr_label')
 @click.option('--overwrite/--no-overwrite', default=False,
               help='Overwrite existing labels.')
 def gen_labels_sharded(sharded_path, label_dir, num_threads, overwrite):
-    sharded = sh.load_sharded(sharded_path)
+    sharded = sh.Sharded.load(sharded_path)
     num_shards = sharded.get_num_shards()
 
     requested_shards = list(range(num_shards))

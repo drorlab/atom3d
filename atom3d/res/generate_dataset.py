@@ -30,7 +30,7 @@ with open('train_res_weights') as f:
 
 
 def shard_envs(input_path, output_path, num_threads=8, subsample=True):
-    input_sharded = sh.load_sharded(input_path)
+    input_sharded = sh.Sharded.load(input_path)
     keys = input_sharded.get_keys()
     if keys != ['ensemble']:
         raise RuntimeError('Can only apply to sharded by ensemble.')

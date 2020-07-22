@@ -50,7 +50,7 @@ class PPI_Dataset_PTG(Dataset):
 
 class PPI_Dataset(data.IterableDataset):
     def __init__(self, sharded, seed=131313):
-        self.sharded = sh.load_sharded(sharded)
+        self.sharded = sh.Sharded.load(sharded)
         self.num_shards = self.sharded.get_num_shards()
         self.seed = seed
         
@@ -219,7 +219,7 @@ def _save_graphs(sharded, shard_num, out_dir):
 
 if __name__ == "__main__":
     # split = sys.argv[1]
-    db5_sharded = sh.load_sharded(f'{SC_DIR_R}atom3d/protein_interface_prediction/DB5/sharded/pairs@10')
+    db5_sharded = sh.Sharded.load(f'{SC_DIR_R}atom3d/protein_interface_prediction/DB5/sharded/pairs@10')
 
     if False:
         print('Testing PPI graph dataloader')
