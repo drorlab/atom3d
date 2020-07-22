@@ -142,11 +142,11 @@ def get_chain_sequences(pdb_file):
 
     Takes the form of list of (chain name, sequence string).
     """
-#     fname = os.path.join(path, pdb, pdb + '_protein.pdb')
+    #     fname = os.path.join(path, pdb, pdb + '_protein.pdb')
     chain_seqs = []
-    for seq in SeqIO.parse(pdb_file, 'pdb-atom'):
-        chain = seq.annotations['chain']
-        chain_seqs.append(((chain,), str(seq.seq)))
+    for s in SeqIO.parse(pdb_file, 'pdb-atom'):
+        chain = s.annotations['chain']
+        chain_seqs.append(((chain,), str(s.seq)))
     return chain_seqs
 
 
@@ -181,3 +181,4 @@ def write_fasta(chain_sequences, outfile):
         for chain, seq in chain_sequences.items():
             f.write('>' + chain + '\n')
             f.write(seq + '\n')
+

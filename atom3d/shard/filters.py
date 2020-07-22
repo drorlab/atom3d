@@ -3,9 +3,9 @@ import Bio.PDB.Polypeptide as Poly
 import numpy as np
 import pandas as pd
 
-import atom3d.util.file as fi
 import atom3d.protein.scop as scop
 import atom3d.protein.sequence as seq
+import atom3d.util.file as fi
 
 PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
 RESOLUTION_FILE = 'metadata/resolu.idx'

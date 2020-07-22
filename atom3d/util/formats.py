@@ -4,11 +4,11 @@ import gzip
 import os
 import re
 
-import Bio.PDB.Structure
-import Bio.PDB.Model
-import Bio.PDB.Chain
-import Bio.PDB.Residue
 import Bio.PDB.Atom
+import Bio.PDB.Chain
+import Bio.PDB.Model
+import Bio.PDB.Residue
+import Bio.PDB.Structure
 import numpy as np
 import pandas as pd
 

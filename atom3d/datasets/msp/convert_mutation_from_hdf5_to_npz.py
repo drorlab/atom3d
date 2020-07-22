@@ -7,8 +7,8 @@ import scipy as sp
 import scipy.spatial
 from rdkit import Chem
 
-import atom3d.util.formats as dt
 import atom3d.shard.shard as shard
+import atom3d.util.formats as dt
 
 pte = Chem.GetPeriodicTable()
 

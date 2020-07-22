@@ -3,14 +3,15 @@ import numpy as np
 import pandas as pd
 
 import atom3d.datasets.ppi.neighbors as nb
-import atom3d.util.file as fi
-import atom3d.shard.filters as filters
-import atom3d.util.log as log
 import atom3d.protein.scop as scop
+import atom3d.protein.sequence
 import atom3d.protein.sequence as seq
+import atom3d.protein.sequence_splits
+import atom3d.shard.filters as filters
 import atom3d.shard.shard as sh
 import atom3d.shard.shard_ops as sho
-import atom3d.util.splits as splits
+import atom3d.util.file as fi
+import atom3d.util.log as log
 
 logger = log.get_logger('prepare')
 
@@ -26,7 +27,7 @@ def split(input_sharded, output_root, shuffle_buffer):
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
 
     logger.info('Splitting by cluster')
-    train, val, test = splits.cluster_split(all_chain_sequences, 30)
+    train, val, test = atom3d.protein.sequence_splits.cluster_split(all_chain_sequences, 30)
 
     # Will just look up ensembles.
     train = [x[0] for x in train]

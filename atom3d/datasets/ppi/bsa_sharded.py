@@ -9,8 +9,8 @@ import parallel as par
 
 import atom3d.datasets.ppi.bsa as bsa
 import atom3d.datasets.ppi.neighbors as nb
-import atom3d.util.log as log
 import atom3d.shard.shard as sh
+import atom3d.util.log as log
 
 logger = log.get_logger('bsa')
 

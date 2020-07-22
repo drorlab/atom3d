@@ -3,8 +3,8 @@ import freesasa
 import pandas as pd
 
 import atom3d.datasets.ppi.neighbors as nb
-import atom3d.util.formats as dt
 import atom3d.shard.shard as sh
+import atom3d.util.formats as dt
 
 freesasa.setVerbosity(freesasa.nowarnings)
 
