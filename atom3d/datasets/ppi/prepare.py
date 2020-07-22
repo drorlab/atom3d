@@ -3,11 +3,13 @@ import numpy as np
 import pandas as pd
 
 import atom3d.datasets.ppi.neighbors as nb
+import atom3d.filters.pdb
+import atom3d.filters.sequence
 import atom3d.protein.scop as scop
 import atom3d.protein.sequence
 import atom3d.protein.sequence as seq
-import atom3d.protein.sequence_splits
-import atom3d.shard.filters as filters
+import atom3d.splits.sequence
+import atom3d.filters.filters as filters
 import atom3d.shard.shard as sh
 import atom3d.shard.shard_ops as sho
 import atom3d.util.file as fi
@@ -27,7 +29,7 @@ def split(input_sharded, output_root, shuffle_buffer):
         all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
 
     logger.info('Splitting by cluster')
-    train, val, test = atom3d.protein.sequence_splits.cluster_split(all_chain_sequences, 30)
+    train, val, test = atom3d.splits.sequence.cluster_split(all_chain_sequences, 30)
 
     # Will just look up ensembles.
     train = [x[0] for x in train]
@@ -156,20 +158,20 @@ def filter_pairs(input_sharded_path, output_root, bsa, against_path,
     filter_fn = filters.identity_filter
 
     filter_fn = filters.compose(
-        filters.form_molecule_type_filter(allowed=['prot']), filter_fn)
+        atom3d.filters.pdb.form_molecule_type_filter(allowed=['prot']), filter_fn)
     filter_fn = filters.compose(
         filters.form_size_filter(min_size=50), filter_fn)
     filter_fn = filters.compose(
-        filters.form_resolution_filter(3.5), filter_fn)
+        atom3d.filters.pdb.form_resolution_filter(3.5), filter_fn)
     filter_fn = filters.compose(
-        filters.form_source_filter(allowed=['diffraction', 'EM']), filter_fn)
+        atom3d.filters.pdb.form_source_filter(allowed=['diffraction', 'EM']), filter_fn)
     if bsa is not None:
         filter_fn = filters.compose(
             form_bsa_filter(bsa, 500), filter_fn)
     if against_path is not None:
         against = sh.Sharded.load(against_path)
         filter_fn = filters.compose(
-            filters.form_seq_filter_against(against, 0.3), filter_fn)
+            atom3d.filters.sequence.form_seq_filter_against(against, 0.3), filter_fn)
         filter_fn = filters.compose(
             form_scop_pair_filter_against(against, 'superfamily'), filter_fn)
 

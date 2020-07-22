@@ -8,7 +8,7 @@ import atom3d.shard.ensemble as en
 import atom3d.shard.shard as sh
 import atom3d.util.file as fi
 import atom3d.util.formats as dt
-import atom3d.util.splits as sp
+import atom3d.splits.splits as sp
 
 
 def split_targets_random(targets_df, train_size=None, val_size=0.1,

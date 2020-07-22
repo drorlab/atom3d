@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 import atom3d.util.formats as dt
-import atom3d.util.splits as splits
+import atom3d.splits.splits as splits
 
 
 class MoleculesDataset():
@@ -126,7 +126,7 @@ def convert_sdfcsv_to_hdf5(in_dir_name, out_dir_name, split_indices=None, dataty
 
     # Define indices to split the data set
     if split_indices is None:
-        test_indices, vali_indices, train_indices = splits.random_split(len(ds),vali_split=0.1,test_split=0.1,random_seed=seed,exclude=exclude)
+        test_indices, vali_indices, train_indices = splits.random_split(len(ds), vali_split=0.1, test_split=0.1, random_seed=seed, exclude=exclude)
     else:
         test_indices, vali_indices, train_indices = split_indices
     print('Training: %i molecules. Validation: %i molecules. Test: %i molecules.'%(len(train_indices),len(vali_indices),len(test_indices)))

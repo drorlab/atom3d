@@ -2,7 +2,7 @@ import argparse
 
 import numpy as np
 
-import atom3d.util.splits as splits
+import atom3d.splits.splits as splits
 
 
 def generate_split(excl_uncharacterized=True, excl_rdkitfails=True, out_dir_name='.', seed=42):
@@ -24,7 +24,7 @@ def generate_split(excl_uncharacterized=True, excl_rdkitfails=True, out_dir_name
         exclude = []
 
     # Define indices to split the data set
-    test_indices, vali_indices, train_indices = splits.random_split(num_molecules,vali_split=0.1,test_split=0.1,random_seed=seed,exclude=exclude)
+    test_indices, vali_indices, train_indices = splits.random_split(num_molecules, vali_split=0.1, test_split=0.1, random_seed=seed, exclude=exclude)
     print('Training: %i molecules. Validation: %i molecules. Test: %i molecules.'%(len(train_indices),len(vali_indices),len(test_indices)))
     
     # Save the indices for the split

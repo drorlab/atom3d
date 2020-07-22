@@ -2,7 +2,7 @@
 import click
 
 import atom3d.datasets.rsr.score as sc
-import atom3d.shard.filters as filters
+import atom3d.filters.filters as filters
 import atom3d.shard.shard as sh
 import atom3d.shard.shard_ops as sho
 import atom3d.util.log as log
