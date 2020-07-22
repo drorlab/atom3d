@@ -2,7 +2,7 @@ import click
 import freesasa
 import pandas as pd
 
-import atom3d.ppi.neighbors as nb
+import atom3d.datasets.ppi.neighbors as nb
 import atom3d.util.datatypes as dt
 import atom3d.shard.shard as sh
 

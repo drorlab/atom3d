@@ -13,7 +13,7 @@ de.load_dotenv(de.find_dotenv())
 
 import atom3d.shard.shard as sh
 import atom3d.torch.graph as gr
-import atom3d.ppi.neighbors as nb
+import atom3d.datasets.ppi.neighbors as nb
 
 
 import torch

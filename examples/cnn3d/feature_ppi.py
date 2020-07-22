@@ -8,7 +8,7 @@ import pandas as pd
 
 de.load_dotenv(de.find_dotenv(usecwd=True))
 
-import atom3d.ppi.neighbors as nb
+import atom3d.datasets.ppi.neighbors as nb
 import atom3d.shard.shard as sh
 
 import examples.cnn3d.subgrid_gen as subgrid_gen

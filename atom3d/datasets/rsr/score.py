@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-import atom3d.rsr.ensemble as en
+import atom3d.datasets.rsr.ensemble as en
 import atom3d.util.file as fi
 
 

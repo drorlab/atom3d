@@ -1,7 +1,7 @@
 """CASP functions."""
 import collections as col
 
-import atom3d.psr.util as util
+import atom3d.datasets.psr.util as util
 
 
 def casp_ensembler(pdb_files):

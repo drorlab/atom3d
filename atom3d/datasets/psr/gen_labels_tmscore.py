@@ -7,7 +7,7 @@ import dotenv as de
 import pandas as pd
 import parallel as par
 
-import atom3d.psr.util as util
+import atom3d.datasets.psr.util as util
 import atom3d.util.file as fi
 
 de.load_dotenv(de.find_dotenv(usecwd=True))

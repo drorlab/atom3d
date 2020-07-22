@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-import atom3d.ppi.neighbors as nb
+import atom3d.datasets.ppi.neighbors as nb
 import atom3d.util.file as fi
 import atom3d.shard.filters as filters
 import atom3d.util.log as log

@@ -1,7 +1,7 @@
 """Code for preparing rsr dataset (splitting)."""
 import click
 
-import atom3d.rsr.score as sc
+import atom3d.datasets.rsr.score as sc
 import atom3d.shard.filters as filters
 import atom3d.util.log as log
 import atom3d.shard.shard as sh

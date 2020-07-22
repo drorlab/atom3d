@@ -1,11 +1,11 @@
 """Ensembling operations for shards."""
 import pandas as pd
 
-import atom3d.lep.ensemble as lepe
-import atom3d.msp.ensemble as mspe
-import atom3d.ppi.db5 as db5
-import atom3d.psr.casp as casp
-import atom3d.rsr.ensemble as rsre
+import atom3d.datasets.lep.ensemble as lepe
+import atom3d.datasets.msp.ensemble as mspe
+import atom3d.datasets.ppi.db5 as db5
+import atom3d.datasets.psr.casp as casp
+import atom3d.datasets.rsr.ensemble as rsre
 import atom3d.util.datatypes as dt
 
 

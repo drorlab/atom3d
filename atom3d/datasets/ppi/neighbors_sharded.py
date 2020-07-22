@@ -5,7 +5,7 @@ import click
 import pandas as pd
 import parallel as par
 
-import atom3d.ppi.neighbors as nb
+import atom3d.datasets.ppi.neighbors as nb
 import atom3d.util.log as log
 import atom3d.shard.shard as sh
 
