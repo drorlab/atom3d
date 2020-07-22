@@ -2,7 +2,12 @@ from setuptools import setup
 
 setup(
     name='atom3d',
-    packages=['atom3d', 'atom3d.util'],
+    packages=[
+        'atom3d',
+        'atom3d.protein',
+        'atom3d.shard',
+        'atom3d.util',
+    ],
     version='0.1.0',
     description='ATOM3D: Tasks On Molecules in 3 Dimensions',
     author='Raphael Townshend',
