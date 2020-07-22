@@ -1,19 +1,28 @@
-.PHONY: clean data lint requirements
-
-#################################################################################
-# GLOBALS                                                                       #
-#################################################################################
-
-PYTHON_INTERPRETER = python3
-
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
 
 ## Install Python Dependencies
 requirements:
-	$(PYTHON_INTERPRETER) -m pip install -U pip setuptools wheel
-	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	pip install -U pip setuptools wheel
+	pip install -r requirements.txt
+
+# Setup environment file.
+env:
+	cp -n .env.template .env
+
+# Install rdkit
+rdkit:
+    conda install -c conda-forge -y rdkit
+
+# Install GPU tensorflow
+tensorflow-gpu:
+	pip install tensorflow-gpu==1.15.0
+
+# Install CPU tensorflow
+tensorflow:
+	pip install tensorflow==1.15.0
+
 
 ## Delete all compiled Python files
 clean:
