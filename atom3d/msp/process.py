@@ -1,10 +1,10 @@
-import pymol as py
-from collections import defaultdict
-import random
-import os
-import dill
-import sys
 import csv
+import os
+import sys
+from collections import defaultdict
+
+import pymol as py
+
 
 #Functions that filter data
 #==========================

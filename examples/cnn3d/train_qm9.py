@@ -7,17 +7,17 @@ import logging
 import math
 import os
 import random
-import tqdm
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import tqdm
+
 try:
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 except:
     pass
 
-import atom3d.util.shard as sh
 import examples.cnn3d.model as model
 import examples.cnn3d.feature_qm9 as feature_qm9
 import examples.cnn3d.subgrid_gen as subgrid_gen

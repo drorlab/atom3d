@@ -1,5 +1,4 @@
 """Code for preparing a pairs dataset (filtering and splitting)."""
-import click
 import numpy as np
 import pandas as pd
 
@@ -12,7 +11,6 @@ import atom3d.util.sequence as seq
 import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
 import atom3d.util.splits as splits
-
 
 logger = log.getLogger('prepare')
 

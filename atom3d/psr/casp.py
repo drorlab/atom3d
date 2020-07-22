@@ -1,6 +1,5 @@
 """CASP functions."""
 import collections as col
-import os
 
 import atom3d.psr.util as util
 

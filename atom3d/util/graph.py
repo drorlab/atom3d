@@ -1,14 +1,8 @@
 import numpy as np
-import pandas as pd
-import sys
-sys.path.append('../..')
-import atom3d.util.datatypes as dt
-import atom3d. util.file as fi
+import scipy.spatial as ss
 import torch
-import torch.nn.functional as F
-from scipy.spatial import KDTree
-from rdkit import Chem
 
+import atom3d.util.datatypes as dt
 
 # PDB atom names -- these include co-crystallized metals
 prot_atoms = ['C', 'H', 'O', 'N', 'S', 'P', 'ZN', 'NA', 'FE', 'CA', 'MN', 'NI', 'CO', 'MG', 'CU', 'CL', 'SE', 'F', 'X'] 
@@ -36,7 +30,7 @@ def prot_df_to_graph(df, edge_dist_cutoff=4.5):
 
 	node_pos = torch.FloatTensor(df[['x', 'y', 'z']].to_numpy())
 
-	kd_tree = KDTree(node_pos)
+	kd_tree = ss.KDTree(node_pos)
 	edge_tuples = list(kd_tree.query_pairs(edge_dist_cutoff))
 	edges = torch.LongTensor(edge_tuples).t().contiguous()
 

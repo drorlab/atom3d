@@ -1,16 +1,12 @@
-import os
-import subprocess
-import tqdm
-import warnings
-
 import collections as col
+import os
+
+import dotenv as de
 import numpy as np
 import pandas as pd
 
-import dotenv as de
 de.load_dotenv(de.find_dotenv(usecwd=True))
 
-import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
 
 import examples.cnn3d.subgrid_gen as subgrid_gen

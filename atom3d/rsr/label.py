@@ -1,13 +1,11 @@
 """Label structures with deviation."""
 import click
-import parallel as par
-
 import pandas as pd
+import parallel as par
 
 import atom3d.rsr.score as sc
 import atom3d.util.log as log
 import atom3d.util.shard as sh
-
 
 logger = log.getLogger('rsr_label')
 

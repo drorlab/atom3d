@@ -2,7 +2,6 @@ import itertools
 import operator
 
 import numpy as  np
-import pandas as pd
 
 
 class dotdict(dict):

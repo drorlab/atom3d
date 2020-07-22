@@ -2,18 +2,14 @@
 # coding: utf-8
 
 
-import pandas as pd
-import numpy as np
-import numpy as np
+import argparse
 import os
-import subprocess
-import sys
-sys.path.append('..')
+
+import pandas as pd
+from rdkit.Chem import PandasTools
+from tqdm import tqdm
 from util import datatypes as dt
 from util import file as fi
-from tqdm import tqdm
-import argparse
-from rdkit.Chem import PandasTools
 
 
 def convert_to_hdf5(input_dir, label_file, hdf_file):

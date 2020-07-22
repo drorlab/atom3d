@@ -1,13 +1,12 @@
 """Label structures with RMSD, GDT_TS, GDT_HA, TM-score."""
 import click
-import parallel as par
 import numpy as np
 import pandas as pd
+import parallel as par
 
 import atom3d.psr.util as psr_util
 import atom3d.util.log as log
 import atom3d.util.shard as sh
-
 
 logger = log.getLogger('psr_label')
 

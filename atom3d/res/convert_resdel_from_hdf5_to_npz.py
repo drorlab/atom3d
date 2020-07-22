@@ -1,18 +1,12 @@
-import os, sys
-import pickle
-import pandas as pd
-import numpy as np
-import scipy as sp
-import scipy.spatial
 import argparse
+import os
 
-sys.path.append('../..')
-import atom3d.util.splits as splits
-import atom3d.util.datatypes as dt
-import atom3d.util.shard as shard
-
+import numpy as np
+import pandas as pd
 from rdkit import Chem
 
+import atom3d.util.datatypes as dt
+import atom3d.util.shard as shard
 
 label_res_dict={0:'HIS',1:'LYS',2:'ARG',3:'ASP',4:'GLU',5:'SER',6:'THR',7:'ASN',8:'GLN',9:'ALA',10:'VAL',11:'LEU',12:'ILE',13:'MET',14:'PHE',15:'TYR',16:'TRP',17:'PRO',18:'GLY',19:'CYS'}
 res_label_dict={'HIS':0,'LYS':1,'ARG':2,'ASP':3,'GLU':4,'SER':5,'THR':6,'ASN':7,'GLN':8,'ALA':9,'VAL':10,'LEU':11,'ILE':12,'MET':13,'PHE':14,'TYR':15,'TRP':16,'PRO':17,'GLY':18,'CYS':19}

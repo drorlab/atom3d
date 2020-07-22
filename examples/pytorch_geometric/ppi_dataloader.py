@@ -1,22 +1,16 @@
-import os
-import subprocess
-from tqdm import tqdm
-import pdb
-
-import numpy as np
-import pandas as pd
-import random
 import math
-import scipy.spatial
-import parallel as par
+import os
+import random
 
 import dotenv as de
+import numpy as np
+import pandas as pd
+import parallel as par
+import scipy.spatial
+from tqdm import tqdm
+
 de.load_dotenv(de.find_dotenv())
 
-import sys
-sys.path.append('../..')
-
-import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
 import atom3d.util.graph as gr
 import atom3d.ppi.neighbors as nb

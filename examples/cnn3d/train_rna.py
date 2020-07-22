@@ -5,13 +5,14 @@ import functools
 import json
 import logging
 import math
-import random
 import os
-import tqdm
+import random
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import tqdm
+
 try:
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 except:

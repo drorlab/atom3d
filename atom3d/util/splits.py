@@ -1,10 +1,8 @@
 """Functions for splitting data into test, validation, and training sets."""
 import math
 import random
-import sys
 
 import numpy as np
-sys.path.append('../..')
 
 import atom3d.util.file as fi
 import atom3d.util.log as log

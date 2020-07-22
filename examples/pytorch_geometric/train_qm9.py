@@ -1,22 +1,20 @@
-import os, sys
-import os.path as osp
 import argparse
-import numpy as np
 import logging
+import os
+import os.path as osp
+
+import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.nn import Sequential, Linear, ReLU, GRU
 import torch_geometric.transforms as T
-from torch_geometric.nn import NNConv, Set2Set
-from torch_geometric.data import DataLoader
-from torch_geometric.utils import remove_self_loops
-sys.path.append('../..')
 from atom3d.mpp.data_qm9_for_ptgeom import GraphQM9
+from torch.nn import Sequential, Linear, ReLU, GRU
+from torch_geometric.data import DataLoader
+from torch_geometric.nn import NNConv, Set2Set
+from torch_geometric.utils import remove_self_loops
 
 
-
-
-class MyTransform(object):    
+class MyTransform(object):
     def __init__(self,target):
         self.target = target
     def __call__(self, data):

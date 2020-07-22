@@ -1,29 +1,22 @@
-import numpy as np
-import os
-import math
-from tqdm import tqdm
 import argparse
 import datetime
+import os
 import time
-import logging
 
 import dotenv as de
-de.load_dotenv()
+import numpy as np
 
-import sys
-sys.path.append('../..')
+de.load_dotenv()
 
 import torch
 import torch.nn as nn
-from torch.utils import data
-from torch_geometric.data import Data, Batch, DataLoader
-from torch_geometric.nn import GCNConv, global_add_pool, DataParallel
-from torch.nn import Sequential, Linear, ReLU
+from torch_geometric.data import DataLoader
+from torch_geometric.nn import GCNConv
+from torch.nn import Linear
 import torch.nn.functional as F
 
 
 # import atom3d.util.datatypes as dt
-import atom3d.util.shard as sh
 import resdel_dataloader as dl
 
 

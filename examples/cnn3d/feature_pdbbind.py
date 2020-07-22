@@ -1,12 +1,12 @@
 import os
 
+import dotenv as de
 import numpy as np
 import pandas as pd
 
 import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
-import dotenv as de
 de.load_dotenv(de.find_dotenv(usecwd=True))
 
 

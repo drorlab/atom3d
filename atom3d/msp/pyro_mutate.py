@@ -1,11 +1,11 @@
-import sys
 import csv
 import os
+import sys
 
 import pyrosetta
-from pyrosetta import Pose, pose_from_pdb
+from pyrosetta import pose_from_pdb
 from pyrosetta.toolbox import mutate_residue
-from pyrosetta import utility
+
 
 def read_csv(csv_file):
     rows = []

@@ -2,23 +2,19 @@
 # GCN torch-geometric training script for psp
 # based on https://github.com/rusty1s/pytorch_geometric/blob/master/examples/gcn.py
 
+import argparse
+import datetime
 import os
 import time
-import logging
-from sklearn.metrics import roc_auc_score, average_precision_score
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 import numpy as np
-import datetime
-import argparse
-
-import torch
-import torch.nn.functional as F
-import torch.nn as nn
-from torch_geometric.data import DataLoader
-from torch_geometric.nn import GCNConv, global_add_pool
-
 import ppi_dataloader as dl
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from sklearn.metrics import roc_auc_score, average_precision_score
+from torch_geometric.data import DataLoader
+from torch_geometric.nn import GCNConv
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False

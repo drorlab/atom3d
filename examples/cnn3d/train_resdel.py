@@ -1,18 +1,14 @@
-import numpy as np
-import os
-import math
-from tqdm import tqdm
 import argparse
 import datetime
+import math
+import os
 import time
-import logging
-from sklearn.metrics import f1_score
 
 import dotenv as de
-de.load_dotenv()
+import numpy as np
+from sklearn.metrics import f1_score
 
-import sys
-sys.path.append('../..')
+de.load_dotenv()
 
 import torch
 import torch.nn as nn

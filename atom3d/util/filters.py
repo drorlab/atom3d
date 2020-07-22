@@ -1,13 +1,11 @@
 """Common filtering functions."""
+import Bio.PDB.Polypeptide as poly
 import numpy as np
 import pandas as pd
-
-import Bio.PDB.Polypeptide as poly
 
 import atom3d.util.file as fi
 import atom3d.util.scop as scop
 import atom3d.util.sequence as seq
-
 
 PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
 RESOLUTION_FILE = 'metadata/resolu.idx'

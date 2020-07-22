@@ -1,21 +1,15 @@
-import os
-import subprocess
-from tqdm import tqdm
-import parallel as par
 import multiprocessing
-
-import numpy as np
-import pandas as pd
+import os
 import random
-import torch
 
 import dotenv as de
+import numpy as np
+import pandas as pd
+import torch
+from tqdm import tqdm
+
 de.load_dotenv(de.find_dotenv(usecwd=True))
 
-import sys
-sys.path.append('../..')
-
-import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
 from atom3d.residue_deletion.util import *
 
@@ -23,7 +17,6 @@ import examples.cnn3d.subgrid_gen as subgrid_gen
 import examples.cnn3d.util as util
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 
 
@@ -199,7 +192,6 @@ def plot_cube(cube, name='test.png'):
     plt.savefig(name)
 
 def get_all_labels(sharded):
-    import json
     cts = {k:0 for k in res_label_dict.keys()}
     total = 0
     for shard in tqdm(sharded.iter_shards()):

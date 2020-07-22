@@ -1,24 +1,16 @@
 import os
+import random
+
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-import random
-import time
-import multiprocessing
-import scipy.spatial
 import parallel as par
-
-import sys
-sys.path.append('../..')
-
+import scipy.spatial
 import torch
+from util import *
 
 # import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
-import examples.cnn3d.feature_resdel as feat
-import examples.pytorch_geometric.resdel_dataloader as dl
-from util import *
 
 seed = 131313
 np.random.seed(seed)

@@ -8,7 +8,6 @@ import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
 import atom3d.util.splits as splits
 
-
 logger = log.getLogger('prepare')
 
 

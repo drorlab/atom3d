@@ -1,19 +1,13 @@
-import os
-import subprocess
-from tqdm import tqdm
-import pdb
-
-import numpy as np
-import pandas as pd
-import random
 import math
-import parallel as par
+import os
+import random
 
 import dotenv as de
-de.load_dotenv(de.find_dotenv())
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
-import sys
-sys.path.append('../..')
+de.load_dotenv(de.find_dotenv())
 
 import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
@@ -22,7 +16,6 @@ import atom3d.util.graph as gr
 
 import torch
 from torch_geometric.data import Data, Batch, Dataset
-import torch_geometric.data
 from torch.utils import data
 
 seed = 131313

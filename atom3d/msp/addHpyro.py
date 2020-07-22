@@ -1,10 +1,8 @@
-import sys
-import csv
 import os
 from glob import glob
 
 import pyrosetta
-from pyrosetta import Pose, pose_from_pdb
+from pyrosetta import pose_from_pdb
 
 pyrosetta.init()
 

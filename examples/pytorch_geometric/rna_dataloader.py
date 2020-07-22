@@ -1,19 +1,14 @@
-import os
-import subprocess
-import tqdm
-import pdb
-
-import numpy as np
-import pandas as pd
-import random
 import math
-import parallel as par
+import os
+import random
 
 import dotenv as de
-de.load_dotenv(de.find_dotenv())
+import numpy as np
+import pandas as pd
+import parallel as par
+import tqdm
 
-import sys
-sys.path.append('../..')
+de.load_dotenv(de.find_dotenv())
 
 import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh

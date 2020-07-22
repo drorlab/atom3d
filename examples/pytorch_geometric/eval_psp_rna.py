@@ -1,6 +1,7 @@
-import pandas as pd
-import numpy as np
 import sys
+
+import numpy as np
+import pandas as pd
 
 typ = sys.argv[1] # rna or psp
 

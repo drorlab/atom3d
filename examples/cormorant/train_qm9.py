@@ -3,22 +3,17 @@
 # from https://github.com/risilab/cormorant/blob/master/examples/train_qm9.py
 #
 
-import torch
-from torch.utils.data import DataLoader
-
 import logging
-from datetime import datetime
-from math import sqrt
 
-from cormorant.models import CormorantQM9
-from cormorant.models.autotest import cormorant_tests
-
+import torch
+from cormorant.data.collate import collate_fn
+from cormorant.data.utils import initialize_datasets
 from cormorant.engine import Engine
 from cormorant.engine import init_argparse, init_file_paths, init_logger, init_cuda
 from cormorant.engine import init_optimizer, init_scheduler
-from cormorant.data.utils import initialize_datasets
-
-from cormorant.data.collate import collate_fn
+from cormorant.models import CormorantQM9
+from cormorant.models.autotest import cormorant_tests
+from torch.utils.data import DataLoader
 
 # This makes printing tensors more readable.
 torch.set_printoptions(linewidth=1000, threshold=100000)

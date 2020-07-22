@@ -1,6 +1,6 @@
+import collections as col
 import os
 
-import collections as col
 import pandas as pd
 
 import atom3d.util.file as fi

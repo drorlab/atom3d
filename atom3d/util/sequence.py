@@ -2,17 +2,15 @@
 import os
 import subprocess
 
-from Bio import SeqIO
-from Bio.Blast.Applications import NcbiblastpCommandline
 import Bio.PDB.Polypeptide as poly
 import dotenv as de
 import numpy as np
 import tqdm
+from Bio import SeqIO
+from Bio.Blast.Applications import NcbiblastpCommandline
 
-import atom3d.util.datatypes as dt
-import atom3d.util.log as log
 import atom3d.util.file as fi
-
+import atom3d.util.log as log
 
 project_root = os.path.abspath(os.path.join(__file__, '../../..'))
 de.load_dotenv(os.path.join(project_root, '.env'))

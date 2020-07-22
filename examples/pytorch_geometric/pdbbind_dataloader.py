@@ -1,19 +1,14 @@
-import torch
-import numpy as np
-import pandas as pd
-import sys
-sys.path.append('../..')
-from atom3d.util import datatypes as dt
-from atom3d.util import file as fi
-from atom3d.util import splits as sp
-from atom3d.protein_ligand.get_labels import get_label
-from atom3d.util import graph
 import os
+
+import pandas as pd
 import torch
+from atom3d.protein_ligand.get_labels import get_label
 from torch_geometric.data import Dataset, Data, DataLoader
 
-import logging
-import pdb
+from atom3d.util import datatypes as dt
+from atom3d.util import file as fi
+from atom3d.util import graph
+from atom3d.util import splits as sp
 
 
 # loader for pytorch-geometric

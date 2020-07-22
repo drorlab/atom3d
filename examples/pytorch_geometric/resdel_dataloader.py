@@ -1,28 +1,19 @@
-import os
-import subprocess
-from tqdm import tqdm
-import pdb
-
-import numpy as np
-import pandas as pd
-import scipy.spatial
-import random
 import math
-import parallel as par
 import multiprocessing
+import os
+import random
 
 import dotenv as de
+import numpy as np
+import pandas as pd
+import parallel as par
+from tqdm import tqdm
+
 de.load_dotenv(de.find_dotenv())
 
-import sys
-sys.path.append('../..')
-
-import atom3d.util.datatypes as dt
 import atom3d.util.shard as sh
 import atom3d.util.graph as gr
 
-import examples.cnn3d.subgrid_gen as subgrid_gen
-import examples.cnn3d.util as util
 from atom3d.residue_deletion.util import *
 
 import torch

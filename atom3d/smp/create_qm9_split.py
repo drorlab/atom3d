@@ -1,11 +1,9 @@
-import os, sys
-import pickle
-import numpy as np
 import argparse
-sys.path.append('../..')
+
+import numpy as np
+
 import atom3d.util.splits as splits
 
-from rdkit import Chem
 
 def generate_split(excl_uncharacterized=True, excl_rdkitfails=True, out_dir_name='.', seed=42):
 

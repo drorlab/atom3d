@@ -1,10 +1,8 @@
 """Code to ensemble FARFAR2-Puzzles dataset."""
+import collections as col
 import os
 import random
 import re
-
-import collections as col
-
 
 NUMBER_PATTERN = re.compile('_([0-9]{1,2})(_|$|\.)')
 

@@ -1,14 +1,13 @@
+import collections as col
 import math
 import os
 
-import collections as col
+import dotenv as de
 import numpy as np
 import pandas as pd
 
-import dotenv as de
 de.load_dotenv(de.find_dotenv(usecwd=True))
 
-import atom3d.util.datatypes as dt
 import atom3d.ppi.neighbors as nb
 import atom3d.util.shard as sh
 

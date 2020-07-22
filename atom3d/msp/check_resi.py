@@ -1,11 +1,10 @@
-import sys
 import csv
-import os
 import glob
+import os
+import sys
 
 import pyrosetta
-from pyrosetta import Pose, pose_from_pdb
-from pyrosetta.toolbox import mutate_residue
+from pyrosetta import pose_from_pdb
 
 pyrosetta.init()
 files = sorted(glob.glob('../pyrosetta_mut/*.pdb'))

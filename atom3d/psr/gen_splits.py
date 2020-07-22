@@ -1,7 +1,4 @@
 import argparse
-import functools
-import os
-import tqdm
 
 import numpy as np
 import pandas as pd
@@ -11,7 +8,6 @@ import atom3d.util.datatypes as dt
 import atom3d.util.ensemble as en
 import atom3d.util.file as fi
 import atom3d.util.shard as sh
-import atom3d.util.shard_ops as sho
 import atom3d.util.splits as sp
 
 

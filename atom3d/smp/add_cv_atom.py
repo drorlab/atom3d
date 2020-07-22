@@ -1,9 +1,7 @@
-import sys
 import numpy as np
 import pandas as pd
-sys.path.append('../..')
+
 import atom3d.util.datatypes as dt
-from rdkit import Chem
 
 in_dir_name = '../../data/qm9/raw'
 csv_file = in_dir_name+'/gdb9.sdf.csv'

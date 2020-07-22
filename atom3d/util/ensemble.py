@@ -1,7 +1,5 @@
 """Ensembling operations for shards."""
 import pandas as pd
-import sys
-sys.path.append('../..')
 
 import atom3d.lep.ensemble as lepe
 import atom3d.msp.ensemble as mspe

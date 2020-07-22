@@ -1,17 +1,14 @@
-import os, sys
-import pickle
-import pandas as pd
+import argparse
+import os
+
 import numpy as np
+import pandas as pd
 import scipy as sp
 import scipy.spatial
-import argparse
+from rdkit import Chem
 
-sys.path.append('../..')
-import atom3d.util.splits as splits
 import atom3d.util.datatypes as dt
 import atom3d.util.shard as shard
-
-from rdkit import Chem
 
 pte = Chem.GetPeriodicTable()
 

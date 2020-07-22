@@ -1,14 +1,13 @@
 # Dataset format for QM9 in PyTorch Geometric
 # Adapted from https://github.com/rusty1s/pytorch_geometric/blob/master/torch_geometric/datasets/qm9.py 
 
-import os
 import os.path as osp
+
 import numpy as np
 import torch
 import torch.nn.functional as F
+from torch_geometric.data import (InMemoryDataset, Data)
 from torch_sparse import coalesce
-from torch_geometric.data import (InMemoryDataset, download_url, extract_zip,
-                                  Data)
 
 try:
     import rdkit

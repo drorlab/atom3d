@@ -1,22 +1,20 @@
 #
 
+import argparse
+import datetime
+import logging
 import os
 import time
-import logging
-from scipy.stats import spearmanr
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-import datetime
-import argparse
 
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 import torch
 import torch.nn.functional as F
-from torch.nn import Sequential, Linear, ReLU, MSELoss
-from torch_geometric.data import DataLoader
-from torch_geometric.nn import GCNConv, GINConv, global_add_pool
-
 from pdbbind_dataloader import pdbbind_dataloader
+from scipy.stats import spearmanr
+from torch.nn import Sequential, Linear, ReLU
+from torch_geometric.nn import GCNConv, GINConv, global_add_pool
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False

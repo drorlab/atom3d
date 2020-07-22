@@ -1,16 +1,13 @@
-import os, sys
-import pickle
-import pandas as pd
+import argparse
+import os
+
 import numpy as np
+import pandas as pd
 import scipy as sp
 import scipy.spatial
-import argparse
-
-sys.path.append('../..')
-import atom3d.util.splits as splits
-import atom3d.util.datatypes as dt
-
 from rdkit import Chem
+
+import atom3d.util.datatypes as dt
 
 
 ### --- HELPER FUNCTIONS ---

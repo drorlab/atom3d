@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import tensorflow as tf
+
 try:
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 except:

@@ -2,25 +2,23 @@
 # GCN torch-geometric training script for psp
 # based on https://github.com/rusty1s/pytorch_geometric/blob/master/examples/gcn.py
 
+import argparse
+import datetime
+import logging
 import os
 import time
-import logging
-from scipy.stats import pearsonr, spearmanr, kendalltau
+
+import atom3d.psp.util as psp_util
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
-import datetime
-import argparse
-
-import torch
-import torch.nn.functional as F
-import torch.nn as nn
-from torch_geometric.data import DataLoader
-from torch_geometric.nn import GCNConv, global_add_pool, global_mean_pool
-
 import psp_dataloader as dl
-import atom3d.psp.util as psp_util
+import seaborn as sns
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch_geometric.data import DataLoader
+from torch_geometric.nn import GCNConv, global_mean_pool
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False

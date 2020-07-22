@@ -5,10 +5,8 @@ import os
 import re
 
 import Bio.PDB
-
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 
 patterns = {
     'pdb': 'pdb[0-9]*$',

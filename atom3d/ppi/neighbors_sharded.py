@@ -6,8 +6,8 @@ import pandas as pd
 import parallel as par
 
 import atom3d.ppi.neighbors as nb
-import atom3d.util.shard as sh
 import atom3d.util.log as log
+import atom3d.util.shard as sh
 
 warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
 

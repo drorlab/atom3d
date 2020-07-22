@@ -7,13 +7,13 @@ import logging
 import math
 import os
 import random
-import tqdm
 
 import numpy as np
 import pandas as pd
 import sklearn.metrics as sm
-
 import tensorflow as tf
+import tqdm
+
 try:
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 except:

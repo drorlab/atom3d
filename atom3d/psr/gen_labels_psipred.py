@@ -1,18 +1,13 @@
-import click
 import logging
 import os
 import subprocess
 import time
 
-import Bio.SeqUtils
-
-import numpy as np
+import click
+import dotenv as de
 import pandas as pd
 import parallel as par
 
-import atom3d.util.file as fi
-
-import dotenv as de
 de.load_dotenv(de.find_dotenv(usecwd=True))
 
 

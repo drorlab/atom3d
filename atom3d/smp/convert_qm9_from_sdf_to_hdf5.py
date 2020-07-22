@@ -1,14 +1,11 @@
-import os, sys
-import pickle
-import pandas as pd
-import numpy as np
 import argparse
-sys.path.append('../..')
-import atom3d.util.splits as splits
+import os
+
+import numpy as np
+import pandas as pd
+
 import atom3d.util.datatypes as dt
-
-from rdkit import Chem
-
+import atom3d.util.splits as splits
 
 
 class MoleculesDataset():

@@ -2,16 +2,14 @@
 # coding: utf-8
 
 
-import numpy as np
 import os
-import pandas as pd
+
 import scipy.spatial
-import sys
-sys.path.append('..')
+
+('..')
 from util import datatypes as dt
 from util import file as fi
 from rdkit import Chem
-from rdkit.Chem import AllChem
 import Bio.PDB
 from Bio.PDB.PDBIO import Select
 from tqdm import tqdm

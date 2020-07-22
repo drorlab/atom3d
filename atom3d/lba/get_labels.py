@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import numpy as np
-import pandas as pd
-import os
-import sys
-sys.path.append('../..')
-from atom3d.util import datatypes as dt
-from atom3d.util import file as fi
 import argparse
+import os
+
+import pandas as pd
+
+from atom3d.util import file as fi
+
 
 def get_label(pdb, label_df):
     return label_df[label_df['pdb'] == pdb]['label'].iloc[0]

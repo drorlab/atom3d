@@ -2,12 +2,11 @@
 import click
 import pandas as pd
 
-import atom3d.util.log as log
 import atom3d.util.filters as filters
+import atom3d.util.log as log
 import atom3d.util.shard as sh
 import atom3d.util.shard_ops as sho
 import atom3d.util.splits as splits
-
 
 logger = log.getLogger('lep_prepare')
 
