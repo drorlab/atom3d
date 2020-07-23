@@ -13,7 +13,7 @@ env:
 
 # Install rdkit
 rdkit:
-    conda install -c conda-forge -y rdkit
+	conda install -c conda-forge -y rdkit
 
 # Install GPU tensorflow
 tensorflow-gpu:
