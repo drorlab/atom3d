@@ -22,6 +22,8 @@ def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
 
     if 'BLAST_BIN' not in os.environ:
         raise RuntimeError('Need to set BLAST_BIN in .env to use blastp')
+    if not (0 <= cutoff <= 100):
+        raise Exception('cutoff need to be between 0 and 100')
 
     sim = set()
     for chain, s in chain_sequences:
@@ -34,7 +36,7 @@ def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
 
         for res in out.split():
             nident, match = res.split(',')
-            seq_id = float(nident) / len(s)
+            seq_id = float(nident)*100.0 / len(s)
             if seq_id >= cutoff:
                 sim.add(match)
     return list(sim)
@@ -181,4 +183,3 @@ def write_fasta(chain_sequences, outfile):
         for chain, seq in chain_sequences.items():
             f.write('>' + chain + '\n')
             f.write(seq + '\n')
-
