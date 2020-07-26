@@ -1,4 +1,7 @@
 # atom3d
+[![Documentation
+Status](https://readthedocs.org/projects/atom3d/badge/?version=latest)](http://atom3d.readthedocs.io/?badge=latest)
+
 Atomic tasks on molecules in three dimensions
 
 ## Installation
