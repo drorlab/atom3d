@@ -8,7 +8,7 @@ ATOM3D enables machine learning on three dimensional molecular structure.
 ## Features
 
 * Access to several dataset involving 3D molecular structure. 
-* Sharded data format for storing large 3D molecular datasets.
+* Sharded data format for storing lots of molecules (and associated metadata).
 * Utilities for splitting/filtering data based on many criteria.
 
 ## Installation
