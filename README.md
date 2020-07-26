@@ -46,8 +46,8 @@ for shard_num in sharded.get_num_shards():
 
 ## Contribute
 
-* Issue Tracker: github.com/drorlab/atom3d/issues
-* Source Code: github.com/drorlab/atom3d
+* Issue Tracker: <github.com/drorlab/atom3d/issues>
+* Source Code: <github.com/drorlab/atom3d>
 
 ## Support
 
