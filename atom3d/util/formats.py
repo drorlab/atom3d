@@ -17,6 +17,7 @@ patterns = {
     'pdb.gz': 'pdb[0-9]*\.gz$',
     'mmcif': '(mm)?cif$',
     'sharded': '@[0-9]+',
+    'sdf': 'sdf[0-9]*$',
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
@@ -36,6 +37,9 @@ def is_mmcif(f):
     """If file is in mmcif format."""
     return _regexes['mmcif'].search(f)
 
+def is_sdf(f):
+    """If file is in sdf format."""
+    return _regexes['sdf'].search(f)
 
 def is_pdb_gz(f):
     """If file is in mmcif format."""
@@ -50,6 +54,8 @@ def read_any(f, name=None):
         return read_pdb_gz(f, name)
     elif is_mmcif(f):
         return read_mmcif(f, name)
+    elif is_sdf(f):
+        return read_sdf(f, name)
     else:
         raise ValueError(f"Unrecognized filetype for {f:}")
 
@@ -78,6 +84,19 @@ def read_mmcif(mmcif_file, name=None):
         os.path.basename(mmcif_file)
     parser = Bio.PDB.MMCIFParser(QUIET=True)
     return parser.get_structure(name, mmcif_file)
+
+
+def read_sdf(sdf_file, sanitize=True, add_hs=False, remove_hs=True):
+    """Load SDF file into a list of biopython representations."""
+    molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize, add_hs=add_hs, remove_hs=remove_hs)
+    bplist = []
+    for im,m in enumerate(molecules):
+        if m is not None: 
+            df = mol_to_df(m, residue=im, ensemble=m.GetProp("_Name"), 
+                           structure=m.GetProp("_Name"), model=m.GetProp("_Name"))
+            bp = df_to_bps(df)
+            bplist.append(bp)
+    return bplist
 
 
 def write_pdb(out_file, structure, **kwargs):
@@ -172,7 +191,7 @@ def df_to_bps(df_in):
     df = df_in.copy()
     all_structures = []
     for (structure, s_atoms) in split_df(df_in, ['ensemble', 'structure']):
-        new_structure = Bio.PDB.Structure.Structure(structure)
+        new_structure = Bio.PDB.Structure.Structure(structure[1])
         for (model, m_atoms) in df.groupby(['model']):
             new_model = Bio.PDB.Model.Model(model)
             for (chain, c_atoms) in m_atoms.groupby(['chain']):
@@ -347,7 +366,7 @@ def mol_to_df(mol, add_hs=True, structure=None, model=None, ensemble=None, resid
     conf = mol.GetConformer()
     for i, a in enumerate(mol.GetAtoms()):
         position = conf.GetAtomPosition(i)
-        df['ensemble'].append(structure)
+        df['ensemble'].append(ensemble)
         df['structure'].append(structure)
         df['model'].append(model)
         df['chain'].append('LIG')
@@ -357,15 +376,15 @@ def mol_to_df(mol, add_hs=True, structure=None, model=None, ensemble=None, resid
         df['segid'].append('')
         df['resname'].append('LIG')
         df['altloc'].append('')
-        df['occupancy'].append('')
-        df['bfactor'].append('')
+        df['occupancy'].append(1)
+        df['bfactor'].append(0)
         df['x'].append(position.x)
         df['y'].append(position.y)
         df['z'].append(position.z)
         df['element'].append(a.GetSymbol())
         df['name'].append("%s%i"%(a.GetSymbol(),i+1))
         df['fullname'].append("%s%i"%(a.GetSymbol(),i+1))
-        df['serial_number'].append(None)
+        df['serial_number'].append(i)
     df = pd.DataFrame(df)
     return df
 
