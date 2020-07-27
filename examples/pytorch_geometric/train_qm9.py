@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch_geometric.transforms as T
-from atom3d.mpp.data_qm9_for_ptgeom import GraphQM9
+from data_qm9_for_ptgeom import GraphQM9
 from torch.nn import Sequential, Linear, ReLU, GRU
 from torch_geometric.data import DataLoader
 from torch_geometric.nn import NNConv, Set2Set
@@ -144,6 +144,9 @@ def main(target = 0, dim = 64, prefix='mu', seed=42):
                                                            factor=0.7, patience=5,
                                                            min_lr=0.00001)
 
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    logging.info('Number of trainable parameters: %i'%params)
 
     # TRAINING
     num_epochs = 300
@@ -191,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('--target', type=int, default=0, help='target')
     parser.add_argument('--prefix', type=str, default='mu', help='prefix for the log files')
     parser.add_argument('--load', action="store_true", help='load existing model if present (not yet implemented)')
-    parser.add_argument('--seed', type=int, help='random seed')
+    parser.add_argument('--seed', type=int, default=42, help='random seed')
     args = parser.parse_args()
 
     main(args.target, args.dim, args.prefix, args.seed)
