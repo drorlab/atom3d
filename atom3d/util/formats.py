@@ -363,8 +363,8 @@ def mol_to_df(mol, add_hs=True, structure=None, model=None, ensemble=None, resid
         df['y'].append(position.y)
         df['z'].append(position.z)
         df['element'].append(a.GetSymbol())
-        df['name'].append("%s%i"%(a.GetSymbol(),i))
-        df['fullname'].append("%s%i"%(a.GetSymbol(),i))
+        df['name'].append("%s%i"%(a.GetSymbol(),i+1))
+        df['fullname'].append("%s%i"%(a.GetSymbol(),i+1))
         df['serial_number'].append(None)
     df = pd.DataFrame(df)
     return df
