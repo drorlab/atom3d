@@ -336,7 +336,7 @@ def get_bonds_matrix(mol):
     return bonds_matrix
 
 
-def mol_to_df(mol, add_hs=True, structure=None, model=None):
+def mol_to_df(mol, add_hs=True, structure=None, model=None, ensemble=None, residue=999):
     """
     Convert Mol object to dataframe format (with PDB columns)
     """
@@ -347,12 +347,13 @@ def mol_to_df(mol, add_hs=True, structure=None, model=None):
     conf = mol.GetConformer()
     for i, a in enumerate(mol.GetAtoms()):
         position = conf.GetAtomPosition(i)
+        df['ensemble'].append(structure)
         df['structure'].append(structure)
         df['model'].append(model)
         df['chain'].append('LIG')
         df['hetero'].append('')
         df['insertion_code'].append('')
-        df['residue'].append(999)
+        df['residue'].append(residue)
         df['segid'].append('')
         df['resname'].append('LIG')
         df['altloc'].append('')
@@ -362,8 +363,8 @@ def mol_to_df(mol, add_hs=True, structure=None, model=None):
         df['y'].append(position.y)
         df['z'].append(position.z)
         df['element'].append(a.GetSymbol())
-        df['name'].append(a.GetSymbol())
-        df['fullname'].append(a.GetSymbol())
+        df['name'].append("%s%i"%(a.GetSymbol(),i))
+        df['fullname'].append("%s%i"%(a.GetSymbol(),i))
         df['serial_number'].append(None)
     df = pd.DataFrame(df)
     return df
