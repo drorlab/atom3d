@@ -355,7 +355,7 @@ def get_bonds_matrix(mol):
     return bonds_matrix
 
 
-def mol_to_df(mol, add_hs=True, structure=None, model=None, ensemble=None, residue=999):
+def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, residue=999):
     """
     Convert Mol object to dataframe format (with PDB columns)
     """

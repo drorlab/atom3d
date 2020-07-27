@@ -19,7 +19,7 @@ db_sem = mp.Semaphore()
 @click.command(help='Combine files into sharded HDF5 files.')
 @click.argument('input_dir', type=click.Path(exists=True))
 @click.argument('sharded_path')
-@click.option('--filetype', type=click.Choice(['pdb', 'pdb.gz', 'mmcif']),
+@click.option('--filetype', type=click.Choice(['pdb', 'pdb.gz', 'mmcif', 'sdf']),
               default='pdb', help='which kinds of files are we sharding.')
 @click.option('--ensembler', type=click.Choice(en.ensemblers.keys()),
               default='none', help='how to ensemble files')

@@ -6,6 +6,7 @@ import atom3d.datasets.msp.ensemble as mspe
 import atom3d.datasets.ppi.db5 as db5
 import atom3d.datasets.psr.casp as casp
 import atom3d.datasets.rsr.ensemble as rsre
+import atom3d.datasets.smp.qm9 as qm9
 import atom3d.util.formats as dt
 
 
@@ -22,6 +23,7 @@ ensemblers = {
     'lep': lepe.lep_ensembler,
     'rsr': rsre.rsr_ensembler,
     'msp': mspe.msp_ensembler,
+    'qm9': qm9.qm9_ensembler,
     'none': identity_ensembler,
 }
 
