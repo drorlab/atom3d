@@ -14,9 +14,14 @@ def identity_ensembler(pdb_files):
     return {x: None for x in pdb_files}
 
 
-# An ensembler maps a list of files to an ensemble map (a 2-level dictionary).  First key is
-# name of an ensemble, second key is name of a subunit.  A (ensemble, subunit)
-# pair should map to a single file.
+# An ensembler maps a list of files to an ensemble map (a 2-level dictionary).
+#
+# An ensemble map takes the form of a 2-level dictionary:
+# (e -> (s -> sel))
+#
+# Where 'e' is the string name of an ensemble, and 's' is the string name of a
+# subunit of the ensemble.  'sel' can be one of 1) a filename or 2) a pandas
+# DataFrame, and corresponds to the subunit specified by (e, s).
 ensemblers = {
     'db5': db5.db5_ensembler,
     'casp': casp.casp_ensembler,
@@ -34,7 +39,11 @@ def parse_ensemble(name, ensemble):
     else:
         df = []
         for subunit, f in ensemble.items():
-            curr = dt.bp_to_df(dt.read_any(f))
+            if isinstance(f, pd.DataFrame):
+                curr = f
+            else:
+                curr = dt.bp_to_df(dt.read_any(f))
+
             curr['subunit'] = subunit
             df.append(curr)
         df = pd.concat(df)
