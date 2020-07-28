@@ -6,6 +6,10 @@ def qm9_ensembler(sdf_files):
     
     bp = read_sdf(sdf_files)
     df = bp_to_df(bp)
+    
+    df['subunit'] = df['model']
+    df['structure'] = df['model']
+    df['ensemble'] = df['model']
 
     ensembles = {}
     subunits = {}
