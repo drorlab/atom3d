@@ -86,17 +86,20 @@ def read_mmcif(mmcif_file, name=None):
     return parser.get_structure(name, mmcif_file)
 
 
-def read_sdf(sdf_file, sanitize=True, add_hs=False, remove_hs=True):
-    """Load SDF file into a list of biopython representations."""
-    molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize, add_hs=add_hs, remove_hs=remove_hs)
-    bplist = []
-    for im,m in enumerate(molecules):
-        if m is not None: 
-            df = mol_to_df(m, residue=im, ensemble=m.GetProp("_Name"), 
-                           structure=m.GetProp("_Name"), model=m.GetProp("_Name"))
-            bp = df_to_bps(df)
-            bplist.append(bp)
-    return bplist
+def read_sdf(sdf_files, sanitize=True, add_hs=False, remove_hs=True):
+    dflist = []
+    for sdf_file in sdf_files:
+        molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize, 
+                                    add_hs=add_hs, remove_hs=remove_hs)
+        for im,m in enumerate(molecules):
+            if m is not None: 
+                df = mol_to_df(m, residue=im, 
+                               ensemble='A', 
+                               structure='A', 
+                               model=m.GetProp("_Name"))
+                dflist.append(df)
+    bp = df_to_bp(merge_dfs(dflist))
+    return bp
 
 
 def write_pdb(out_file, structure, **kwargs):
