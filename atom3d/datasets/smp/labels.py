@@ -48,9 +48,6 @@ def _gen_labels_shard(sharded, shard_num, labels_data):
     
     shard = sharded.read_shard(shard_num)
     
-    # Ensemble is None when read in, assign same value as model
-    shard['ensemble'] = shard['model']
-    
     # Names of the labels (first column is mol_id and excluded)
     data_keys = labels_data.keys()[1:]
     
