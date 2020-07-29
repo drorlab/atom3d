@@ -35,10 +35,10 @@ To load a sharded dataset:
 import atom3d.shard.shard as sh
 
 # Load dataset split into fragments (or shards).
-sharded = sh.load_sharded('sharded/candidates/structures@21')
+sharded = sh.Sharded.load('sharded/candidates/structures@21')
 
 # Iterate through shards.
-for shard_num in sharded.get_num_shards():
+for shard_num in range(sharded.get_num_shards()):
   structures = sharded.read_shard(shard_num)
   # You can also load associated metadata.
   labels = sharded.read_shard(shard_num, 'labels')
