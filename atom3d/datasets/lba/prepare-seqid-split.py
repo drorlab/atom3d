@@ -36,6 +36,10 @@ def split(input_sharded, output_root, shuffle_buffer, cutoff = 30):
     train = [x[0] for x in train]
     val = [x[0] for x in val]
     test = [x[0] for x in test]
+    # write splits to text files
+    np.savetxt(output_root.split('@')[0]+'_train.txt', train, fmt='%s')
+    np.savetxt(output_root.split('@')[0]+'_val.txt', val, fmt='%s')
+    np.savetxt(output_root.split('@')[0]+'_test.txt', test, fmt='%s')
 
     keys = input_sharded.get_keys()
     if keys != ['ensemble']:
