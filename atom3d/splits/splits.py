@@ -116,3 +116,79 @@ def time_split(data, val_years, test_years):
     test_set = test['pdb'].tolist()
 
     return train_set, val_set, test_set
+
+
+####################################
+# split by scaffold
+####################################
+
+
+def scaffold_split(scaffold_list, vali_split=0.1, test_split=0.1):
+    """Creates data indices for training and validation splits according to a scaffold split.
+        Args:
+            scaffold_list (array ofstr): names of the scaffolds
+            train_split (float):
+                fraction of data used for training. Default: 0.1
+            vali_split (float):
+                fraction of data used for validation. Default: 0.1
+            test_split (float): fraction of data used for testing. Default: 0.1
+            random_seed (int):
+                specifies random seed for shuffling. Default: None
+            exclude (np.array of int):  indices to exclude.
+        Returns:
+            indices_train (int[]):  indices of the training set.
+            indices_vali (int[]):  indices of the validation set.
+            indices_test (int[]): indices of the test set.
+    """
+    
+    logger.info(f'Splitting dataset with {len(scaffold_list):} entries.')
+
+    # Calculate the target sizes of the splits
+    dataset_size = len(scaffold_list)
+    all_indices = np.arange(dataset_size)
+    testset_size = test_split * dataset_size
+    valiset_size = vali_split * dataset_size
+    trainingset_size = dataset_size - valiset_size - testset_size
+    
+    # Order the scaffolds from common to uncommon 
+    scaffolds, counts = np.unique(scaffold_list, return_counts=True)
+    order = np.argsort(counts)[::-1]
+    scaffolds_ordered = scaffolds[order]
+    
+    # Initialize index lists
+    indices_train = [] 
+    indices_vali = [] 
+    indices_test = []
+    # Initialize counters for scaffolds in each set
+    num_sc_train = 0
+    num_sc_vali = 0
+    num_sc_test = 0
+
+    # Go through the scaffolds from common to uncommon 
+    # and fill the training, validation, and test sets
+    for sc in scaffolds_ordered:
+        # Get all indices of the current scaffold
+        scaffold_set = all_indices[np.array(scaffold_list)==sc].tolist()
+        # ... and add them to their dataset
+        if len(indices_train) < trainingset_size:
+            indices_train += scaffold_set
+            num_sc_train += 1
+        elif len(indices_vali) < valiset_size:
+            indices_vali += scaffold_set
+            num_sc_vali += 1
+        else:
+            indices_test += scaffold_set
+            num_sc_test += 1
+            
+    # Report number of scaffolds in each set
+    logger.info(f'Scaffolds in the training set: {int(num_sc_train):}')
+    logger.info(f'Scaffolds in the validation set: {int(num_sc_vali):}')
+    logger.info(f'Scaffolds in the test set: {int(num_sc_test):}')
+    
+    # Report number of scaffolds in each set
+    logger.info(f'Size of the training set: {len(indices_train):}')
+    logger.info(f'Size of the validation set: {len(indices_vali):}')
+    logger.info(f'Size of the test set: {len(indices_test):}')
+    
+    return indices_train, indices_vali, indices_test
+
