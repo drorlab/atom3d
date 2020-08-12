@@ -3,13 +3,9 @@ import numpy as np
 import pandas as pd
 import click
 
-import atom3d.datasets.ppi.neighbors as nb
 import atom3d.filters.pdb
 import atom3d.filters.sequence
-import atom3d.protein.scop as scop
-import atom3d.protein.sequence
-import atom3d.protein.sequence as seq
-import atom3d.splits.sequence
+import atom3d.splits.splits as splits
 import atom3d.filters.filters as filters
 import atom3d.shard.shard as sh
 import atom3d.shard.shard_ops as sho
@@ -19,23 +15,17 @@ import atom3d.util.log as log
 logger = log.get_logger('prepare')
 
 
-def split(input_sharded, output_root, shuffle_buffer, cutoff = 30):
+def split(input_sharded, output_root, scaffold_data, shuffle_buffer):
     """Split by sequence identity."""
     if input_sharded.get_keys() != ['ensemble']:
         raise RuntimeError('Can only apply to sharded by ensemble.')
 
-    all_chain_sequences = []
-    logger.info('Loading chain sequences')
-    for _, shard in input_sharded.iter_shards():
-        all_chain_sequences.extend(seq.get_all_chain_sequences_df(shard))
-
-    logger.info('Splitting by cluster')
-    train, val, test = atom3d.splits.sequence.cluster_split(all_chain_sequences, cutoff)
-
-    # Will just look up ensembles.
-    train = [x[0] for x in train]
-    val = [x[0] for x in val]
-    test = [x[0] for x in test]
+    logger.info('Splitting by scaffold')
+    scaffold_list = scaffold_data['Scaffold'].tolist()
+    train_idx, val_idx, test_idx = splits.scaffold_split(scaffold_list)
+    train = scaffold_data['pdb'][train_idx].tolist()
+    val = scaffold_data['pdb'][val_idx].tolist()
+    test = scaffold_data['pdb'][test_idx].tolist()
 
     keys = input_sharded.get_keys()
     if keys != ['ensemble']:
@@ -64,20 +54,19 @@ def split(input_sharded, output_root, shuffle_buffer, cutoff = 30):
     np.savetxt(output_root.split('@')[0]+'_test.txt', test, fmt='%s')
 
 
-
 @click.command(help='Prepare a sequence identity split.')
 @click.argument('input_sharded_path', type=click.Path())
 @click.argument('output_root', type=click.Path())
+@click.argument('scaffold_file', type=click.Path(exists=True))
 @click.option('--shuffle_buffer', type=int, default=10,
               help='How many shards to use in streaming shuffle. 0 means will '
               'not shuffle.')
-@click.option('--cutoff', type=float, default=30,
-              help='Cutoff (in %) for sequence identity.')
-def prepare_seqid_split(input_sharded_path, output_root, shuffle_buffer, cutoff):
+def prepare_scaffold_split(input_sharded_path, output_root, shuffle_buffer, scaffold_file):
     input_sharded = sh.Sharded.load(input_sharded_path)
-    split(input_sharded, output_root, shuffle_buffer, cutoff=cutoff)
+    scaffold_data = pd.read_csv(scaffold_file)
+    split(input_sharded, output_root, scaffold_data, shuffle_buffer)
 
 
 if __name__ == "__main__":
-    prepare_seqid_split()
+    prepare_scaffold_split()
 
