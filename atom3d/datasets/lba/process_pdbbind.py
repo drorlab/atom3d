@@ -7,8 +7,9 @@ import os
 import scipy.spatial
 
 ('..')
-from util import datatypes as dt
-from util import file as fi
+import atom3d.util.file as fi
+import atom3d.util.formats as ft
+
 from rdkit import Chem
 import Bio.PDB
 from Bio.PDB.PDBIO import Select
@@ -36,30 +37,30 @@ def get_ligand(ligfile):
 def get_pocket_res(protein, ligand, dist):
     """
     Given a co-crystallized protein and ligand, extract residues within specified distance of ligand.
-    
+
     Args:
         protein (Biopython Structure object): receptor protein
         ligand (RDKit Mol object): co-crystallized ligand
         dist (float): distance cutoff for defining binding site
-    
+
     Returns:
         key_residues (set of Biopython Residue objects): set of key binding site residues
     """
     # get protein coordinates
     prot_atoms = [a for a in protein.get_atoms()]
     prot_coords = [atom.get_coord() for atom in prot_atoms]
-        
+
     # get ligand coordinates
     lig_coords = []
     for i in range(0, ligand.GetNumAtoms()):
         pos = ligand.GetConformer().GetAtomPosition(i)
         lig_coords.append([pos.x, pos.y, pos.z])
-        
+
     kd_tree = scipy.spatial.KDTree(prot_coords)
     key_pts = kd_tree.query_ball_point(lig_coords, r=dist, p=2.0)
     key_pts = set([k for l in key_pts for k in l])
-    
-    key_residues = set() 
+
+    key_residues = set()
     for i in key_pts:
         atom = prot_atoms[i]
         res = atom.get_parent()
@@ -98,14 +99,14 @@ def process_files(input_dir):
         if pdb_id not in structure_dict:
             structure_dict[pdb_id] = {}
         if '_protein' in f:
-            prot = dt.read_any(f)
+            prot = ft.read_any(f)
             structure_dict[pdb_id]['protein'] = prot
-    
+
     lig_files = fi.find_files(input_dir, 'sdf')
     for f in tqdm(lig_files, desc='ligand files'):
         pdb_id = fi.get_pdb_code(f)
         structure_dict[pdb_id]['ligand'] = get_ligand(f)
-    
+
     return structure_dict
 
 
@@ -118,10 +119,10 @@ def write_files(pdbid, protein, ligand, pocket, out_path):
     io = Bio.PDB.MMCIFIO()
     io.set_structure(protein)
     io.save(os.path.join(out_path, f"{pdbid}_protein.mmcif"))
-    
+
     # write pocket to mmCIF file
     io.save(os.path.join(out_path, f"{pdbid}_pocket.mmcif"), PocketSelect(pocket))
-    
+
     # write ligand to file
     writer = Chem.SDWriter(os.path.join(out_path, f"{pdbid}_ligand.sdf"))
     writer.write(ligand)
@@ -149,17 +150,16 @@ def main():
     parser.add_argument('--dist', type=float, default=6.0, help='distance cutoff for defining pocket')
     parser.add_argument('--out_dir', type=str, default=os.getcwd(), help='directory to place cleaned dataset')
     args = parser.parse_args()
-    
+
     if not os.path.exists(args.data_dir):
         raise Exception('Path not found. Please enter valid path to PDBBind dataset.')
-    
+
     if not os.path.exists(args.out_dir):
         os.mkdir(args.out_dir)
-        
+
     structures = process_files(args.data_dir)
     produce_cleaned_dataset(structures, args.out_dir, args.dist)
 
 
 if __name__ == "__main__":
     main()
-

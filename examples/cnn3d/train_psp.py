@@ -19,7 +19,7 @@ except:
     pass
 
 import atom3d.shard.shard as sh
-import atom3d.psp.util as psp_util
+import atom3d.datasets.psr.util as psp_util
 import examples.cnn3d.model as model
 import examples.cnn3d.feature_psp as feature_psp
 import examples.cnn3d.subgrid_gen as subgrid_gen

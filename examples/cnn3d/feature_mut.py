@@ -189,6 +189,7 @@ def get_data_stats(sharded_list, center_at_mut=True):
     print('\nLabel by dataset:')
     print(all_labels_df.groupby(['sharded', 'shard_num']).label.value_counts())
     print('\n')
+    print(all_labels_df.label.value_counts())
 
     df = pd.DataFrame(data, columns=['ensemble', 'subunit', 'max_dist', 'num_atoms'])
     df = df.sort_values(by=['max_dist', 'num_atoms'],
@@ -207,7 +208,7 @@ if __name__ == "__main__":
         ]
     sharded_list = [sh.Sharded.load(path) for path in sharded_path_list]
 
-    #data_stats_df = get_data_stats(sharded_list, center_at_mut=True)
+    data_stats_df = get_data_stats(sharded_list, center_at_mut=True)
 
     print('\nTesting Mutation feature generator')
     gen = dataset_generator(

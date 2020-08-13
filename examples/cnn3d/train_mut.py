@@ -143,7 +143,7 @@ def conv_model(feature, target, is_training, conv_drop_rate, fc_drop_rate,
     predict = tf.round(tf.nn.sigmoid(logits), name='predict')
 
     # Loss
-    loss = balanced_loss(target, logits, args.grid_config.neg_to_pos_ratio)
+    loss = balanced_loss(target, logits, 6)#args.grid_config.neg_to_pos_ratio)
 
     # Accuracy
     accuracy = compute_accuracy(target, predict)

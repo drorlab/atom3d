@@ -28,6 +28,9 @@ de.load_dotenv(de.find_dotenv(usecwd=True))
 
 
 def compute_stats(results):
+    results[['true', 'pred']] = results[['true', 'pred']].astype(float)
+    results = results.groupby('structure', as_index=False).mean()
+
     res = {}
     all_true = results['true'].astype(float)
     all_pred = results['pred'].astype(float)
