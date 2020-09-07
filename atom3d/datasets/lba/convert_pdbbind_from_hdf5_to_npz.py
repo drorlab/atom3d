@@ -314,7 +314,12 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, split_dir_name, datatypes=Non
     ds_tr.write_compressed(tr_file_name, datatypes=datatypes )
     ds_va.write_compressed(va_file_name, datatypes=datatypes )
     ds_te.write_compressed(te_file_name, datatypes=datatypes )
-        
+
+    # Save the PDB codes in txt files
+    np.savetxt(out_dir_name+'/train.txt', ds_tr.index, fmt='%s')
+    np.savetxt(out_dir_name+'/valid.txt', ds_va.index, fmt='%s')
+    np.savetxt(out_dir_name+'/test.txt', ds_te.index, fmt='%s')
+    
     return ds_tr, ds_va, ds_te
 
 
