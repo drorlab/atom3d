@@ -52,6 +52,7 @@ def main():
                              args.cutoff_type, args.hard_cut_rad, args.soft_cut_rad, args.soft_cut_width,
                              args.weight_init, args.level_gain, args.charge_power, args.basis_set,
                              charge_scale, args.gaussian_mask, args.top, args.input,
+                             cgprod_bounded = True,
                              device=device, dtype=dtype)
 
     # Initialize the scheduler and optimizer
@@ -65,7 +66,7 @@ def main():
     cormorant_tests(model, dataloaders['train'], args, charge_scale=charge_scale)
 
     # Instantiate the training class
-    trainer = Engine(args, dataloaders, model, loss_fn, optimizer, scheduler, restart_epochs, device, dtype, clip_value=0.1)
+    trainer = Engine(args, dataloaders, model, loss_fn, optimizer, scheduler, restart_epochs, device, dtype, clip_value=None)
     print('Initialized the trainer with clip value:',trainer.clip_value)
 
     # Load from checkpoint file. If no checkpoint file exists, automatically does nothing.

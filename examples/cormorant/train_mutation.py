@@ -65,7 +65,7 @@ def main():
     cormorant_tests(model, dataloaders['train'], args, charge_scale=charge_scale, siamese=True)
 
     # Instantiate the training class
-    trainer = Engine(args, dataloaders, model, loss_fn, optimizer, scheduler, restart_epochs, device, dtype, task='classification', clip_value=0.1)
+    trainer = Engine(args, dataloaders, model, loss_fn, optimizer, scheduler, restart_epochs, device, dtype, task='classification', clip_value=None) # 0.1
     print('Initialized a',trainer.task,'trainer with clip value',trainer.clip_value)
 
     # Load from checkpoint file. If no checkpoint file exists, automatically does nothing.
