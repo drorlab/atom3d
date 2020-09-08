@@ -135,7 +135,6 @@ class MoleculesDataset():
             # move on with the next structure if this one contains unwanted elements
             if not valid_elements(sel_symbols,elements):
                 continue
-
             # get atomic numbers
             sel_atnums  = np.array([ pte.GetAtomicNumber(e.title()) for e in sel_struct.element ])
             # extract coordinates
@@ -295,12 +294,12 @@ if __name__ == "__main__":
     parser.add_argument('--maxnumat', dest='maxnumat', type=float, default=None, help='drop all structures with more than this number of atoms')
     args = parser.parse_args()
     
-    elements_pdbbind = ['H','C','N','O','S','Cl','F','B','P','Mg']
-    cormorant_datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
+    elements = ['H','C','N','O','S','Cl','F']
+    datatypes = ['float64', 'float32', 'float16', 'int64', 'int32', 'int16', 'int8', 'uint8', 'bool']
     element_dict = None
 
     ds_tr, ds_va, ds_te = convert_hdf5_to_npz(args.in_dir, args.out_dir,  
-                                              datatypes=cormorant_datatypes, droph=args.drop_h, cutoff=args.cutoff, 
-                                              max_num_atoms=args.maxnumat, elements=elements_pdbbind, element_dict=element_dict)
+                                              datatypes=datatypes, droph=args.drop_h, cutoff=args.cutoff, 
+                                              max_num_atoms=args.maxnumat, elements=elements, element_dict=element_dict)
 
 
