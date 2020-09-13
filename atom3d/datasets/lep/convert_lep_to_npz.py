@@ -92,7 +92,7 @@ def valid_elements(symbols,reference):
 class MoleculesDataset():
     """Internal data set, including coordinates."""
 
-    def __init__(self, sharded_name, name='molecules', 
+    def __init__(self, sharded_name, name='molecules',
                  drop_hydrogen=False, cutoff=None, max_num_atoms=None, elements=None, element_dict=None):
         """Initializes a data set.
         
@@ -101,7 +101,7 @@ class MoleculesDataset():
             name (str, opt.): Name of the dataset. Default: 'molecules'.
         
         """
-        
+
         # Read structures and labels
         struct_df, labels_df = load_data(sharded_name)
 
@@ -113,19 +113,19 @@ class MoleculesDataset():
         self.index     = []
         self.data      = []
         self.data_keys = ['label'] # 0th key is ensemble code 
+        self.len_first = [] # number of atoms in the first (of two) subunits
 
         for code in struct_df.ensemble.unique():
-    
+
             new_struct = struct_df[struct_df.ensemble==code]
             new_labels = labels_df[labels_df.ensemble==code]
             new_labels = new_labels.reset_index()
             new_values = [ int(new_labels.at[0,'label']=='A') ]
-
+            new_len1st = np.sum([su[-7:] == '_active' for su in new_struct.subunit])
+            
             # select the binding pocket
             if cutoff is None:
                 sel_struct = new_struct
-            else:
-                sel_struct = select_binding_pocket(new_struct,dist=cutoff)
 
             # get element symbols
             if element_dict is None:
@@ -153,16 +153,16 @@ class MoleculesDataset():
             self.charges.append(sel_atnums)
             self.positions.append(conf_coord)
             self.num_atoms.append(len(sel_atnums))
+            aelf.len_first.append(new_len1st)
 
-        return
-    
-    
+            return
+
     def __len__(self):
         """Provides the number of molecules in a data set"""
-        
+
         return len(self.index)
 
-    
+
     def __getitem__(self, idx):
         """Provides a molecule from the data set.
         
@@ -173,15 +173,15 @@ class MoleculesDataset():
             sample (dict): The name of a property as a key and the property itself as a value.
         
         """
-        
+
         sample = {'index': self.index[idx],\
                   'num_atoms': self.num_atoms[idx],\
                   'charges': self.charges[idx],\
                   'positions': self.positions[idx],\
-                  'data': self.data[idx]}
+                  'data': self.data[idx],\
+                  'len_first': self.len_first[idx]}
 
         return sample
-    
 
     def write_compressed(self, filename, indices=None, datatypes=None):
         """Writes (a subset of) the data set as compressed numpy arrays.
@@ -201,6 +201,7 @@ class MoleculesDataset():
         size = np.max( self.num_atoms )
         # Initialize arrays
         num_atoms = np.zeros(len(indices))
+        len_first = np.zeros(len(indices))
         charges   = np.zeros([len(indices),size])
         positions = np.zeros([len(indices),size,3])
         # For each molecule ...
@@ -209,11 +210,12 @@ class MoleculesDataset():
             sample = self[idx]
             # assign per-molecule data
             num_atoms[j] = sample['num_atoms']
+            len_first[j] = sample['len_first']
             # ... and for each atom:
             for ia in range(sample['num_atoms']):
                 charges[j,ia] = sample['charges'][ia]
-                positions[j,ia,0] = sample['positions'][ia][0] 
-                positions[j,ia,1] = sample['positions'][ia][1] 
+                positions[j,ia,0] = sample['positions'][ia][0]
+                positions[j,ia,1] = sample['positions'][ia][1]
                 positions[j,ia,2] = sample['positions'][ia][2]
 
         # Create a dictionary with all the values to save
@@ -225,16 +227,18 @@ class MoleculesDataset():
             # Use only those quantities that are of one of the defined data types
             if datatypes is not None and np.array(locals()[prop]).dtype in datatypes:
                 save_dict[prop] = locals()[prop]
-        
+
         # Add the data from the SDF file
         save_dict['num_atoms'] = num_atoms
         save_dict['charges']   = charges
         save_dict['positions'] = positions
-
+        save_dict['len_first'] = len_first
+        
         # Save as a compressed array 
         np.savez_compressed(filename,**save_dict)
-        
-        return    
+
+        return
+
 
 
 # --- CONVERSION ---
