@@ -58,8 +58,8 @@ def select_binding_pocket(df,dist=6):
     #key_pts = set([k for l in key_pts for k in l])
     key_pts = np.unique([k for l in key_pts for k in l])
     
-    new_df = pd.concat([protein.iloc[key_pts], ligand], ignore_index=True)
-    
+    new_df = pd.concat([protein.iloc[key_pts], ligand], ignore_index=False).sort_index()
+
     return new_df
 
 
@@ -88,11 +88,10 @@ def valid_elements(symbols,reference):
 
 # --- THE DATASET CLASS ---
 
-
 class MoleculesDataset():
     """Internal data set, including coordinates."""
 
-    def __init__(self, sharded_name, name='molecules', 
+    def __init__(self, sharded_name, name='molecules',
                  drop_hydrogen=False, cutoff=None, max_num_atoms=None, elements=None, element_dict=None):
         """Initializes a data set.
         
@@ -101,7 +100,7 @@ class MoleculesDataset():
             name (str, opt.): Name of the dataset. Default: 'molecules'.
         
         """
-        
+
         # Read structures and labels
         struct_df, labels_df = load_data(sharded_name)
 
@@ -113,20 +112,22 @@ class MoleculesDataset():
         self.index     = []
         self.data      = []
         self.data_keys = ['label'] # 0th key is ensemble code 
+        self.active_su = [] # is the atom part of the active subunit
 
         for code in struct_df.ensemble.unique():
-    
+
             new_struct = struct_df[struct_df.ensemble==code]
             new_labels = labels_df[labels_df.ensemble==code]
             new_labels = new_labels.reset_index()
             new_values = [ int(new_labels.at[0,'label']=='A') ]
-
+            
             # select the binding pocket
             if cutoff is None:
                 sel_struct = new_struct
             else:
                 sel_struct = select_binding_pocket(new_struct,dist=cutoff)
-
+            # get atoms belonging to the active structure
+            sel_active = np.array([su[-7:] == '_active' for su in sel_struct.subunit], dtype=int)
             # get element symbols
             if element_dict is None:
                 sel_symbols = [ e.title() for e in sel_struct.element ]
@@ -143,6 +144,7 @@ class MoleculesDataset():
             if drop_hydrogen:
                 heavy_atom = np.array(sel_atnums)!=1
                 sel_atnums = sel_atnums[heavy_atom]
+                sel_active = sel_active[heavy_atom]
                 conf_coord = conf_coord[heavy_atom]
             # move on with the next structure if this one is too large
             if max_num_atoms is not None and len(sel_atnums) > max_num_atoms:
@@ -153,16 +155,16 @@ class MoleculesDataset():
             self.charges.append(sel_atnums)
             self.positions.append(conf_coord)
             self.num_atoms.append(len(sel_atnums))
+            self.active_su.append(sel_active)
 
         return
-    
-    
+
     def __len__(self):
         """Provides the number of molecules in a data set"""
-        
+
         return len(self.index)
 
-    
+
     def __getitem__(self, idx):
         """Provides a molecule from the data set.
         
@@ -173,15 +175,15 @@ class MoleculesDataset():
             sample (dict): The name of a property as a key and the property itself as a value.
         
         """
-        
+
         sample = {'index': self.index[idx],\
                   'num_atoms': self.num_atoms[idx],\
                   'charges': self.charges[idx],\
                   'positions': self.positions[idx],\
-                  'data': self.data[idx]}
+                  'data': self.data[idx],\
+                  'active': self.active_su[idx]}
 
         return sample
-    
 
     def write_compressed(self, filename, indices=None, datatypes=None):
         """Writes (a subset of) the data set as compressed numpy arrays.
@@ -201,6 +203,7 @@ class MoleculesDataset():
         size = np.max( self.num_atoms )
         # Initialize arrays
         num_atoms = np.zeros(len(indices))
+        active_su = np.zeros([len(indices),size])
         charges   = np.zeros([len(indices),size])
         positions = np.zeros([len(indices),size,3])
         # For each molecule ...
@@ -212,8 +215,9 @@ class MoleculesDataset():
             # ... and for each atom:
             for ia in range(sample['num_atoms']):
                 charges[j,ia] = sample['charges'][ia]
-                positions[j,ia,0] = sample['positions'][ia][0] 
-                positions[j,ia,1] = sample['positions'][ia][1] 
+                active_su[j,ia] = sample['active'][ia]
+                positions[j,ia,0] = sample['positions'][ia][0]
+                positions[j,ia,1] = sample['positions'][ia][1]
                 positions[j,ia,2] = sample['positions'][ia][2]
 
         # Create a dictionary with all the values to save
@@ -225,16 +229,18 @@ class MoleculesDataset():
             # Use only those quantities that are of one of the defined data types
             if datatypes is not None and np.array(locals()[prop]).dtype in datatypes:
                 save_dict[prop] = locals()[prop]
-        
+
         # Add the data from the SDF file
         save_dict['num_atoms'] = num_atoms
         save_dict['charges']   = charges
         save_dict['positions'] = positions
-
+        save_dict['active']    = active_su
+        
         # Save as a compressed array 
         np.savez_compressed(filename,**save_dict)
-        
-        return    
+
+        return
+
 
 
 # --- CONVERSION ---
