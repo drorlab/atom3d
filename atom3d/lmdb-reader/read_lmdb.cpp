@@ -19,19 +19,9 @@ using json = nlohmann::json;
 const string LMDB_FILE = "../../data/dataset_tests/json_lmdb";
 
 
-string gzip_decompress(const string &compressed_data) {
+string gzip_decompress(const char *ptr, size_t size) {
     // Decompress returns a string and decodes both zlib and gzip
-    const char *compressed_pointer = compressed_data.data();
-    string decompressed_data = gzip::decompress(compressed_pointer, compressed_data.size());
-    return decompressed_data;
-}
-
-string read_gzip(const string &filename) {
-    ifstream ifs(filename, ios::in | ios::binary);
-    stringstream buffer;
-    buffer << ifs.rdbuf();
-    string compressed_data = buffer.str();
-    return gzip_decompress(compressed_data);
+    return gzip::decompress(ptr, size);
 }
 
 json parse_json(const string &str) {
@@ -39,44 +29,30 @@ json parse_json(const string &str) {
     return j;
 }
 
-string read_lmdb(const string &filename) {
+void read_lmdb(const string &filename, const lmdb::val &key) {
     // Create and open the LMDB environment
     auto env = lmdb::env::create();
     env.open(filename.c_str());
 
-    // Fetch key/value pairs in a read-only transaction
-    auto rtxn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
-    auto dbi = lmdb::dbi::open(rtxn, nullptr);
+    {
+        auto rtxn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
+        auto dbi = lmdb::dbi::open(rtxn, nullptr);
 
-    auto cursor = lmdb::cursor::open(rtxn, dbi);
-    string key, value;
-    int i = 0;
-    while (cursor.get(key, value, MDB_NEXT) && i < 2) {
-        json j = json::parse(gzip_decompress(value));
-        cout << "Key: " << key << ", val: " << j.dump(4) << "\n" << endl;
-        i++;
-    }
-    cursor.close();
+        lmdb::val val;
+        if (lmdb::dbi_get(rtxn, dbi, key, val)) {
+            json j = parse_json(gzip_decompress(val.data(), val.size()));
+            cout << "Key: " << key << ", val: " << j.dump(4) << "\n" << endl;
+        } else {
+            cerr << "ERROR: key " << key.data() << " not found in the database" << endl;
+        }
+    } // rtxn aborted automatically*/
 
-    /*
-    TODO (psuriana): Make this to work
-    std::string value;
-    bool fail = dbi.get(rtxn, key, value);
-    if (!fail) {
-        json j = json::parse(gzip_decompress(value));
-        cout << "Key: " << key << ", val: " << j.dump(4) << "\n" << endl;
-    } else {
-        cout << "ERROR: key " << key << " not found in the database" << endl;
-    }*/
-
-    rtxn.abort();
-    return value;
     // The enviroment is closed automatically. */
 }
 
 int main() {
     cout << "Reading LMDB file " << LMDB_FILE << endl;
-    read_lmdb(LMDB_FILE);
+    read_lmdb(LMDB_FILE, "0");
     cout << "Done" << endl;
 
     return EXIT_SUCCESS;
