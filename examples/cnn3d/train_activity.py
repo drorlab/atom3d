@@ -44,8 +44,8 @@ def major_vote(results):
 def compute_perf(df):
     results = major_vote(df)
     res = {}
-    all_true = results['true'].round().astype(np.int8)
-    all_pred = results['pred'].round().astype(np.int8)
+    all_true = results['true'].astype(np.int8)
+    all_pred = results['pred'].astype(np.int8)
     res['all_ap'] = sm.average_precision_score(all_true, all_pred)
     res['all_auroc'] = sm.roc_auc_score(all_true, all_pred)
     res['all_acc'] = sm.accuracy_score(all_true, all_pred.round())
