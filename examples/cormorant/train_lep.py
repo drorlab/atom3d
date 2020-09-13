@@ -5,7 +5,7 @@
 import logging
 
 import torch
-from cormorant.data.collate import collate_fn
+from cormorant.data.collate import collate_activity
 from cormorant.data.utils import initialize_datasets
 from cormorant.engine import Engine
 from cormorant.engine import init_argparse, init_file_paths, init_logger, init_cuda
@@ -30,9 +30,6 @@ def main():
     # Initialize logger
     init_logger(args)
 
-    # Initialize device and data type
-    device, dtype = init_cuda(args)
-
     # Initialize dataloader
     args, datasets, num_species, charge_scale = initialize_datasets(args, args.datadir, 'lep', 
                                                                     force_download=args.force_download,
@@ -44,8 +41,11 @@ def main():
                                      batch_size=args.batch_size,
                                      shuffle=args.shuffle if (split == 'train') else False,
                                      num_workers=args.num_workers,
-                                     collate_fn=collate_fn)
+                                     collate_fn=collate_activity)
                          for split, dataset in datasets.items()}
+
+    # Initialize device and data type
+    device, dtype = init_cuda(args)
 
     # Initialize model
     model = CormorantLEP(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
@@ -67,7 +67,7 @@ def main():
 
     # Apply the covariance and permutation invariance tests
     print('Files:',dataloaders['train'])
-    cormorant_tests(model, dataloaders['train'], args, charge_scale=charge_scale)
+    cormorant_tests(model, dataloaders['train'], args, charge_scale=charge_scale, siamese=True)
 
     # Instantiate the training class
     trainer = Engine(args, dataloaders, model, loss_fn, optimizer, scheduler, restart_epochs, device, dtype, task='classification', clip_value=None) 
