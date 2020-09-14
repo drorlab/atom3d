@@ -1,9 +1,7 @@
-# Example C++ Reader for ATOM3D data
+# Example C++ Reader for ATOM3D data in HDF format
 
-## TO DO
+Incomplete! Can only read coordinates.
 
-* Read a single HDF5 file as in 'readdata.cpp', adapted to ATOM3D data.
-* Check whether 'chunks.cpp' can be adapted for sharded datasets.
 
 ## Installation
 
