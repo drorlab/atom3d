@@ -3,9 +3,9 @@
 RAWDIR=../../data/ligand_efficacy_prediction/split
 
 
-for MAXNUMAT in 500 480 520; do
+for MAXNUMAT in 500 480 520 540 560 580 600; do
 
-	for CUTOFF in 50 55 60; do
+	for CUTOFF in 40 45 50 55 60; do
 		
 		NPZDIR=../../data/ligand_efficacy_prediction/split/npz_cutoff${CUTOFF}_maxnumat${MAXNUMAT}
 
@@ -20,11 +20,11 @@ for MAXNUMAT in 500 480 520; do
 done
 
 
-for MAXNUMAT in 500 480 520; do
+for MAXNUMAT in 500 480 520 540 560 580 600; do
 
-        for CUTOFF in 40 45 50; do
+        for CUTOFF in 40 45 50 55 60; do
 
-                NPZDIR=../../data/ligand_efficacy_prediction/split/npz_cutoff${CUTOFF}_maxnumat${MAXNUMAT}
+                NPZDIR=../../data/ligand_efficacy_prediction/split/npz_cutoff${CUTOFF}_maxnumat${MAXNUMAT}_with-hydrogens
 
                 mkdir $NPZDIR
                 mkdir $NPZDIR/lep
