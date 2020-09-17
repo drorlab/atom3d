@@ -41,7 +41,19 @@ void read_lmdb(const string &filename, const lmdb::val &key) {
         lmdb::val val;
         if (lmdb::dbi_get(rtxn, dbi, key, val)) {
             json j = parse_json(gzip_decompress(val.data(), val.size()));
-            cout << "Key: " << key << ", val: " << j.dump(4) << "\n" << endl;
+            //cout << "Key: " << key << ", val: " << j.dump(4) << "\n" << endl;
+	    // Extract the various entries from the JSON object
+            json id = j["/id"_json_pointer];
+	    json columns = j["/atoms/columns"_json_pointer];
+	    json data = j["/atoms/data"_json_pointer];
+	    json index = j["/atoms/index"_json_pointer];
+	    // .. and print them
+	    cout << key << ", " << id << ", " << data.size() << " atoms" << endl;
+	    cout << columns << endl;
+	    for (auto& atom : data.items())
+            {
+		cout << atom.value() << '\n'; // x.key() provides index
+            }
         } else {
             cerr << "ERROR: key " << key.data() << " not found in the database" << endl;
         }
