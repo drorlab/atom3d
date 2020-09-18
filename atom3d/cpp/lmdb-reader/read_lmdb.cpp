@@ -92,7 +92,7 @@ void read_lmdb(const string &filename, const lmdb::val &key) {
 		ac++;
             }
 	    cout << "Done reading. Starting test output." << endl;
-            for (int i=0; i < ac; i++) {
+            for (unsigned int i=0; i < element.size(); i++) {
                 cout << model[i] << " " 
 		     << chain[i] << " " 
 		     << hetero[i] << " " 
