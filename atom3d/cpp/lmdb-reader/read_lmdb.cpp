@@ -29,6 +29,17 @@ json parse_json(const string &str) {
     return j;
 }
 
+int find_index(json jlist, const string s) {
+    unsigned int i = 0;
+    while (i < jlist.size()) {
+	if (jlist[i] == s) {
+	    break;
+	}
+	i++;
+    }
+    return i;
+}
+
 void read_lmdb(const string &filename, const lmdb::val &key) {
     // Create and open the LMDB environment
     auto env = lmdb::env::create();
@@ -48,7 +59,7 @@ void read_lmdb(const string &filename, const lmdb::val &key) {
 	    json index = j["/atoms/index"_json_pointer];
 	    // Print general info 
 	    cout << key << ", " << id << ", " << data.size() << " atoms" << endl;
-	    cout << columns << endl;
+	    cout << columns.size() << " columns: " << columns << endl;
             // Declare the vectors
 	    vector <int> model (data.size());
 	    vector <string> chain (data.size());
@@ -71,23 +82,23 @@ void read_lmdb(const string &filename, const lmdb::val &key) {
 		// Print the info about the atom
 		cout << atom.value() << '\n'; // x.key() provides index
                 // Fill the vectors with data
-		model[ac] = atom.value()[0];
-		chain[ac] = atom.value()[1];
-		hetero[ac] = atom.value()[2];
-		insertion_code[ac] = atom.value()[3];
-		residue[ac] = atom.value()[4];
-		segid[ac] = atom.value()[5];
-		resname[ac] = atom.value()[6];
-		altloc[ac] = atom.value()[7];
-		occupancy[ac] = atom.value()[8];
-		bfactor[ac] = atom.value()[9];
-		coordinates[ac][0] = atom.value()[10];
-		coordinates[ac][1] = atom.value()[11];
-		coordinates[ac][2] = atom.value()[12];
-		element[ac] = atom.value()[13];
-		name[ac] = atom.value()[14];
-		fullname[ac] = atom.value()[15];
-		serial_number[ac] = atom.value()[16];
+		model[ac] = atom.value()[find_index(columns,"model")];
+		chain[ac] = atom.value()[find_index(columns,"chain")];
+		hetero[ac] = atom.value()[find_index(columns,"hetero")];
+		insertion_code[ac] = atom.value()[find_index(columns,"insertion_code")];
+		residue[ac] = atom.value()[find_index(columns,"residue")];
+		segid[ac] = atom.value()[find_index(columns,"segid")];
+		resname[ac] = atom.value()[find_index(columns,"resname")];
+		altloc[ac] = atom.value()[find_index(columns,"altloc")];
+		occupancy[ac] = atom.value()[find_index(columns,"occupancy")];
+		bfactor[ac] = atom.value()[find_index(columns,"bfactor")];
+		coordinates[ac][0] = atom.value()[find_index(columns,"x")];
+		coordinates[ac][1] = atom.value()[find_index(columns,"y")];
+		coordinates[ac][2] = atom.value()[find_index(columns,"z")];
+		element[ac] = atom.value()[find_index(columns,"element")];
+		name[ac] = atom.value()[find_index(columns,"name")];
+		fullname[ac] = atom.value()[find_index(columns,"fullname")];
+		serial_number[ac] = atom.value()[find_index(columns,"serial_number")];
 		// Increase the counter
 		ac++;
             }
