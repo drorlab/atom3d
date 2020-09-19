@@ -18,6 +18,8 @@ setup(
         'click',
         'easy-parallel',
         'h5py',
+        'lmdb',
+        'msgpack',
         'numpy',
         'pandas',
         'python-dotenv>=0.5.1',

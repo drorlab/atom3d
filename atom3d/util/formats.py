@@ -25,25 +25,27 @@ _regexes = {k: re.compile(v) for k, v in patterns.items()}
 
 def is_sharded(f):
     """If file is in sharded format."""
-    return _regexes['sharded'].search(f)
+    return _regexes['sharded'].search(str(f))
 
 
 def is_pdb(f):
     """If file is in pdb format."""
-    return _regexes['pdb'].search(f)
+    return _regexes['pdb'].search(str(f))
 
 
 def is_mmcif(f):
     """If file is in mmcif format."""
-    return _regexes['mmcif'].search(f)
+    return _regexes['mmcif'].search(str(f))
+
 
 def is_sdf(f):
     """If file is in sdf format."""
-    return _regexes['sdf'].search(f)
+    return _regexes['sdf'].search(str(f))
+
 
 def is_pdb_gz(f):
     """If file is in mmcif format."""
-    return _regexes['pdb.gz'].search(f)
+    return _regexes['pdb.gz'].search(str(f))
 
 
 def read_any(f, name=None):
@@ -89,13 +91,13 @@ def read_mmcif(mmcif_file, name=None):
 def read_sdf(sdf_files, sanitize=True, add_hs=False, remove_hs=True):
     dflist = []
     for sdf_file in sdf_files:
-        molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize, 
+        molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
                                     add_hs=add_hs, remove_hs=remove_hs)
         for im,m in enumerate(molecules):
-            if m is not None: 
-                df = mol_to_df(m, residue=im, 
-                               ensemble='A', 
-                               structure='A', 
+            if m is not None:
+                df = mol_to_df(m, residue=im,
+                               ensemble='A',
+                               structure='A',
                                model=m.GetProp("_Name"))
                 dflist.append(df)
     bp = df_to_bp(merge_dfs(dflist))
