@@ -49,11 +49,8 @@ From python:
 from atom3d.torch import LMDBDataset
 
 dataset = LMDBDataset(PATH_TO_LMDB)
-# Print length
-print(len(dataset))
-# Print i-th entry
-i = 2
-print(dataset[i])
+print(len(dataset))  # Print length
+print(dataset[0])  # Print 1st entry
 ```
 
 ### Sharded datasets
