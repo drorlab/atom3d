@@ -16,7 +16,7 @@ ATOM3D enables machine learning on three dimensional molecular structure.
 Install with:
 
 ```
-pip install -r requirements.txt
+make requirements
 ```
     
 To use rdkit functionality, please install within conda:
@@ -24,7 +24,7 @@ To use rdkit functionality, please install within conda:
 ```
 conda create -n atom3d python=3.6 pip rdkit
 conda activate atom3d
-pip install -r requirements.txt
+make requirements
 ```
 
 ## Usage
@@ -35,18 +35,11 @@ LMDB allows for compressed, fast, random access to your structures, all within a
 single database.  Currently, we support creating LMDB datasets from PDB files
 and silent files.
 
-#### Creating an LMDB dataset using PDB files
+#### Creating an LMDB dataset
 
 From command line:
 ```
-python atom3d/torch/datasets.py PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype pdb 
-```
-
-#### Creating an LMDB dataset using silent files
-
-From command line:
-```
-python atom3d/torch/datasets.py PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype pdb 
+python atom3d/torch/datasets.py PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype {pdb,silent} 
 ```
 
 #### Loading an LMDB dataset
