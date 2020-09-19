@@ -29,27 +29,27 @@ pip install -r requirements.txt
 
 ## Usage
 
-### LMDB datasets.
+### LMDB datasets
 
 LMDB allows for compressed, fast, random access to your structures, all within a
 single database.  Currently, we support creating LMDB datasets from PDB files
 and silent files.
 
-#### Creating an LMDB dataset using PDB files.
+#### Creating an LMDB dataset using PDB files
 
 From command line:
 ```
-python atom3d/torch/dataset.py PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype pdb 
+python atom3d/torch/datasets.py PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype pdb 
 ```
 
-#### Creating an LMDB dataset using silent files.
+#### Creating an LMDB dataset using silent files
 
 From command line:
 ```
-python atom3d/torch/dataset.py PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype pdb 
+python atom3d/torch/datasets.py PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype pdb 
 ```
 
-#### Loading an LMDB dataset.
+#### Loading an LMDB dataset
 
 From python:
 ```
@@ -63,11 +63,11 @@ i = 2
 print(dataset[i])
 ```
 
-### Sharded datasets.
+### Sharded datasets
 
 An HDF5 based data format that allows for keyed indexing of structures.
 
-#### Loading a sharded dataset.
+#### Loading a sharded dataset
 
 From python:
 ```
