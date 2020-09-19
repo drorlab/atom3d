@@ -39,14 +39,14 @@ and silent files.
 
 From command line:
 ```
-python atom3d/torch/datasets.py PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype {pdb,silent} 
+python -m atom3d.datasets PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype {pdb,silent} 
 ```
 
 #### Loading an LMDB dataset
 
 From python:
 ```
-from atom3d.torch import LMDBDataset
+from atom3d.datasets import LMDBDataset
 
 dataset = LMDBDataset(PATH_TO_LMDB)
 print(len(dataset))  # Print length

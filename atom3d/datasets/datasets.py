@@ -1,4 +1,3 @@
-import click
 import contextlib
 import gzip
 import importlib
@@ -16,7 +15,6 @@ import pandas as pd
 from torch.utils.data import Dataset, IterableDataset
 
 from . import scores as sc
-import atom3d.util.file as fi
 import atom3d.util.formats as fo
 
 logger = logging.getLogger(__name__)
@@ -81,11 +79,11 @@ class PDBDataset(Dataset):
     Creates a dataset from directory of PDB files.
 
     Args:
-        data_path (Union[str, Path, list[str, Path]]):
+        file_list (list[Union[str, Path]]):
             Path to pdb files.
     """
-    def __init__(self, data_path, transform=None):
-        self._file_list = fi.get_file_list(data_path, '.pdb')
+    def __init__(self, file_list, transform=None):
+        self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
         self._transform = transform
 
@@ -115,11 +113,11 @@ class SilentDataset(IterableDataset):
     Can either use a directory of silent files, or a path to one.
 
     Args:
-        data_path (Union[str, Path, list[str, Path]]):
+        file_list (list[Union[str, Path]]):
             Path to silent files.
     """
 
-    def __init__(self, data_path, transform=None):
+    def __init__(self, file_list, transform=None):
 
         if not importlib.util.find_spec("rosetta") is not None:
             raise RuntimeError(
@@ -133,7 +131,7 @@ class SilentDataset(IterableDataset):
                 'pyrosetta.rosetta.core.import_pose.pose_stream')
             self.pyrosetta.init("-mute all")
 
-        self._file_list = fi.get_file_list(data_path, '.out')
+        self._file_list = [Path(x) for x in file_list]
         self._num_examples = sum(
             [x.shape[0] for x in self._file_scores.values()])
         self._transform = transform
@@ -210,15 +208,15 @@ def deserialize(x, serialization_format):
     return serialized
 
 
-def make_lmdb_dataset(input_data_path, output_data_file, filetype,
+def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
                       transform=None, serialization_format='json'):
     """
     Make an LMDB dataset from an input dataset.
 
     Args:
-        input_data_path (Union[str, Path, list[str, Path]]):
+        input_file_list (list[Union[str, Path]])
             Path to input files.
-        output_data_file (Union[str, Path]):
+        output_lmdb (Union[str, Path]):
             Path to output LMDB.
         filetype ('pdb' or 'silent'):
             Input filetype.
@@ -227,19 +225,19 @@ def make_lmdb_dataset(input_data_path, output_data_file, filetype,
         serialization_format ('json', 'msgpack', 'pkl'):
             How to serialize an entry.
     """
+#        file_list = fi.get_file_list(input_data_path, '.pdb')
+#        file_list = fi.get_file_list(input_data_path, '.out')
     if filetype == 'pdb':
-        file_list = fi.get_file_list(input_data_path, '.pdb')
-        dataset = PDBDataset(file_list, transform=transform)
+        dataset = PDBDataset(input_file_list, transform=transform)
     else:
-        file_list = fi.get_file_list(input_data_path, '.out')
-        dataset = SilentDataset(file_list, transform=transform)
+        dataset = SilentDataset(input_file_list, transform=transform)
 
     num_examples = len(dataset)
 
     logger.info('making final data set from raw data')
     logger.info(f'{num_examples} examples')
 
-    env = lmdb.open(str(output_data_file), map_size=int(1e11))
+    env = lmdb.open(str(output_lmdb), map_size=int(1e11))
 
     with env.begin(write=True) as txn:
         txn.put(b'num_examples', str(num_examples).encode())
@@ -251,31 +249,3 @@ def make_lmdb_dataset(input_data_path, output_data_file, filetype,
                 f.write(serialize(x, serialization_format))
             compressed = buf.getvalue()
             txn.put(str(i).encode(), compressed)
-
-
-@click.command()
-@click.argument('input_data_path', type=click.Path(exists=True))
-@click.argument('output_data_file', type=click.Path(exists=False))
-@click.option('--filetype', type=click.Choice(['pdb', 'silent']),
-              default='pdb')
-@click.option('-sf', '--serialization_format',
-              type=click.Choice(['msgpack', 'pkl', 'json']),
-              default='json')
-@click.option('--score_path', type=click.Path(exists=True))
-def main(input_data_path, output_data_file, filetype, score_path,
-         serialization_format):
-    """Script wrapper to make_lmdb_dataset to create LMDB dataset."""
-    if score_path and type == 'pdb':
-        file_list = fi.get_file_list(input_data_path, '.pdb')
-        scores = sc.Scores(score_path)
-        new_file_list = scores.remove_missing(file_list)
-        logger.info(f'Keeping {len(new_file_list)} / {len(file_list)}')
-        input_data_path = new_file_list
-    else:
-        scores = None
-    make_lmdb_dataset(input_data_path, output_data_file, filetype, scores,
-                      serialization_format)
-
-
-if __name__ == '__main__':
-    main()
