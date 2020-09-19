@@ -125,7 +125,7 @@ class Sharded(object):
         """Read keyed entry from sharded dataset."""
         metadata_path = self._get_metadata()
         metadata = pd.read_hdf(metadata_path, f'metadata')
-        entry = metadata[metadata[self._keys] == name]
+        entry = metadata[(metadata[self._keys] == name).any(axis=1)]
         if len(entry) != 1:
             raise RuntimeError('Need exactly one matchin in structure lookup')
         entry = entry.iloc[0]

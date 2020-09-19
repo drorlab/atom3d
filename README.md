@@ -67,7 +67,7 @@ print(dataset[i])
 
 An HDF5 based data format that allows for keyed indexing of structures.
 
-### Loading a sharded dataset.
+#### Loading a sharded dataset.
 
 From python:
 ```
