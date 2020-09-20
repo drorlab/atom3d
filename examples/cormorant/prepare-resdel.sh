@@ -1,12 +1,12 @@
 conda activate /oak/stanford/groups/rondror/users/mvoegele/envs/atom3d 
 
-RAWDIR=../../data/residue_deletion
+RAWDIR=../../data/residue_identity/environments-split
 
 for MAXNUMAT in 500; do
 
-	for NUMSHARDS in 5 10 15 20; do
+	for NUMSHARDS in 20 20 25 25; do
 
-		NPZDIR=../../data/residue_deletion/npz-maxnumat$MAXNUMAT-numshards$NUMSHARDS
+		NPZDIR=../../data/residue_identity/environments-split/npz-maxnumat$MAXNUMAT-numshards$NUMSHARDS
 
 		mkdir $NPZDIR
 		mkdir $NPZDIR/resdel

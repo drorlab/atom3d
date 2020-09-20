@@ -185,9 +185,9 @@ def convert_hdf5_to_npz(in_dir_name, out_dir_name, datatypes=None, shuffle=False
         
     """
 
-    tr_env_fn = in_dir_name+'/split/train_envs@1000'
-    va_env_fn = in_dir_name+'/split/val_envs@100'
-    te_env_fn = in_dir_name+'/split/test_envs@100'
+    tr_env_fn = in_dir_name+'/train_envs@1000'
+    va_env_fn = in_dir_name+'/val_envs@100'
+    te_env_fn = in_dir_name+'/test_envs@100'
 
     # Create the internal data sets
     ds_tr = MoleculesDataset(tr_env_fn, shuffle=shuffle, max_num_atoms=max_num_atoms, num_sampled_shards=int(num_sampled_shards_tr), name='training')
