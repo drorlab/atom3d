@@ -88,7 +88,22 @@ def read_mmcif(mmcif_file, name=None):
     return parser.get_structure(name, mmcif_file)
 
 
-def read_sdf(sdf_files, sanitize=True, add_hs=False, remove_hs=True):
+def read_sdf(sdf_file, sanitize=True, add_hs=False, remove_hs=True):
+    dflist = []
+    molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
+                                add_hs=add_hs, remove_hs=remove_hs)
+    for im,m in enumerate(molecules):
+        if m is not None:
+            df = mol_to_df(m, residue=im, 
+                           ensemble = m.GetProp("_Name"), 
+                           structure = m.GetProp("_Name"), 
+                           model = m.GetProp("_Name"))
+            dflist.append(df)
+    bp = df_to_bp(merge_dfs(dflist))
+    return bp
+
+
+def read_sdf_multi(sdf_files, sanitize=True, add_hs=False, remove_hs=True):
     dflist = []
     for sdf_file in sdf_files:
         molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
@@ -96,9 +111,9 @@ def read_sdf(sdf_files, sanitize=True, add_hs=False, remove_hs=True):
         for im,m in enumerate(molecules):
             if m is not None:
                 df = mol_to_df(m, residue=im,
-                               ensemble='A',
-                               structure='A',
-                               model=m.GetProp("_Name"))
+                               ensemble = m.GetProp("_Name"),
+                               structure = m.GetProp("_Name"),
+                               model = m.GetProp("_Name"))
                 dflist.append(df)
     bp = df_to_bp(merge_dfs(dflist))
     return bp
@@ -120,36 +135,36 @@ def write_mmcif(out_file, structure):
     return
 
 
-def read_xyz(filename):
-    """Read GDB9-style xyz file."""
-    with open(filename) as xyzfile:
-        # Extract number of atoms
-        num_at = int(xyzfile.readline())
-        # print('Reading file', filename, 'with', num_at, 'atoms.')
-        # Read header
-        header = xyzfile.readline()
-        # Initialize lists, arrays
-        elements = []
-        charges = np.zeros(num_at)
-        coordinates = np.zeros([num_at, 3])
-        # Iterate through all atoms and read info
-        for i in range(num_at):
-            line = xyzfile.readline()
-            el, x, y, z, q = line.split()
-            elements.append(el)
-            charges[i] = q
-            coordinates[i] = np.array([x, y, z], dtype=float)
-        # Read footer
-        footer = xyzfile.readline()
-        # Read SMILES and InChi
-        smiles1, smiles2 = xyzfile.readline().split()
-        inchi1, inchi2 = xyzfile.readline().split()
-    # Construct the dictionary
-    data = {'smiles': smiles1, 'inchi': inchi1,
-            'header': header, 'footer': footer,
-            'elements': elements, 'charges': charges,
-            'coordinates': coordinates}
-    return data
+def read_xyz_to_df(inputfile, gdb_data=False):
+    """Read an XYZ file (optionally with GDB9-specific data)"""
+    with open(inputfile) as f:
+        # Reading number of atoms in the molecule
+        num_atoms = int(f.readline().strip())
+        # Loading GDB ID and label data
+        line_labels = f.readline().strip().split('\t')
+        name = line_labels[0]
+        if gdb_data: data = [float(ll) for ll in line_labels[1:]]
+        # Skip atom data (will be read using pandas below)
+        for n in range(num_atoms): f.readline()
+        # Harmonic vibrational frequencies
+        if gdb_data: freq = [float(ll) for ll in f.readline().strip().split('\t')]
+        # SMILES and InChI
+        if gdb_data: smiles = f.readline().strip().split('\t')[0]
+        if gdb_data: inchi  = f.readline().strip().split('\t')[0]
+    # Define columns: element, x, y, z, Mulliken charges (GDB only)
+    columns = ['atom','x', 'y', 'z']
+    if gdb_data: columns += ['charge']
+    # Load atom information
+    molecule = pd.read_table(inputfile, skiprows=2, delim_whitespace=True,
+                             names=columns) 
+    molecule = molecule[:num_atoms]
+    # Name the dataframe
+    molecule.name = name
+    # return molecule info
+    if gdb_data: 
+        return molecule, data, freq, smiles, inchi
+    else:
+        return molecule
 
 
 def bp_to_df(bp):
