@@ -164,8 +164,8 @@ def read_xyz_to_df(inputfile, gdb_data=False):
     if gdb_data: columns += ['charge']
     # Load atom information
     molecule = pd.read_table(inputfile, names=columns,
-                             skiprows=2, delim_whitespace=True)
-    molecule = molecule[:num_atoms]
+                             skiprows=2, nrows=num_atoms,
+                             delim_whitespace=True)
     # Name the dataframe
     molecule.name = name
     molecule.index.name = name

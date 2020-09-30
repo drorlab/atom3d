@@ -16,8 +16,8 @@ using namespace std;
 using json = nlohmann::json;
 
 
-const string LMDB_FILE = "../../../data/dataset_tests/json_lmdb";
-
+//const string LMDB_FILE = "../../../data/dataset_tests/json_lmdb";
+const string LMDB_FILE = "/mnt/d/atom3d/data/qm9/lmdb";
 
 string gzip_decompress(const char *ptr, size_t size) {
     // Decompress returns a string and decodes both zlib and gzip
