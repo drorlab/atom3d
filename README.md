@@ -32,14 +32,13 @@ make requirements
 ### LMDB datasets
 
 LMDB allows for compressed, fast, random access to your structures, all within a
-single database.  Currently, we support creating LMDB datasets from PDB files
-and silent files.
+single database.  Currently, we support creating LMDB datasets from PDB files, silent files, and xyz files.
 
 #### Creating an LMDB dataset
 
 From command line:
 ```
-python -m atom3d.datasets PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype {pdb,silent} 
+python -m atom3d.datasets PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype {pdb,silent,xyz} 
 ```
 
 #### Loading an LMDB dataset
