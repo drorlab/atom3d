@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.argument('input_dir', type=click.Path(exists=True))
 @click.argument('output_lmdb', type=click.Path(exists=False))
-@click.option('--filetype', type=click.Choice(['pdb', 'silent']),
+@click.option('--filetype', type=click.Choice(['pdb', 'silent', 'xyz', 'xyz-gdb']),
               default='pdb')
 @click.option('-sf', '--serialization_format',
               type=click.Choice(['msgpack', 'pkl', 'json']),
@@ -20,9 +20,13 @@ logger = logging.getLogger(__name__)
 @click.option('--score_path', type=click.Path(exists=True))
 def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
     """Script wrapper to make_lmdb_dataset to create LMDB dataset."""
+    print('filetype:', filetype)
     if filetype == 'pdb':
         file_list = fi.find_files(input_dir, ft.patterns['pdb']) + \
             fi.find_files(input_dir, ft.patterns['pdb.gz'])
+    elif filetype in ['xyz', 'xyz-gdb']:
+        file_list = fi.find_files(input_dir, 'xyz')
+        print('Found %i XYZ files.'%(len(file_list)))
     else:
         file_list = fi.find_files(input_dir, '.out')
 
@@ -40,3 +44,4 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
 
 if __name__ == "__main__":
     main()
+

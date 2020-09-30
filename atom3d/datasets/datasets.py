@@ -106,6 +106,43 @@ class PDBDataset(Dataset):
         return item
 
 
+class XYZDataset(Dataset):
+    """
+    Creates a dataset from directory of XYZ files.
+
+    Args:
+        file_list (list[Union[str, Path]]):
+            Path to xyz files.
+    """
+    def __init__(self, file_list, transform=None, gdb=False):
+        self._file_list = [Path(x) for x in file_list]
+        self._num_examples = len(self._file_list)
+        self._transform = transform
+        self._gdb = gdb
+
+    def __len__(self) -> int:
+        return self._num_examples
+
+    def __getitem__(self, index: int):
+        if not 0 <= index < self._num_examples:
+            raise IndexError(index)
+
+        file_path = self._file_list[index]
+        bp = fo.read_xyz(file_path, gdb=self._gdb)
+        if self._gdb: bp, data, freq, smiles, inchi = bp
+        df = fo.bp_to_df(bp)
+
+        item = {
+            'atoms': df,
+            'id': bp.id,
+            'file_path': str(file_path),
+        }
+        if self._gdb:
+            item['data'] = data
+            item['freq'] = freq
+        if self._transform:
+            item = self._transform(item)
+        return item
 
 
 class SilentDataset(IterableDataset):
@@ -231,6 +268,10 @@ def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
 #        file_list = fi.get_file_list(input_data_path, '.out')
     if filetype == 'pdb':
         dataset = PDBDataset(input_file_list, transform=transform)
+    elif filetype == 'xyz':
+        dataset = XYZDataset(input_file_list, transform=transform)
+    elif filetype == 'xyz-gdb':
+        dataset = XYZDataset(input_file_list, transform=transform, gdb=True)
     else:
         dataset = SilentDataset(input_file_list, transform=transform)
 
@@ -251,3 +292,4 @@ def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
                 f.write(serialize(x, serialization_format))
             compressed = buf.getvalue()
             txn.put(str(i).encode(), compressed)
+

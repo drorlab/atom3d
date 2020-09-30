@@ -18,6 +18,7 @@ patterns = {
     'mmcif': '(mm)?cif$',
     'sharded': '@[0-9]+',
     'sdf': 'sdf[0-9]*$',
+    'xyz': 'xyz[0-9]*$',
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
@@ -47,6 +48,10 @@ def is_pdb_gz(f):
     """If file is in mmcif format."""
     return _regexes['pdb.gz'].search(str(f))
 
+def is_xyz(f):
+    """If file is in xyz format."""
+    return _regexes['xyz'].search(str(f))
+
 
 def read_any(f, name=None):
     """Read file into biopython structure."""
@@ -58,6 +63,8 @@ def read_any(f, name=None):
         return read_mmcif(f, name)
     elif is_sdf(f):
         return read_sdf(f, name)
+    elif is_xyz(f):
+        return read_xyz(f, name)
     else:
         raise ValueError(f"Unrecognized filetype for {f:}")
 
@@ -147,24 +154,68 @@ def read_xyz_to_df(inputfile, gdb_data=False):
         # Skip atom data (will be read using pandas below)
         for n in range(num_atoms): f.readline()
         # Harmonic vibrational frequencies
-        if gdb_data: freq = [float(ll) for ll in f.readline().strip().split('\t')]
+        if gdb_data: 
+            freq = [float(ll) for ll in f.readline().strip().split('\t')]
         # SMILES and InChI
         if gdb_data: smiles = f.readline().strip().split('\t')[0]
         if gdb_data: inchi  = f.readline().strip().split('\t')[0]
     # Define columns: element, x, y, z, Mulliken charges (GDB only)
-    columns = ['atom','x', 'y', 'z']
+    columns = ['element','x', 'y', 'z']
     if gdb_data: columns += ['charge']
     # Load atom information
-    molecule = pd.read_table(inputfile, skiprows=2, delim_whitespace=True,
-                             names=columns) 
+    molecule = pd.read_table(inputfile, names=columns,
+                             skiprows=2, delim_whitespace=True)
     molecule = molecule[:num_atoms]
     # Name the dataframe
     molecule.name = name
+    molecule.index.name = name
     # return molecule info
     if gdb_data: 
         return molecule, data, freq, smiles, inchi
     else:
         return molecule
+
+
+def read_xyz(xyz_file, name=None, gdb=False):
+    """Load xyz file in to biopython representation."""
+    # Load the xyz file into a dataframe
+    if gdb:
+        df, data, freq, smiles, inchi = read_xyz_to_df(xyz_file, gdb_data=True)
+    else:
+        df = read_xyz_to_df(xyz_file)
+    if name is not None: df.index.name = name
+    # Make up atom names
+    elements = df['element'].unique()
+    el_count = {}
+    for e in elements: 
+        el_count[e] = 0
+    new_name = []
+    for el in df['element']:
+        el_count[e] += 1
+        new_name.append('%s%i'%(el,el_count[e]))
+    # Fill additional fields
+    df['ensemble'] = [df.name.replace(' ','_')]*len(df)
+    df['subunit'] = [0]*len(df)
+    df['structure'] = [df.name.replace(' ','_')]*len(df)
+    df['model'] = [0]*len(df)
+    df['chain'] = ['L']*len(df)
+    df['hetero'] = ['']*len(df)
+    df['insertion_code'] = ['']*len(df)
+    df['residue'] = [1]*len(df)
+    df['segid'] = ['LIG']*len(df)
+    df['resname'] = ['LIG']*len(df)
+    df['altloc'] = ['']*len(df)
+    df['occupancy'] = [1.]*len(df)
+    df['bfactor'] = [0.]*len(df)
+    df['name'] = new_name
+    df['fullname'] = new_name
+    df['serial_number'] = range(len(df))
+    # Convert to biopython representation
+    bp = df_to_bp(df)
+    if gdb:
+        return bp, data, freq, smiles, inchi
+    else:
+        return bp
 
 
 def bp_to_df(bp):
@@ -234,7 +285,6 @@ def df_to_bps(df_in):
                             atom['serial_number'],
                             atom['element'])
                         new_residue.add(new_atom)
-
                     new_chain.add(new_residue)
                 new_model.add(new_chain)
             new_structure.add(new_model)
@@ -417,3 +467,4 @@ def get_coordinates_from_df(df):
     xyz[:, 2] = np.array(df.z)
 
     return xyz
+
