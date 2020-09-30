@@ -191,8 +191,8 @@ def read_xyz(xyz_file, name=None, gdb=False):
         el_count[e] = 0
     new_name = []
     for el in df['element']:
-        el_count[e] += 1
-        new_name.append('%s%i'%(el,el_count[e]))
+        el_count[el] += 1
+        new_name.append('%s%i'%(el,el_count[el]))
     # Fill additional fields
     df['ensemble'] = [df.name.replace(' ','_')]*len(df)
     df['subunit'] = [0]*len(df)
