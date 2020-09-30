@@ -208,7 +208,7 @@ class XYZDataset(Dataset):
             'file_path': str(file_path),
         }
         if self._gdb:
-            item['data'] = self.data_with_subtracted_thchem_energy(data, df)
+            item['labels'] = self.data_with_subtracted_thchem_energy(data, df)
             item['freq'] = freq
         if self._transform:
             item = self._transform(item)
