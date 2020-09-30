@@ -11,6 +11,7 @@ import tqdm
 
 import Bio.PDB
 import lmdb
+import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, IterableDataset
 
@@ -106,45 +107,6 @@ class PDBDataset(Dataset):
         return item
 
 
-class XYZDataset(Dataset):
-    """
-    Creates a dataset from directory of XYZ files.
-
-    Args:
-        file_list (list[Union[str, Path]]):
-            Path to xyz files.
-    """
-    def __init__(self, file_list, transform=None, gdb=False):
-        self._file_list = [Path(x) for x in file_list]
-        self._num_examples = len(self._file_list)
-        self._transform = transform
-        self._gdb = gdb
-
-    def __len__(self) -> int:
-        return self._num_examples
-
-    def __getitem__(self, index: int):
-        if not 0 <= index < self._num_examples:
-            raise IndexError(index)
-
-        file_path = self._file_list[index]
-        bp = fo.read_xyz(file_path, gdb=self._gdb)
-        if self._gdb: bp, data, freq, smiles, inchi = bp
-        df = fo.bp_to_df(bp)
-
-        item = {
-            'atoms': df,
-            'id': bp.id,
-            'file_path': str(file_path),
-        }
-        if self._gdb:
-            item['data'] = data
-            item['freq'] = freq
-        if self._transform:
-            item = self._transform(item)
-        return item
-
-
 class SilentDataset(IterableDataset):
     """
     Creates a dataset from rosetta silent files.
@@ -212,6 +174,74 @@ class SilentDataset(IterableDataset):
         parser = Bio.PDB.PDBParser(QUIET=True)
         bp = parser.get_structure(name, f)
         return fo.bp_to_df(bp)
+
+
+class XYZDataset(Dataset):
+    """
+    Creates a dataset from directory of XYZ files.
+
+    Args:
+        file_list (list[Union[str, Path]]):
+            Path to xyz files.
+    """
+    def __init__(self, file_list, transform=None, gdb=False):
+        self._file_list = [Path(x) for x in file_list]
+        self._num_examples = len(self._file_list)
+        self._transform = transform
+        self._gdb = gdb
+
+    def __len__(self) -> int:
+        return self._num_examples
+
+    def __getitem__(self, index: int):
+        if not 0 <= index < self._num_examples:
+            raise IndexError(index)
+
+        file_path = self._file_list[index]
+        bp = fo.read_xyz(file_path, gdb=self._gdb)
+        if self._gdb: bp, data, freq, smiles, inchi = bp
+        df = fo.bp_to_df(bp)
+
+        item = {
+            'atoms': df,
+            'id': bp.id,
+            'file_path': str(file_path),
+        }
+        if self._gdb:
+            item['data'] = self.data_with_subtracted_thchem_energy(data, df)
+            item['freq'] = freq
+        if self._transform:
+            item = self._transform(item)
+        return item
+    
+    def data_with_subtracted_thchem_energy(self, data, df):
+        """
+        Adds energies with subtracted thermochemical energies to the data list
+        We only need this for the QM9 dataset (SMP).
+        """
+
+        # per-atom thermochem. energies for U0 [Ha], U [Ha], H [Ha], G [Ha], Cv [cal/(mol*K)]
+        # https://figshare.com/articles/dataset/Atomref%3A_Reference_thermochemical_energies_of_H%2C_C%2C_N%2C_O%2C_F_atoms./1057643
+        thchem_en = {'H':[ -0.500273,  -0.498857,  -0.497912,  -0.510927,2.981],
+                     'C':[-37.846772, -37.845355, -37.844411, -37.861317,2.981],
+                     'N':[-54.583861, -54.582445, -54.581501, -54.598897,2.981],
+                     'O':[-75.064579, -75.063163, -75.062219, -75.079532,2.981],
+                     'F':[-99.718730, -99.717314, -99.716370, -99.733544,2.981]}   
+
+        # Count occurence of each element in the molecule
+        counts = df['element'].value_counts()
+
+        # Calculate and subtract thermochemical energies
+        u0_atom = data[10] - np.sum([c * thchem_en[el][0] for el, c in counts.items()]) # U0
+        u_atom  = data[11] - np.sum([c * thchem_en[el][1] for el, c in counts.items()]) # U
+        h_atom  = data[12] - np.sum([c * thchem_en[el][2] for el, c in counts.items()]) # H
+        g_atom  = data[13] - np.sum([c * thchem_en[el][3] for el, c in counts.items()]) # G
+        cv_atom = data[14] - np.sum([c * thchem_en[el][4] for el, c in counts.items()]) # Cv
+
+        # Append new data
+        data += [u0_atom, u_atom, h_atom, g_atom, cv_atom]
+
+        return data
 
 
 def serialize(x, serialization_format):
