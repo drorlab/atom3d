@@ -320,7 +320,8 @@ def deserialize(x, serialization_format):
 
 
 def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
-                      transform=None, serialization_format='json'):
+                      transform=None, serialization_format='json'
+                      include_bonds=False):
     """
     Make an LMDB dataset from an input dataset.
 
@@ -329,17 +330,21 @@ def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
             Path to input files.
         output_lmdb (Union[str, Path]):
             Path to output LMDB.
-        filetype ('pdb', 'silent', 'xyz', or 'xyz-gdb'):
+        filetype ('pdb', 'silent', 'sdf', 'xyz', or 'xyz-gdb'):
             Input filetype.
         transform (lambda x -> x):
             Transform to apply before writing out files.
         serialization_format ('json', 'msgpack', 'pkl'):
             How to serialize an entry.
+        include_bonds (bool):
+            Include bond information (only available for SDF yet)
     """
 #        file_list = fi.get_file_list(input_data_path, '.pdb')
 #        file_list = fi.get_file_list(input_data_path, '.out')
     if filetype == 'pdb':
         dataset = PDBDataset(input_file_list, transform=transform)
+    if filetype == 'sdf':
+        dataset = SDFDataset(input_file_list, transform=transform, read_bonds=include_bonds)
     elif filetype == 'xyz':
         dataset = XYZDataset(input_file_list, transform=transform)
     elif filetype == 'xyz-gdb':
