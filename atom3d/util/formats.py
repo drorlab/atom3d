@@ -347,7 +347,7 @@ def bp_from_xyz_dict(data, struct_name='structure'):
     return s
 
 
-def read_sdf_to_mol(sdf_file, sanitize=True, add_hs=False, remove_hs=True):
+def read_sdf_to_mol(sdf_file, sanitize=False, add_hs=False, remove_hs=False):
     from rdkit import Chem
     suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_hs)
     molecules = [mol for mol in suppl]
