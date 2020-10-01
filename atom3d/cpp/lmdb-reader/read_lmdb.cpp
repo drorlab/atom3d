@@ -16,8 +16,7 @@ using namespace std;
 using json = nlohmann::json;
 
 
-//const string LMDB_FILE = "../../../data/dataset_tests/json_lmdb";
-const string LMDB_FILE = "/mnt/d/atom3d/data/qm9/lmdb";
+const string LMDB_FILE = "../../../data/small_molecule_properties/json_lmdb";
 
 string gzip_decompress(const char *ptr, size_t size) {
     // Decompress returns a string and decodes both zlib and gzip
@@ -54,13 +53,18 @@ void read_lmdb(const string &filename, const lmdb::val &key) {
             json j = parse_json(gzip_decompress(val.data(), val.size()));
 	    // Extract the various entries from the JSON object
             json id = j["/id"_json_pointer];
+	    json labels = j["/labels"_json_pointer];
 	    json columns = j["/atoms/columns"_json_pointer];
 	    json data = j["/atoms/data"_json_pointer];
 	    json index = j["/atoms/index"_json_pointer];
 	    // Print general info 
 	    cout << key << ", " << id << ", " << data.size() << " atoms" << endl;
 	    cout << columns.size() << " columns: " << columns << endl;
-            // Declare the vectors
+	    cout << labels.size() << " labels: " << labels << endl;
+	    // Define the zeroth element as label (can pick any)
+	    float label = labels[0];
+	    cout << "label value: " << label << endl;
+            // Declare the atom vectors
 	    vector <int> model (data.size());
 	    vector <string> chain (data.size());
 	    vector <string> hetero (data.size());
@@ -133,6 +137,9 @@ void read_lmdb(const string &filename, const lmdb::val &key) {
 int main() {
     cout << "Reading LMDB file " << LMDB_FILE << endl;
     read_lmdb(LMDB_FILE, "0");
+    read_lmdb(LMDB_FILE, "1");
+    read_lmdb(LMDB_FILE, "2");
+    read_lmdb(LMDB_FILE, "3");
     cout << "Done" << endl;
 
     return EXIT_SUCCESS;
