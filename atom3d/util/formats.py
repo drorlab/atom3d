@@ -62,7 +62,7 @@ def read_any(f, name=None):
     elif is_mmcif(f):
         return read_mmcif(f, name)
     elif is_sdf(f):
-        return read_sdf(f, name, sanitize=False)
+        return read_sdf(f, name)
     elif is_xyz(f):
         return read_xyz(f, name)
     else:
@@ -95,7 +95,7 @@ def read_mmcif(mmcif_file, name=None):
     return parser.get_structure(name, mmcif_file)
 
 
-def read_sdf(sdf_file, name=None, sanitize=True, add_hs=False, remove_hs=True):
+def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False):
     dflist = []
     molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
                                 add_hs=add_hs, remove_hs=remove_hs)
@@ -115,7 +115,7 @@ def read_sdf(sdf_file, name=None, sanitize=True, add_hs=False, remove_hs=True):
     return bp
 
 
-def read_sdf_multi(sdf_files, name=None, sanitize=True, add_hs=False, remove_hs=True):
+def read_sdf_multi(sdf_files, name=None, sanitize=False, add_hs=False, remove_hs=False):
     dflist = []
     for sdf_file in sdf_files:
         molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
