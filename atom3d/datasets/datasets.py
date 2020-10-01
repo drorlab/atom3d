@@ -247,15 +247,17 @@ class XYZDataset(Dataset):
 class SDFDataset(Dataset):
     """
     Creates a dataset from directory of SDF files.
+    Assumes one structure per file!
 
     Args:
         file_list (list[Union[str, Path]]):
             Path to sdf files.
     """
-    def __init__(self, file_list, transform=None):
+    def __init__(self, file_list, transform=None, read_bonds=False):
         self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
         self._transform = transform
+        self._read_bonds = read_bonds
 
     def __len__(self) -> int:
         return self._num_examples
@@ -263,15 +265,22 @@ class SDFDataset(Dataset):
     def __getitem__(self, index: int):
         if not 0 <= index < self._num_examples:
             raise IndexError(index)
-
+        # Read biopython structure
         file_path = self._file_list[index]
-        structure = fo.read_sdf(str(file_path), sanitize=False)
-        
+        structure = fo.read_sdf(str(file_path), sanitize=False, 
+                                add_hs=False, remove_hs=False)
+        # assemble the item (no bonds)
         item = {
             'atoms': fo.bp_to_df(structure),
             'id': structure.id,
             'file_path': str(file_path),
         }
+        # Add bonds if included
+        if self._read_bonds:
+            mol = fo.read_sdf_to_mol(str(file_path), sanitize=False, 
+                                     add_hs=False, remove_hs=False)
+            bonds_df = fo.get_bonds_list_from_mol(mol[0])
+            item['bonds'] = bonds_df
         if self._transform:
             item = self._transform(item)
         return item
@@ -320,7 +329,7 @@ def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
             Path to input files.
         output_lmdb (Union[str, Path]):
             Path to output LMDB.
-        filetype ('pdb' or 'silent'):
+        filetype ('pdb', 'silent', 'xyz', or 'xyz-gdb'):
             Input filetype.
         transform (lambda x -> x):
             Transform to apply before writing out files.
