@@ -378,7 +378,7 @@ def get_coordinates_of_conformer(mol):
     return xyz
 
 
-def get_connectivity_matrix(mol):
+def get_connectivity_matrix_from_mol(mol):
     """Generates the connection matrix from a molecule.
 
     Args:
@@ -403,8 +403,14 @@ def get_connectivity_matrix(mol):
     return connect_matrix
 
 
-def get_bonds_matrix(mol):
-    """Provides bond types encoded as single (1.0). double (2.0), triiple (3.0), and aromatic (1.5).
+def get_bonds_matrix_from_mol(mol):
+    """
+    Provides bond matrix from a molecule. 
+    Bond types are encoded as double: 
+     single bond (1.0) 
+     double bond (2.0)
+     triple bond (3.0)
+     aromatic bond (1.5).
 
     Args:
         mol (Mol): a molecule in RDKit format
@@ -427,6 +433,33 @@ def get_bonds_matrix(mol):
                 bonds_matrix[a.GetIdx(), b.GetIdx()] = bt
 
     return bonds_matrix
+
+
+def get_bonds_list_from_mol(mol):
+    """
+    Extract bonds from a molecule.
+    Bond types are encoded as double:
+     single bond (1.0)
+     double bond (2.0)
+     triple bond (3.0)
+     aromatic bond (1.5).  
+
+    Args:
+        mol (Mol): a molecule in RDKit format        
+
+    Returns:
+        bonds_df (pandas dataframe): list of bonds
+
+    """
+    bonds_list = []
+    for b in mol.GetBonds():
+        atom1 = b.GetBeginAtomIdx()
+        atom2 = b.GetEndAtomIdx()
+        btype = b.GetBondTypeAsDouble()
+        bonds_list.append([atom1,atom2,btype])
+    col = ['atom1','atom2','type']
+    bonds_df = pd.DataFrame(bonds_list, columns=col)
+    return bonds_df
 
 
 def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, residue=999):
