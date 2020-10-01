@@ -4,7 +4,7 @@ RAWDIR=../../data/residue_identity/environments-split
 
 for MAXNUMAT in 500; do
 
-	for NUMSHARDS in 20 20 25 25; do
+	for NUMSHARDS in 05 05 10 10 15 15 20 20 25 25; do
 
 		NPZDIR=../../data/residue_identity/environments-split/npz-maxnumat$MAXNUMAT-numshards$NUMSHARDS
 

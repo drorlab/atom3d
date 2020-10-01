@@ -33,16 +33,17 @@ class MoleculesDataset():
         
         """
         
-        print('Loading',name,'set')
         self.name = name
-
+        
         sharded_ds = shard.Sharded.load(struct_filename)
         num_shards = sharded_ds.get_num_shards()
-    
+        
         self.num_atoms = []
         self.symbols   = []
         self.charges   = []
         self.positions = []
+        self.index     = []
+        self.location  = []
         self.data      = []
         self.data_keys = ['residue'] # only one property here
         
@@ -51,9 +52,7 @@ class MoleculesDataset():
         if num_sampled_shards is not None and num_sampled_shards < num_shards:
             shard_indices = np.random.choice(shard_indices, size=num_sampled_shards, replace=False, p=None)
         
-        for i, shard_idx in enumerate(shard_indices):
-
-            print('Processing shard',shard_idx,' -- ',i,'/',len(shard_indices))
+        for shard_idx in shard_indices:
             
             s = sharded_ds.read_shard(shard_idx)
             
@@ -66,6 +65,10 @@ class MoleculesDataset():
                 # get the label (residue to predict)
                 subunit = ens[1]
                 res_name = subunit.split('_')[-1]
+                loc_res = int(subunit.split('_')[1])
+                loc_res_bool = np.array( new_struct.residue == loc_res, dtype=bool )
+                c_alpha_bool = np.array( new_struct.name == 'CA', dtype=bool )
+                new_loc = np.argwhere(loc_res_bool*c_alpha_bool)[0][0]
                 label = res_label_dict[res_name]
                 # get element symbols
                 new_symbols = [ elem.title() for elem in new_struct.element ]
@@ -77,19 +80,21 @@ class MoleculesDataset():
                 # extract coordinates
                 conf_coord = dt.get_coordinates_from_df(new_struct)
                 # append everything
+                self.index.append(ens[0])
                 self.data.append([label])
+                self.location.append(new_loc)
                 self.symbols.append(new_symbols)
                 self.charges.append(new_atnums)
                 self.positions.append(conf_coord)
                 self.num_atoms.append(len(new_atnums))
-    
+            
         return
     
     
     def __len__(self):
         """Provides the number of molecules in a data set"""
         
-        return len(self.data)
+        return len(self.index)
 
     
     def __getitem__(self, idx):
@@ -103,9 +108,11 @@ class MoleculesDataset():
         
         """
         
-        sample = {'num_atoms': self.num_atoms[idx],\
+        sample = {'index': self.index[idx],\
+                  'num_atoms': self.num_atoms[idx],\
                   'charges': self.charges[idx],\
                   'positions': self.positions[idx],\
+                  'location': self.location[idx],\
                   'data': self.data[idx]}
 
         return sample
@@ -119,8 +126,6 @@ class MoleculesDataset():
             indices (int[]): The indices of the molecules to write data for.
 
         """
-        
-        print('Writing',self.name,'set')
 
         # Define which molecules to use 
         # (counting indices of processed data set)
@@ -130,6 +135,7 @@ class MoleculesDataset():
         # (the one of the biggest molecule)
         size = np.max( self.num_atoms )
         # Initialize arrays
+        location  = np.zeros(len(indices))
         num_atoms = np.zeros(len(indices))
         charges   = np.zeros([len(indices),size])
         positions = np.zeros([len(indices),size,3])
@@ -138,6 +144,7 @@ class MoleculesDataset():
             # load the data
             sample = self[idx]
             # assign per-molecule data
+            location[j]  = sample['location']
             num_atoms[j] = sample['num_atoms']
             # ... and for each atom:
             for ia in range(sample['num_atoms']):
@@ -158,6 +165,7 @@ class MoleculesDataset():
 
         # Add the structural data
         save_dict['num_atoms'] = num_atoms
+        save_dict['location']  = location
         save_dict['charges']   = charges
         save_dict['positions'] = positions
 
