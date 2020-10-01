@@ -244,6 +244,39 @@ class XYZDataset(Dataset):
         return data
 
 
+class SDFDataset(Dataset):
+    """
+    Creates a dataset from directory of SDF files.
+
+    Args:
+        file_list (list[Union[str, Path]]):
+            Path to sdf files.
+    """
+    def __init__(self, file_list, transform=None):
+        self._file_list = [Path(x) for x in file_list]
+        self._num_examples = len(self._file_list)
+        self._transform = transform
+
+    def __len__(self) -> int:
+        return self._num_examples
+
+    def __getitem__(self, index: int):
+        if not 0 <= index < self._num_examples:
+            raise IndexError(index)
+
+        file_path = self._file_list[index]
+        structure = fo.read_sdf(str(file_path), sanitize=False)
+        
+        item = {
+            'atoms': fo.bp_to_df(structure),
+            'id': structure.id,
+            'file_path': str(file_path),
+        }
+        if self._transform:
+            item = self._transform(item)
+        return item
+
+
 def serialize(x, serialization_format):
     if serialization_format == 'pkl':
         # Pickle

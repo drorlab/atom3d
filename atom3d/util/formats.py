@@ -95,7 +95,7 @@ def read_mmcif(mmcif_file, name=None):
     return parser.get_structure(name, mmcif_file)
 
 
-def read_sdf(sdf_file, sanitize=True, add_hs=False, remove_hs=True):
+def read_sdf(sdf_file, name=None, sanitize=True, add_hs=False, remove_hs=True):
     dflist = []
     molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
                                 add_hs=add_hs, remove_hs=remove_hs)
@@ -106,11 +106,16 @@ def read_sdf(sdf_file, sanitize=True, add_hs=False, remove_hs=True):
                            structure = m.GetProp("_Name"), 
                            model = m.GetProp("_Name"))
             dflist.append(df)
-    bp = df_to_bp(merge_dfs(dflist))
+    assert len(dflist) >= 1
+    if len(dflist) > 1:
+        bp = df_to_bp(merge_dfs(dflist))
+    else:
+        bp = df_to_bp(dflist[0])
+
     return bp
 
 
-def read_sdf_multi(sdf_files, sanitize=True, add_hs=False, remove_hs=True):
+def read_sdf_multi(sdf_files, name=None, sanitize=True, add_hs=False, remove_hs=True):
     dflist = []
     for sdf_file in sdf_files:
         molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
@@ -348,7 +353,6 @@ def read_sdf_to_mol(sdf_file, sanitize=True, add_hs=False, remove_hs=True):
     molecules = [mol for mol in suppl]
     if add_hs:
         molecules = [Chem.AddHs(mol, addCoords=True) for mol in suppl]
-
     return molecules
 
 
@@ -452,10 +456,19 @@ def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, resi
         df['y'].append(position.y)
         df['z'].append(position.z)
         df['element'].append(a.GetSymbol())
-        df['name'].append("%s%i"%(a.GetSymbol(),i+1))
-        df['fullname'].append("%s%i"%(a.GetSymbol(),i+1))
         df['serial_number'].append(i)
     df = pd.DataFrame(df)
+    # Make up atom names
+    elements = df['element'].unique()
+    el_count = {}
+    for e in elements:
+        el_count[e] = 0
+    new_name = []
+    for el in df['element']:
+        el_count[el] += 1
+        new_name.append('%s%i'%(el,el_count[el]))
+    df['name'] = new_name
+    df['fullname'] = new_name
     return df
 
 
