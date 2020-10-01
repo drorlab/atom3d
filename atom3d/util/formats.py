@@ -62,7 +62,7 @@ def read_any(f, name=None):
     elif is_mmcif(f):
         return read_mmcif(f, name)
     elif is_sdf(f):
-        return read_sdf(f, name)
+        return read_sdf(f, name, sanitize=False)
     elif is_xyz(f):
         return read_xyz(f, name)
     else:
