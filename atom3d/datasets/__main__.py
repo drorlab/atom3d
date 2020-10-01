@@ -1,3 +1,4 @@
+import glob
 import click
 import logging
 
@@ -25,7 +26,7 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
         file_list = fi.find_files(input_dir, ft.patterns['pdb']) + \
             fi.find_files(input_dir, ft.patterns['pdb.gz'])
     elif filetype in ['xyz', 'xyz-gdb']:
-        file_list = fi.find_files(input_dir, 'xyz')
+        file_list = glob.glob(input_dir+'*.xyz')
         print('Found %i XYZ files.'%(len(file_list)))
     else:
         file_list = fi.find_files(input_dir, '.out')
