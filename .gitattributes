@@ -1,0 +1,6 @@
+# ignore included libraries for language statistics
+atom3d/cpp/lmdb-reader/include/* linguist-vendored
+
+# mark documentation for language statistics
+docs/* linguist-documentation
+
