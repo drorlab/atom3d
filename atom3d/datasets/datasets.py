@@ -213,7 +213,7 @@ class XYZDataset(Dataset):
         if self._transform:
             item = self._transform(item)
         return item
-    
+
     def data_with_subtracted_thchem_energy(self, data, df):
         """
         Adds energies with subtracted thermochemical energies to the data list
@@ -226,7 +226,7 @@ class XYZDataset(Dataset):
                      'C':[-37.846772, -37.845355, -37.844411, -37.861317,2.981],
                      'N':[-54.583861, -54.582445, -54.581501, -54.598897,2.981],
                      'O':[-75.064579, -75.063163, -75.062219, -75.079532,2.981],
-                     'F':[-99.718730, -99.717314, -99.716370, -99.733544,2.981]}   
+                     'F':[-99.718730, -99.717314, -99.716370, -99.733544,2.981]}
 
         # Count occurence of each element in the molecule
         counts = df['element'].value_counts()
@@ -267,7 +267,7 @@ class SDFDataset(Dataset):
             raise IndexError(index)
         # Read biopython structure
         file_path = self._file_list[index]
-        structure = fo.read_sdf(str(file_path), sanitize=False, 
+        structure = fo.read_sdf(str(file_path), sanitize=False,
                                 add_hs=False, remove_hs=False)
         # assemble the item (no bonds)
         item = {
@@ -277,7 +277,7 @@ class SDFDataset(Dataset):
         }
         # Add bonds if included
         if self._read_bonds:
-            mol = fo.read_sdf_to_mol(str(file_path), sanitize=False, 
+            mol = fo.read_sdf_to_mol(str(file_path), sanitize=False,
                                      add_hs=False, remove_hs=False)
             bonds_df = fo.get_bonds_list_from_mol(mol[0])
             item['bonds'] = bonds_df
@@ -320,7 +320,7 @@ def deserialize(x, serialization_format):
 
 
 def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
-                      transform=None, serialization_format='json'
+                      transform=None, serialization_format='json',
                       include_bonds=False):
     """
     Make an LMDB dataset from an input dataset.
