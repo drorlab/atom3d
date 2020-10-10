@@ -343,7 +343,7 @@ def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
 #        file_list = fi.get_file_list(input_data_path, '.out')
     if filetype == 'pdb':
         dataset = PDBDataset(input_file_list, transform=transform)
-    if filetype == 'sdf':
+    elif filetype == 'sdf':
         dataset = SDFDataset(input_file_list, transform=transform, read_bonds=include_bonds)
     elif filetype == 'xyz':
         dataset = XYZDataset(input_file_list, transform=transform)
