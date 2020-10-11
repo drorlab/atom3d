@@ -63,7 +63,7 @@ class LMDBDataset(Dataset):
         return self[idx]
 
     def ids(self):
-        return self._id_to_idx.keys()
+        return list(self._id_to_idx.keys())
 
     def __getitem__(self, index: int):
         if not 0 <= index < self._num_examples:
