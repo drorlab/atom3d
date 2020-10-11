@@ -347,12 +347,25 @@ def bp_from_xyz_dict(data, struct_name='structure'):
     return s
 
 
-def read_sdf_to_mol(sdf_file, sanitize=False, add_hs=False, remove_hs=False):
-    from rdkit import Chem
-    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_hs)
+def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
+    """Reads a list of molecules from an SDF file.
+    
+    Args:
+        add_h (bool): Adds hydrogens. Default: False
+        remove_h (bool): Removes hydrogen. Default: False
+        sanitize (bool): Tries to sanitize the molecule. Default: False
+        
+    """
+    
+    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_h)
+    
     molecules = [mol for mol in suppl]
-    if add_hs:
-        molecules = [Chem.AddHs(mol, addCoords=True) for mol in suppl]
+    
+    if add_h:
+        for mol in molecules:
+            if mol is not None:
+                mol = Chem.AddHs(mol, addCoords=True)
+
     return molecules
 
 
