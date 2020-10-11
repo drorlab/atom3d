@@ -55,7 +55,7 @@ class LMDBDataset(Dataset):
     def __len__(self) -> int:
         return self._num_examples
 
-    def loc(self, id: str):
+    def get(self, id: str):
         if id not in self._id_to_idx:
             raise IndexError(id)
 
