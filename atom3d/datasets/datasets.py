@@ -46,12 +46,24 @@ class LMDBDataset(Dataset):
             self._num_examples = int(txn.get(b'num_examples'))
             self._serialization_format = \
                 txn.get(b'serialization_format').decode()
+            self._id_to_idx = deserialize(
+                txn.get(b'id_to_idx'), self._serialization_format)
 
         self._env = env
         self._transform = transform
 
     def __len__(self) -> int:
         return self._num_examples
+
+    def loc(self, id: str):
+        if id not in self._id_to_idx:
+            raise IndexError(id)
+
+        idx = self._id_to_idx[id]
+        return self[idx]
+
+    def ids(self):
+        return self._id_to_idx.keys()
 
     def __getitem__(self, index: int):
         if not 0 <= index < self._num_examples:
@@ -363,6 +375,7 @@ def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
         txn.put(b'num_examples', str(num_examples).encode())
         txn.put(b'serialization_format', serialization_format.encode())
 
+        id_to_idx = {}
         for i, x in tqdm.tqdm(enumerate(dataset), total=num_examples):
             buf = io.BytesIO()
             with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=6) as f:
@@ -370,3 +383,5 @@ def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
             compressed = buf.getvalue()
             txn.put(str(i).encode(), compressed)
 
+            id_to_idx[x['id']] = i
+        txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
