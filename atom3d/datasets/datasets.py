@@ -77,8 +77,10 @@ class LMDBDataset(Dataset):
                 serialized = f.read()
             item = deserialize(serialized, self._serialization_format)
 
-        if 'atoms' in item:
-            item['atoms'] = pd.DataFrame(**item['atoms'])
+        # Items that start with prefix atoms are assumed to be a dataframe.
+        for x in item.keys():
+            if x.startswith('atoms'):
+                item[x] = pd.DataFrame(**item[x])
 
         if self._transform:
             item = self._transform(item)
