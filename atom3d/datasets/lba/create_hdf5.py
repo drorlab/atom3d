@@ -8,8 +8,8 @@ import os
 import pandas as pd
 from rdkit.Chem import PandasTools
 from tqdm import tqdm
-from util import datatypes as dt
-from util import file as fi
+import atom3d.util.formats as dt
+import atom3d.util.file as fi
 
 
 def convert_to_hdf5(input_dir, label_file, hdf_file):
