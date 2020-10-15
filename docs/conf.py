@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'atom3d'
-copyright = '2020, Raphael Townshend'
-author = 'Raphael Townshend'
+copyright = '2020, ATOM3D Developers.'
+author = 'ATOM3D Developers'
 
 
 # -- General configuration ---------------------------------------------------
