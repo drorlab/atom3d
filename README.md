@@ -52,6 +52,10 @@ print(len(dataset))  # Print length
 print(dataset[0])  # Print 1st entry
 ```
 
+From C++:
+
+ We provide example C++ code to load the LMDB datasets [here](https://github.com/drorlab/atom3d/tree/master/atom3d/cpp/lmdb-reader).
+
 ### Sharded datasets
 
 An HDF5 based data format that allows for keyed indexing of structures.
