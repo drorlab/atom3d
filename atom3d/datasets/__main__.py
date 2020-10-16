@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.argument('input_dir', type=click.Path(exists=True))
 @click.argument('output_lmdb', type=click.Path(exists=False))
-@click.option('--filetype', type=click.Choice(['pdb', 'silent', 'xyz', 'xyz-gdb']),
+@click.option('-f', '--filetype', type=click.Choice(['pdb', 'silent', 'xyz', 'xyz-gdb']),
               default='pdb')
 @click.option('-sf', '--serialization_format',
               type=click.Choice(['msgpack', 'pkl', 'json']),
