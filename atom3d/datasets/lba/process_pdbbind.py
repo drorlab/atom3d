@@ -6,9 +6,9 @@ import os
 
 import scipy.spatial
 
-('..')
 import atom3d.util.file as fi
 import atom3d.util.formats as ft
+import get_labels as lab
 
 from rdkit import Chem
 import Bio.PDB
@@ -118,10 +118,10 @@ def write_files(pdbid, protein, ligand, pocket, out_path):
     # write protein to mmCIF file
     io = Bio.PDB.MMCIFIO()
     io.set_structure(protein)
-    io.save(os.path.join(out_path, f"{pdbid}_protein.mmcif"))
+    io.save(os.path.join(out_path, f"{pdbid}_protein.cif"))
 
     # write pocket to mmCIF file
-    io.save(os.path.join(out_path, f"{pdbid}_pocket.mmcif"), PocketSelect(pocket))
+    io.save(os.path.join(out_path, f"{pdbid}_pocket.cif"), PocketSelect(pocket))
 
     # write ligand to file
     writer = Chem.SDWriter(os.path.join(out_path, f"{pdbid}_ligand.sdf"))
@@ -143,6 +143,9 @@ def produce_cleaned_dataset(structure_dict, out_path, dist):
         pocket_res = get_pocket_res(protein, ligand, dist)
         write_files(pdb, protein, ligand, pocket_res, out_path)
 
+def generate_labels(data_dir, out_dir):
+	lab.main()
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -159,6 +162,7 @@ def main():
 
     structures = process_files(args.data_dir)
     produce_cleaned_dataset(structures, args.out_dir, args.dist)
+    generate_labels(args.data_dir, args.out_dir)
 
 
 if __name__ == "__main__":
