@@ -144,7 +144,7 @@ def produce_cleaned_dataset(structure_dict, out_path, dist):
         write_files(pdb, protein, ligand, pocket_res, out_path)
 
 def generate_labels(data_dir, out_dir):
-	lab.main()
+	lab.main(data_dir, out_dir)
 
 
 def main():
