@@ -131,6 +131,15 @@ def read_sdf_multi(sdf_files, name=None, sanitize=False, add_hs=False, remove_hs
     return bp
 
 
+def combine_sdfs(sdf_files, big_sdf):
+    """Concatenate several SDF files into one."""
+    with open(big_sdf, 'w') as outfile:
+        for fname in sdf_files:
+            with open(fname) as infile:
+                for line in infile:
+                    outfile.write(line)
+
+
 def write_pdb(out_file, structure, **kwargs):
     """Write a biopython structure to a pdb file."""
     io = Bio.PDB.PDBIO()

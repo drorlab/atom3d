@@ -12,6 +12,7 @@ import atom3d.util.formats as dt
 import atom3d.util.file as fi
 
 
+
 def convert_to_hdf5(input_dir, label_file, hdf_file):
     cif_files = fi.find_files(input_dir, 'cif')
     proteins = []
@@ -39,7 +40,7 @@ def convert_to_hdf5(input_dir, label_file, hdf_file):
     print('converting ligands...')
     sdf_files = fi.find_files(input_dir, 'sdf')
     big_sdf = os.path.join(input_dir, 'all_ligands.sdf')
-    combine_sdfs(sdf_files, big_sdf)
+    dt.combine_sdfs(sdf_files, big_sdf)
     lig_df = PandasTools.LoadSDF(big_sdf, molColName='Mol')
     lig_df.index = pdb_codes
     lig_df.to_hdf(hdf_file, 'ligands')
