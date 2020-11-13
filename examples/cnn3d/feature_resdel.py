@@ -227,49 +227,23 @@ def get_residue_weights():
 
 
 if __name__ == "__main__":
-<<<<<<< HEAD
-    sharded = sh.Sharded.load('/oak/stanford/groups/rbaltman/aderry/atom3d/data/residue_deletion/test_pdbs@100/test_pdbs@100')
-    cts, pcts = get_all_labels(sharded)
-    print(cts)
-    print(pcts)
-    quit()
-    print('Testing residue deletion generator')
-    gen = dataset_generator(
-        sharded, range(sharded.get_num_shards()), grid_config, shuffle=True)
-
-    for i, (feature, label) in enumerate(gen):
-        print('Generating sample {:} -> feature {:}, label {:}'.format(
-            i, feature.shape, label))
-        plot_cube(feature.transpose(1,2,3,0)[:,:,:,0], f'test_car_{label}.png')
-        if i == 9:
-            break
-=======
-    sharded = sh.Sharded.load(O_DIR + 'atom3d/data/residue_deletion/split/train_envs@1000')
-
-    if False:
-        cts, pcts = get_all_labels(sharded)
-        print(pcts)
-        
-        total_ct = 0
-        for res, ct in cts.items():
-            total_ct += int(ct)
-                
-        print(total_ct, 'total residues')
-        # print('Testing residue deletion generator')
-        # gen = dataset_generator(sharded, range(sharded.get_num_shards()), grid_config=grid_config)
+    sharded = sh.Sharded.load(os.environ['O_DIR'] + 'atom3d/data/residue_deletion/split/train_envs@1000')
+    mode = 'test'
+    if mode == 'test':
+        print('Testing residue deletion generator')
         gen = dataset_generator(sharded, range(sharded.get_num_shards()), grid_config=grid_config)
 
         for i, (feature, label) in tqdm(enumerate(gen)):
             print('Generating sample {:} -> feature {:}, label {:}'.format(
                 i, feature.shape, label))
-        #     plot_cube(feature.transpose(1,2,3,0)[:,:,:,0], f'test_car_{label}.png')
-        #     if i == 9:
-        #         break
-    num_cores = multiprocessing.cpu_count()
+            plot_cube(feature.transpose(1,2,3,0)[:,:,:,0], f'test_car_{label}.png')
+            if i == 9:
+                break
+    elif mode == 'generate':
+        num_cores = multiprocessing.cpu_count()
 
-    graph_dir = SC_DIR + 'atom3d/residue_deletion/cube_pt/train'
-    if not os.path.exists(graph_dir):
-        os.makedirs(graph_dir)
-    save_graphs(sharded, graph_dir, num=1000, num_threads=num_cores)
+        out_dir = os.environ['SC_DIR'] + 'atom3d/residue_deletion/cube_pt/train'
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        save_graphs(sharded, out_dir, num_threads=num_cores)
 
->>>>>>> GNN training code
