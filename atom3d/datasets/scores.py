@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 
 import pandas as pd
+import tqdm
 
 import atom3d.util.file as fi
 
@@ -31,10 +32,13 @@ class Scores(object):
 
     def __init__(self, data_path):
         self._scores = {}
-        score_paths = fi.get_file_list(data_path, '.sc')
+        score_paths = fi.find_files(data_path, 'sc')
+        if len(score_paths) == 0:
+            raise RuntimeError('No score files found.')
         for silent_file in score_paths:
             key = self._key_from_silent_file(silent_file)
             self._scores[key] = parse_scores(silent_file)
+
         self._scores = pd.concat(self._scores)
 
     def _key_from_silent_file(self, silent_file):
@@ -47,7 +51,7 @@ class Scores(object):
             return self._scores.loc[key]
         key = (file_path.parent.stem, file_path.stem)
         if key in self._scores.index:
-            return self._files_scores.loc[key]
+            return self._scores.loc[key]
         return None
 
     def __call__(self, x):
@@ -59,7 +63,7 @@ class Scores(object):
     def remove_missing(self, file_list):
         """Remove examples we cannot find in score files."""
         result = []
-        for i, file_path in enumerate(file_list):
+        for i, file_path in tqdm.tqdm(enumerate(file_list), total=len(file_list)):
             entry = self._lookup(file_path)
             if entry is not None:
                 result.append(file_path)

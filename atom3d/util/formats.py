@@ -19,6 +19,7 @@ patterns = {
     'sharded': '@[0-9]+',
     'sdf': 'sdf[0-9]*$',
     'xyz': 'xyz[0-9]*$',
+    'out': 'out$',
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
@@ -101,9 +102,9 @@ def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False)
                                 add_hs=add_hs, remove_hs=remove_hs)
     for im,m in enumerate(molecules):
         if m is not None:
-            df = mol_to_df(m, residue=im, 
-                           ensemble = m.GetProp("_Name"), 
-                           structure = m.GetProp("_Name"), 
+            df = mol_to_df(m, residue=im,
+                           ensemble = m.GetProp("_Name"),
+                           structure = m.GetProp("_Name"),
                            model = m.GetProp("_Name"))
             dflist.append(df)
     assert len(dflist) >= 1
@@ -168,7 +169,7 @@ def read_xyz_to_df(inputfile, gdb_data=False):
         # Skip atom data (will be read using pandas below)
         for n in range(num_atoms): f.readline()
         # Harmonic vibrational frequencies
-        if gdb_data: 
+        if gdb_data:
             freq = [float(ll) for ll in f.readline().strip().split('\t')]
         # SMILES and InChI
         if gdb_data: smiles = f.readline().strip().split('\t')[0]
@@ -184,7 +185,7 @@ def read_xyz_to_df(inputfile, gdb_data=False):
     molecule.name = name
     molecule.index.name = name
     # return molecule info
-    if gdb_data: 
+    if gdb_data:
         return molecule, data, freq, smiles, inchi
     else:
         return molecule
@@ -201,7 +202,7 @@ def read_xyz(xyz_file, name=None, gdb=False):
     # Make up atom names
     elements = df['element'].unique()
     el_count = {}
-    for e in elements: 
+    for e in elements:
         el_count[e] = 0
     new_name = []
     for el in df['element']:
@@ -358,18 +359,18 @@ def bp_from_xyz_dict(data, struct_name='structure'):
 
 def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
     """Reads a list of molecules from an SDF file.
-    
+
     Args:
         add_h (bool): Adds hydrogens. Default: False
         remove_h (bool): Removes hydrogen. Default: False
         sanitize (bool): Tries to sanitize the molecule. Default: False
-        
+
     """
-    
+
     suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_h)
-    
+
     molecules = [mol for mol in suppl]
-    
+
     if add_h:
         for mol in molecules:
             if mol is not None:
@@ -427,9 +428,9 @@ def get_connectivity_matrix_from_mol(mol):
 
 def get_bonds_matrix_from_mol(mol):
     """
-    Provides bond matrix from a molecule. 
-    Bond types are encoded as double: 
-     single bond (1.0) 
+    Provides bond matrix from a molecule.
+    Bond types are encoded as double:
+     single bond (1.0)
      double bond (2.0)
      triple bond (3.0)
      aromatic bond (1.5).
@@ -464,10 +465,10 @@ def get_bonds_list_from_mol(mol):
      single bond (1.0)
      double bond (2.0)
      triple bond (3.0)
-     aromatic bond (1.5).  
+     aromatic bond (1.5).
 
     Args:
-        mol (Mol): a molecule in RDKit format        
+        mol (Mol): a molecule in RDKit format
 
     Returns:
         bonds_df (pandas dataframe): list of bonds

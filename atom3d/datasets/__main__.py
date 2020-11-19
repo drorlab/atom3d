@@ -1,9 +1,9 @@
-import glob
 import click
 import logging
+import sys
 
-from . import datasets as da
-from . import scores as sc
+import atom3d.datasets.datasets as da
+import atom3d.datasets.scores as sc
 import atom3d.util.file as fi
 import atom3d.util.formats as ft
 
@@ -21,21 +21,21 @@ logger = logging.getLogger(__name__)
 @click.option('--score_path', type=click.Path(exists=True))
 def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
     """Script wrapper to make_lmdb_dataset to create LMDB dataset."""
-    print('filetype:', filetype)
-    if filetype == 'pdb':
-        file_list = fi.find_files(input_dir, ft.patterns['pdb']) + \
-            fi.find_files(input_dir, ft.patterns['pdb.gz'])
-    elif filetype in ['xyz', 'xyz-gdb']:
-        file_list = glob.glob(input_dir+'*.xyz')
-        print('Found %i XYZ files.'%(len(file_list)))
-    else:
-        file_list = fi.find_files(input_dir, '.out')
+    logging.basicConfig(stream=sys.stdout,
+                        format='%(asctime)s %(levelname)s %(process)d: ' +
+                        '%(message)s',
+                        level=logging.INFO)
+
+    logger.info(f'filetype: {filetype}')
+    file_list = fi.find_files(input_dir, ft.patterns[filetype])
+    logger.info(f'Found {len(file_list)} files.')
 
     if score_path:
+        logger.info('Looking up scores...')
         scores = sc.Scores(score_path)
         new_file_list = scores.remove_missing(file_list)
         logger.info(f'Keeping {len(new_file_list)} / {len(file_list)}')
-        input_data_path = new_file_list
+        file_list = new_file_list
     else:
         scores = None
 
@@ -45,4 +45,3 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
 
 if __name__ == "__main__":
     main()
-
