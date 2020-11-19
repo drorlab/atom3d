@@ -19,7 +19,7 @@ patterns = {
     'sharded': '@[0-9]+',
     'sdf': 'sdf[0-9]*$',
     'xyz': 'xyz[0-9]*$',
-    'out': 'out$',
+    'silent': 'out$',
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
