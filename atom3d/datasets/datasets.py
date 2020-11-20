@@ -40,11 +40,11 @@ class LMDBDataset(Dataset):
                 raise RuntimeError("Need exactly one filepath for lmdb")
             data_file = data_file[0]
 
-        data_file = Path(data_file)
-        if not data_file.exists():
-            raise FileNotFoundError(data_file)
+        self.data_file = Path(data_file).absolute()
+        if not self.data_file.exists():
+            raise FileNotFoundError(self.data_file)
 
-        env = lmdb.open(str(data_file), max_readers=1, readonly=True,
+        env = lmdb.open(str(self.data_file), max_readers=1, readonly=True,
                         lock=False, readahead=False, meminit=False)
 
         with env.begin(write=False) as txn:
@@ -89,6 +89,8 @@ class LMDBDataset(Dataset):
 
         if self._transform:
             item = self._transform(item)
+        if 'file_path' not in item:
+            item['file_path'] = str(self.data_file)
         if 'id' not in item:
             item['id'] = str(index)
         return item
@@ -104,7 +106,7 @@ class PDBDataset(Dataset):
     """
 
     def __init__(self, file_list, transform=None):
-        self._file_list = [Path(x) for x in file_list]
+        self._file_list = [Path(x).absolute() for x in file_list]
         self._num_examples = len(self._file_list)
         self._transform = transform
 
@@ -152,7 +154,7 @@ class SilentDataset(IterableDataset):
                 'pyrosetta.rosetta.core.import_pose.pose_stream')
             self.pyrosetta.init("-mute all")
 
-        self._file_list = [Path(x) for x in file_list]
+        self._file_list = [Path(x).absolute() for x in file_list]
         self._num_examples = sum(
             [x.shape[0] for x in self._file_scores.values()])
         self._transform = transform
@@ -174,6 +176,7 @@ class SilentDataset(IterableDataset):
                 item = {
                     'atoms': self._pose_to_df(pose),
                     'id': self.pyrpose.tag_from_pose(pose),
+                    'file_path': str(silent_file),
                 }
                 item['scores'] = \
                     self._file_scores[silent_file].loc[item['id']].to_dict()
