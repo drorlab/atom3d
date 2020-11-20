@@ -5,7 +5,7 @@ import sys
 import atom3d.datasets.datasets as da
 import atom3d.datasets.scores as sc
 import atom3d.util.file as fi
-import atom3d.util.formats as ft
+import atom3d.util.formats as fo
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
                         level=logging.INFO)
 
     logger.info(f'filetype: {filetype}')
-    file_list = fi.find_files(input_dir, ft.patterns[filetype])
+    file_list = fi.find_files(input_dir, fo.patterns[filetype])
     logger.info(f'Found {len(file_list)} files.')
 
     if score_path:

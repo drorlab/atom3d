@@ -16,6 +16,7 @@ import pandas as pd
 from torch.utils.data import Dataset, IterableDataset
 
 from . import scores as sc
+import atom3d.util.file as fi
 import atom3d.util.formats as fo
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,10 @@ class LMDBDataset(Dataset):
     """
 
     def __init__(self, data_file, transform=None):
+        if type(data_file) is list:
+            if len(data_file) > 0:
+                raise RuntimeError("Need exactly one filepath for lmdb")
+            data_file = data_file[0]
 
         data_file = Path(data_file)
         if not data_file.exists():
@@ -97,6 +102,7 @@ class PDBDataset(Dataset):
         file_list (list[Union[str, Path]]):
             Path to pdb files.
     """
+
     def __init__(self, file_list, transform=None):
         self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
@@ -198,6 +204,7 @@ class XYZDataset(Dataset):
         file_list (list[Union[str, Path]]):
             Path to xyz files.
     """
+
     def __init__(self, file_list, transform=None, gdb=False):
         self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
@@ -213,7 +220,8 @@ class XYZDataset(Dataset):
 
         file_path = self._file_list[index]
         bp = fo.read_xyz(file_path, gdb=self._gdb)
-        if self._gdb: bp, data, freq, smiles, inchi = bp
+        if self._gdb:
+            bp, data, freq, smiles, inchi = bp
         df = fo.bp_to_df(bp)
 
         item = {
@@ -236,21 +244,27 @@ class XYZDataset(Dataset):
 
         # per-atom thermochem. energies for U0 [Ha], U [Ha], H [Ha], G [Ha], Cv [cal/(mol*K)]
         # https://figshare.com/articles/dataset/Atomref%3A_Reference_thermochemical_energies_of_H%2C_C%2C_N%2C_O%2C_F_atoms./1057643
-        thchem_en = {'H':[ -0.500273,  -0.498857,  -0.497912,  -0.510927,2.981],
-                     'C':[-37.846772, -37.845355, -37.844411, -37.861317,2.981],
-                     'N':[-54.583861, -54.582445, -54.581501, -54.598897,2.981],
-                     'O':[-75.064579, -75.063163, -75.062219, -75.079532,2.981],
-                     'F':[-99.718730, -99.717314, -99.716370, -99.733544,2.981]}
+        thchem_en = {
+            'H': [-0.500273, -0.498857, -0.497912, -0.510927, 2.981],
+            'C': [-37.846772, -37.845355, -37.844411, -37.861317, 2.981],
+            'N': [-54.583861, -54.582445, -54.581501, -54.598897, 2.981],
+            'O': [-75.064579, -75.063163, -75.062219, -75.079532, 2.981],
+            'F': [-99.718730, -99.717314, -99.716370, -99.733544, 2.981]}
 
         # Count occurence of each element in the molecule
         counts = df['element'].value_counts()
 
         # Calculate and subtract thermochemical energies
-        u0_atom = data[10] - np.sum([c * thchem_en[el][0] for el, c in counts.items()]) # U0
-        u_atom  = data[11] - np.sum([c * thchem_en[el][1] for el, c in counts.items()]) # U
-        h_atom  = data[12] - np.sum([c * thchem_en[el][2] for el, c in counts.items()]) # H
-        g_atom  = data[13] - np.sum([c * thchem_en[el][3] for el, c in counts.items()]) # G
-        cv_atom = data[14] - np.sum([c * thchem_en[el][4] for el, c in counts.items()]) # Cv
+        u0_atom = data[10] - np.sum([c * thchem_en[el][0]
+                                     for el, c in counts.items()])  # U0
+        u_atom = data[11] - np.sum([c * thchem_en[el][1]
+                                    for el, c in counts.items()])  # U
+        h_atom = data[12] - np.sum([c * thchem_en[el][2]
+                                    for el, c in counts.items()])  # H
+        g_atom = data[13] - np.sum([c * thchem_en[el][3]
+                                    for el, c in counts.items()])  # G
+        cv_atom = data[14] - np.sum([c * thchem_en[el][4]
+                                     for el, c in counts.items()])  # Cv
 
         # Append new data
         data += [u0_atom, u_atom, h_atom, g_atom, cv_atom]
@@ -267,6 +281,7 @@ class SDFDataset(Dataset):
         file_list (list[Union[str, Path]]):
             Path to sdf files.
     """
+
     def __init__(self, file_list, transform=None, read_bonds=False):
         self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
@@ -333,6 +348,38 @@ def deserialize(x, serialization_format):
     return serialized
 
 
+def get_file_list(input_path, filetype):
+    if filetype == 'lmdb':
+        file_list = [input_path]
+    else:
+        file_list = fi.find_files(input_path, fo.patterns[filetype])
+    return file_list
+
+
+def load_dataset(file_list, filetype, transform=None, include_bonds=False):
+    if type(file_list) != list:
+        file_list = get_file_list(file_list, filetype)
+
+    if filetype == 'lmdb':
+        dataset = LMDBDataset(file_list, transform=transform)
+    elif filetype == 'pdb':
+        dataset = PDBDataset(file_list, transform=transform)
+    elif filetype == 'silent':
+        dataset = SilentDataset(file_list, transform=transform)
+    elif filetype == 'sdf':
+        # TODO: Make read_bonds parameter part of transform.
+        dataset = SDFDataset(file_list, transform=transform,
+                             read_bonds=include_bonds)
+    elif filetype == 'xyz':
+        dataset = XYZDataset(file_list, transform=transform)
+    elif filetype == 'xyz-gdb':
+        # TODO: Make gdb parameter part of transform.
+        dataset = XYZDataset(file_list, transform=transform, gdb=True)
+    else:
+        raise RuntimeError(f'Unrecognized filetype {filetype}.')
+    return dataset
+
+
 def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
                       transform=None, serialization_format='json',
                       include_bonds=False):
@@ -353,19 +400,9 @@ def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
         include_bonds (bool):
             Include bond information (only available for SDF yet)
     """
-#        file_list = fi.get_file_list(input_data_path, '.pdb')
-#        file_list = fi.get_file_list(input_data_path, '.out')
-    if filetype == 'pdb':
-        dataset = PDBDataset(input_file_list, transform=transform)
-    elif filetype == 'sdf':
-        dataset = SDFDataset(input_file_list, transform=transform, read_bonds=include_bonds)
-    elif filetype == 'xyz':
-        dataset = XYZDataset(input_file_list, transform=transform)
-    elif filetype == 'xyz-gdb':
-        dataset = XYZDataset(input_file_list, transform=transform, gdb=True)
-    else:
-        dataset = SilentDataset(input_file_list, transform=transform)
-
+    dataset = load_dataset(
+        input_file_list, filetype, transform=transform,
+        include_bonds=include_bonds)
     num_examples = len(dataset)
 
     logger.info('making final data set from raw data')
