@@ -1,1 +1,1 @@
-from .datasets import LMDBDataset, PDBDataset, SilentDataset
+from .datasets import LMDBDataset, PDBDataset, SilentDataset, load_dataset

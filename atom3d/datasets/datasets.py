@@ -36,7 +36,7 @@ class LMDBDataset(Dataset):
 
     def __init__(self, data_file, transform=None):
         if type(data_file) is list:
-            if len(data_file) > 0:
+            if len(data_file) != 1:
                 raise RuntimeError("Need exactly one filepath for lmdb")
             data_file = data_file[0]
 
