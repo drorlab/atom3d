@@ -129,9 +129,9 @@ void read_lmdb(const string &filename, const lmdb::val &key) {
         } else {
             cerr << "ERROR: key " << key.data() << " not found in the database" << endl;
         }
-    } // rtxn aborted automatically*/
+    } // rtxn aborted automatically
 
-    // The enviroment is closed automatically. */
+    // The enviroment is closed automatically. 
 }
 
 int main() {
@@ -139,7 +139,7 @@ int main() {
     read_lmdb(LMDB_FILE, "0");
     read_lmdb(LMDB_FILE, "1");
     read_lmdb(LMDB_FILE, "2");
-    read_lmdb(LMDB_FILE, "3");
+    read_lmdb(LMDB_FILE, "1459");
     cout << "Done" << endl;
 
     return EXIT_SUCCESS;
