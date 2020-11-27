@@ -32,6 +32,7 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
     else:
         fileext = filetype
     file_list = fi.find_files(input_dir, fo.patterns[fileext])
+    file_list.sort()
     logger.info(f'Found {len(file_list)} files.')
 
     if score_path:
