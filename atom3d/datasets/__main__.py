@@ -27,7 +27,11 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
                         level=logging.INFO)
 
     logger.info(f'filetype: {filetype}')
-    file_list = fi.find_files(input_dir, fo.patterns[filetype])
+    if filetype == 'xyz-gdb':
+        fileext = 'xyz'
+    else:
+        fileext = filetype
+    file_list = fi.find_files(input_dir, fo.patterns[fileext])
     logger.info(f'Found {len(file_list)} files.')
 
     if score_path:
