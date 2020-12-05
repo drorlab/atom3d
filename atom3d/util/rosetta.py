@@ -9,18 +9,6 @@ import tqdm
 import atom3d.util.file as fi
 
 
-def parse_scores(silent_file):
-    grep_cmd = f"grep ^SCORE: {silent_file}"
-    out = subprocess.Popen(
-        grep_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        cwd=os.getcwd(), shell=True)
-    (stdout, stderr) = out.communicate()
-
-    f = io.StringIO(stdout.decode('utf-8'))
-    return pd.read_csv(f, delimiter='\s+').drop('SCORE:', axis=1) \
-        .set_index('description')
-
-
 class Scores(object):
     """
     Track and lookup Rosetta score files.
@@ -37,9 +25,20 @@ class Scores(object):
             raise RuntimeError('No score files found.')
         for silent_file in score_paths:
             key = self._key_from_silent_file(silent_file)
-            self._scores[key] = parse_scores(silent_file)
+            self._scores[key] = self._parse_scores(silent_file)
 
         self._scores = pd.concat(self._scores).sort_index()
+
+    def _parse_scores(self, silent_file):
+        grep_cmd = f"grep ^SCORE: {silent_file}"
+        out = subprocess.Popen(
+            grep_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            cwd=os.getcwd(), shell=True)
+        (stdout, stderr) = out.communicate()
+
+        f = io.StringIO(stdout.decode('utf-8'))
+        return pd.read_csv(f, delimiter='\s+').drop('SCORE:', axis=1) \
+            .set_index('description')
 
     def _key_from_silent_file(self, silent_file):
         return silent_file.stem.split('.')[0]
@@ -54,9 +53,9 @@ class Scores(object):
             return self._scores.loc[key]
         return None
 
-    def __call__(self, x):
+    def __call__(self, x, error_if_missing=False):
         x['scores'] = self._lookup(x['file_path'])
-        if x['scores'] is None:
+        if x['scores'] is None and error_if_missing:
             raise RuntimeError(f'Unable to find scores for {x["file_path"]}')
         return x
 

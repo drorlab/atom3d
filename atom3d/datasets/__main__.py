@@ -3,7 +3,6 @@ import logging
 import sys
 
 import atom3d.datasets.datasets as da
-import atom3d.datasets.scores as sc
 import atom3d.util.file as fi
 import atom3d.util.formats as fo
 
@@ -35,17 +34,10 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
     file_list.sort()
     logger.info(f'Found {len(file_list)} files.')
 
-    if score_path:
-        logger.info('Looking up scores...')
-        scores = sc.Scores(score_path)
-        new_file_list = scores.remove_missing(file_list)
-        logger.info(f'Keeping {len(new_file_list)} / {len(file_list)}')
-        file_list = new_file_list
-    else:
-        scores = None
-
+    dataset = da.load_dataset(file_list, filetype)
     da.make_lmdb_dataset(
-        file_list, output_lmdb, filetype, scores, serialization_format)
+        dataset, output_lmdb, filetype,
+        serialization_format=serialization_format)
 
 
 if __name__ == "__main__":

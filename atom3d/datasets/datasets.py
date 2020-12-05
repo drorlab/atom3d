@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, IterableDataset
 
-from . import scores as sc
+import atom3d.util.rosetta as ar
 import atom3d.util.file as fi
 import atom3d.util.formats as fo
 
@@ -161,7 +161,7 @@ class SilentDataset(IterableDataset):
 
         self._file_scores = {}
         for silent_file in self._file_list:
-            self._file_scores[silent_file] = sc.parse_scores(silent_file)
+            self._file_scores[silent_file] = ar.parse_scores(silent_file)
 
     def __len__(self) -> int:
         return self._num_examples
@@ -383,47 +383,49 @@ def load_dataset(file_list, filetype, transform=None, include_bonds=False):
     return dataset
 
 
-def make_lmdb_dataset(input_file_list, output_lmdb, filetype,
-                      transform=None, serialization_format='json',
+def make_lmdb_dataset(dataset, output_lmdb,
+                      filter_fn=None, serialization_format='json',
                       include_bonds=False):
     """
     Make an LMDB dataset from an input dataset.
 
     Args:
-        input_file_list (list[Union[str, Path]])
+        input_file_list (torch.utils.data.Dataset)
             Path to input files.
         output_lmdb (Union[str, Path]):
             Path to output LMDB.
-        filetype ('pdb', 'silent', 'sdf', 'xyz', or 'xyz-gdb'):
-            Input filetype.
-        transform (lambda x -> x):
-            Transform to apply before writing out files.
+        filter_fn (lambda x -> True/False):
+            Filter to decided if removing files.
         serialization_format ('json', 'msgpack', 'pkl'):
             How to serialize an entry.
         include_bonds (bool):
             Include bond information (only available for SDF yet)
     """
-    dataset = load_dataset(
-        input_file_list, filetype, transform=transform,
-        include_bonds=include_bonds)
     num_examples = len(dataset)
 
-    logger.info('making final data set from raw data')
     logger.info(f'{num_examples} examples')
 
     env = lmdb.open(str(output_lmdb), map_size=int(1e11))
 
     with env.begin(write=True) as txn:
-        txn.put(b'num_examples', str(num_examples).encode())
-        txn.put(b'serialization_format', serialization_format.encode())
 
         id_to_idx = {}
-        for i, x in tqdm.tqdm(enumerate(dataset), total=num_examples):
+        i = 0
+        for x in tqdm.tqdm(dataset, total=num_examples):
+            if filter_fn is not None and filter_fn(x):
+                continue
             buf = io.BytesIO()
             with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=6) as f:
                 f.write(serialize(x, serialization_format))
             compressed = buf.getvalue()
-            txn.put(str(i).encode(), compressed)
+            result = txn.put(str(i).encode(), compressed, overwrite=False)
+            if not result:
+                raise RuntimeError(f'LMDB entry {i} in {str(output_lmdb)} '
+                                   'already exists')
 
             id_to_idx[x['id']] = i
+            i += 1
+
+        txn.put(b'num_examples', str(i).encode())
+        txn.put(b'serialization_format', serialization_format.encode())
         txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
