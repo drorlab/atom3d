@@ -39,7 +39,7 @@ class Scores(object):
             key = self._key_from_silent_file(silent_file)
             self._scores[key] = parse_scores(silent_file)
 
-        self._scores = pd.concat(self._scores)
+        self._scores = pd.concat(self._scores).sort_index()
 
     def _key_from_silent_file(self, silent_file):
         return silent_file.stem.split('.')[0]
