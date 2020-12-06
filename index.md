@@ -14,7 +14,18 @@ Current datasets include:
   
 These datasets can be roughly grouped into four categories that represent a wide range of problems, spanning single molecular structures and interactions between biomolecules as well as molecular functional and design/engineering tasks.
 
-![Image](composite_Datasets.png)
+<img src="composite_Datasets.png" usemap="#image-map">
+
+<map name="image-map">
+    <area target="_self" alt="SMP" title="SMP" href="https://drive.google.com/uc?export=download&amp;id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI" coords="1218,2352,1657,1669" shape="rect">
+    <area target="_self" alt="PIP" title="PIP" href="https://drive.google.com/uc?export=download&amp;id=1EL4ybt2SJF7iLzbavBGlU1ImMiZ0dOkH" coords="2668,1138,3597,346" shape="rect">
+    <area target="_self" alt="RES" title="RES" href="https://drive.google.com/uc?export=download&amp;id=1CzLiTDFgApIBaI1znLjEk2d3T0Zh4Yjo" coords="1889,1663,2620,2384" shape="rect">
+    <area target="_self" alt="MSP" title="MSP" href="https://drive.google.com/uc?export=download&amp;id=186MLykFkC3IbslXhLfHIwQwnDOy1Sr49" coords="2633,1256,3571,1898" shape="rect">
+    <area target="_self" alt="LBA" title="LBA" href="https://drive.google.com/uc?export=download&amp;id=1pj0RCW3mOMnB2FYQPmMv6XFMS0Ps7RvY" coords="1899,29,2659,652" shape="rect">
+    <area target="_self" alt="LEP" title="LEP" href="https://drive.google.com/uc?export=download&amp;id=1NykcNi0im_XfUK4NuO-g4LlsSJoQl7jQ" coords="80,1240,1024,1999" shape="rect">
+    <area target="_self" alt="RSR" title="RSR" href="https://drive.google.com/uc?export=download&amp;id=1imQiQI6kyDnA4t-rxju0PetgJsASkx7S" coords="731,22,843,404,1056,728,1492,709,1784,346,1771,29" shape="poly">
+    <area target="_self" alt="PSR" title="PSR" href="https://drive.google.com/uc?export=download&amp;id=1-Hn2f60BC4aJYGKLCeL_gebXVQYF6ZGS" coords="270,305,786,318,1062,798,1024,1167,92,1163" shape="poly">
+</map>
 
 ### References
 
