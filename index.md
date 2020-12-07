@@ -14,9 +14,9 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 
 <img src="composite_Datasets.png" id="map-image" style="width: 3600px; max-width: 100%; height: auto;" alt="" usemap="#map" />
 <map name="map">
- {% for s in site.collections['image_maps'] %}
+ {% for s in site.collections['image-maps'] %}
     <area shape="poly" coords="{{ s.map.coord }}" 
-          href="{{ site.baseurl }}{{ s.url }}" 
+          href="s.href" 
           alt="{{ s.name }}" title="{{ s.name }}" >
 {% endfor %}
 </map>
