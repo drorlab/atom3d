@@ -101,13 +101,13 @@ Jankauskaite, J., Jiménez-García, B., et al. (2019). Bioinformatics, 35(3), 46
 
 Kryshtafovych, A., Schwede, T., et al. (2019). Proteins: Structure, Function and Bioinformatics, 87(12), 1011-1020.
 
-Zhihai Liu, et al. *Bioinformatics*, 31(3):405–412, 2015.
+Liu, Z., Li, Y., et al. (2015).  Bioinformatics, 31(3), 405–412.
 
 Ramakrishnan, R., Dral, P. O., et al. (2014). Scientific Data, 1:1-7.
 
 Ruddigkeit, L., Van Deursen, R., et al. (2012). Journal of Chemical Information and Modeling, 52(11), 2864–2875. 
 
-Raphael Townshend, et al. *Advances in Neural Information Processing Systems 32*, pp. 15642–15651. 2019.
+Townshend, R. J. L., Bedi, R., et al. (2019).  Advances in Neural Information Processing Systems (Vol. 32, pp. 15616–15625).
 
 Vreven, T., Moal, I. H., et al. (2015). Journal of Molecular Biology, 427(19), 3031–3041.
 
