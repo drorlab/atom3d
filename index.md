@@ -14,19 +14,13 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 
 <img src="composite_Datasets.png" id="map-image" style="width: 3600px; max-width: 100%; height: auto;" alt="" usemap="#map" />
 <map name="map">
-    <area shape="rect" coords="1331, 23, 1346, 35" />
-    <area shape="rect" coords="2229, 1062, 2965, 1578" href="https://drive.google.com/uc?export=download&id=186MLykFkC3IbslXhLfHIwQwnDOy1Sr49" target="_blank" alt="MSP" title="MSP" />
-    <area shape="rect" coords="1558, 1395, 2211, 1989" href="https://drive.google.com/uc?export=download&id=1CzLiTDFgApIBaI1znLjEk2d3T0Zh4Yjo" target="_blank" alt="RES" title="RES" />
-    <area shape="rect" coords="1028, 1405, 1376, 1956" href="https://drive.google.com/uc?export=download&id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI" target="_blank" alt="SMP" title="SMP" />
-    <area shape="rect" coords="98, 1055, 845, 1676" href="https://drive.google.com/uc?export=download&id=1NykcNi0im_XfUK4NuO-g4LlsSJoQl7jQ" target="_blank" alt="LEP" title="LEP" />
-    <area shape="poly" coords="2464, 300, 2125, 650, 2145, 981, 2978, 976, 2968, 727, 2802, 300" href="https://drive.google.com/uc?export=download&id=1EL4ybt2SJF7iLzbavBGlU1ImMiZ0dOkH" target="_blank" alt="PIP" title="PIP" />
-    <area shape="rect" coords="1614, 46, 2215, 547" href="https://drive.google.com/uc?export=download&id=1pj0RCW3mOMnB2FYQPmMv6XFMS0Ps7RvY" target="_blank" alt="LBA" title="LBA" />
-    <area shape="poly" coords="702, 35, 631, 221, 931, 611, 1250, 613, 1490, 221, 1358, 35" href="https://drive.google.com/uc?export=download&id=1imQiQI6kyDnA4t-rxju0PetgJsASkx7S" target="_blank" alt="RSR" title="RSR" />
-    <area shape="poly" coords="114, 303, 673, 297, 910, 733, 914, 984, 108, 981" href="https://drive.google.com/uc?export=download&id=1-Hn2f60BC4aJYGKLCeL_gebXVQYF6ZGS" target="_blank" alt="PSR" title="PSR" />
+ {% for s in site.collections['image_maps'] %}
+    <area shape="poly" coords="{{ s.map.coord }}" 
+          href="{{ site.baseurl }}{{ s.url }}" 
+          alt="{{ s.name }}" title="{{ s.name }}" >
+{% endfor %}
 </map>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-<script src="imageMapResizer.min.js"></script>
-<script>$(document).ready(function(e){$("map").imageMapResize();});</script>
+
 
 #### Small Molecule Properties (SMP) [[download]](https://drive.google.com/uc?export=download&id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI)
   - **Impact:** Predicting physico-chemical properties of small molecules is a common task in medicinal chemistry and materials design. Quantum chemical calculations can save expensive experiments but are themselves costly and cannot cover the huge chemical space spanned by candidate molecules. 
