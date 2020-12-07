@@ -12,18 +12,21 @@ ATOM3D is a unified collection of datasets concerning the three-dimensional stru
   
 ATOM3D currently contains eight datasets, which can be roughly grouped into four categories that represent a wide range of problems, spanning single molecular structures and interactions between biomolecules as well as molecular functional and design/engineering tasks. Click on the corresponding dataset to download as `tar.gz` file.
 
-<img src="composite_Datasets.png" usemap="#image-map">
-
-<map name="image-map">
-    <area target="_blank" alt="SMP" title="SMP" href="https://drive.google.com/uc?export=download&amp;id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI" coords="1205,1666,1695,2333" shape="rect">
-    <area target="_blank" alt="PIP" title="PIP" href="https://drive.google.com/uc?export=download&amp;id=1EL4ybt2SJF7iLzbavBGlU1ImMiZ0dOkH" coords="2888,327,2586,645,2570,1176,3543,1170,3533,318" shape="poly">
-    <area target="_blank" alt="RES" title="RES" href="https://drive.google.com/uc?export=download&amp;id=1CzLiTDFgApIBaI1znLjEk2d3T0Zh4Yjo" coords="1889,1663,2630,2387" shape="rect">
-    <area target="_blank" alt="MSP" title="MSP" href="https://drive.google.com/uc?export=download&amp;id=186MLykFkC3IbslXhLfHIwQwnDOy1Sr49" coords="2646,1243,3565,1882" shape="rect">
-    <area target="_blank" alt="LBA" title="LBA" href="https://drive.google.com/uc?export=download&amp;id=1pj0RCW3mOMnB2FYQPmMv6XFMS0Ps7RvY" coords="1908,38,1940,661,2541,645,2725,48" shape="poly">
-    <area target="_blank" alt="LEP" title="LEP" href="https://drive.google.com/uc?export=download&amp;id=1NykcNi0im_XfUK4NuO-g4LlsSJoQl7jQ" coords="89,1268,1014,1984" shape="rect">
-    <area target="_blank" alt="PSR" title="PSR" href="https://drive.google.com/uc?export=download&amp;id=1-Hn2f60BC4aJYGKLCeL_gebXVQYF6ZGS" coords="340,337,782,337,1069,877,1084,1192,83,1189,105,591" shape="poly">
-    <area target="_blank" alt="RSR" title="RSR" href="https://drive.google.com/uc?export=download&amp;id=1imQiQI6kyDnA4t-rxju0PetgJsASkx7S" coords="776,48,789,315,1040,747,1463,731,1762,302,1762,38" shape="poly">
+<img src="composite_Datasets.png" id="map-image" style="width: 3600px; max-width: 100%; height: auto;" alt="" usemap="#map" />
+<map name="map">
+    <area shape="rect" coords="1331, 23, 1346, 35" />
+    <area shape="rect" coords="2229, 1062, 2965, 1578" href="https://drive.google.com/uc?export=download&id=186MLykFkC3IbslXhLfHIwQwnDOy1Sr49" target="_blank" alt="MSP" title="MSP" />
+    <area shape="rect" coords="1558, 1395, 2211, 1989" href="https://drive.google.com/uc?export=download&id=1CzLiTDFgApIBaI1znLjEk2d3T0Zh4Yjo" target="_blank" alt="RES" title="RES" />
+    <area shape="rect" coords="1028, 1405, 1376, 1956" href="https://drive.google.com/uc?export=download&id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI" target="_blank" alt="SMP" title="SMP" />
+    <area shape="rect" coords="98, 1055, 845, 1676" href="https://drive.google.com/uc?export=download&id=1NykcNi0im_XfUK4NuO-g4LlsSJoQl7jQ" target="_blank" alt="LEP" title="LEP" />
+    <area shape="poly" coords="2464, 300, 2125, 650, 2145, 981, 2978, 976, 2968, 727, 2802, 300" href="https://drive.google.com/uc?export=download&id=1EL4ybt2SJF7iLzbavBGlU1ImMiZ0dOkH" target="_blank" alt="PIP" title="PIP" />
+    <area shape="rect" coords="1614, 46, 2215, 547" href="https://drive.google.com/uc?export=download&id=1pj0RCW3mOMnB2FYQPmMv6XFMS0Ps7RvY" target="_blank" alt="LBA" title="LBA" />
+    <area shape="poly" coords="702, 35, 631, 221, 931, 611, 1250, 613, 1490, 221, 1358, 35" href="https://drive.google.com/uc?export=download&id=1imQiQI6kyDnA4t-rxju0PetgJsASkx7S" target="_blank" alt="RSR" title="RSR" />
+    <area shape="poly" coords="114, 303, 673, 297, 910, 733, 914, 984, 108, 981" href="https://drive.google.com/uc?export=download&id=1-Hn2f60BC4aJYGKLCeL_gebXVQYF6ZGS" target="_blank" alt="PSR" title="PSR" />
 </map>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="imageMapResizer.min.js"></script>
+<script>$(document).ready(function(e){$("map").imageMapResize();});</script>
 
 #### Small Molecule Properties (SMP) [[download]](https://drive.google.com/uc?export=download&id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI)
   - **Impact:** Predicting physico-chemical properties of small molecules is a common task in medicinal chemistry and materials design. Quantum chemical calculations can save expensive experiments but are themselves costly and cannot cover the huge chemical space spanned by candidate molecules. 
