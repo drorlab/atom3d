@@ -41,7 +41,6 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 </svg>
 
 \
-\
 
 - [Small Molecule Properties (SMP)](./smp.html)
 - [Protein Interface Prediction (PIP)](./pip.html)
@@ -52,5 +51,3 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 - [Protein Structure Ranking (PSR)](./psr.html)
 - [RNA Structure Ranking (RSR)](./rsr.html)
 
-
-Watkins, A. M., Rangan, R., & Das, R. (2020). Structure, 28(8), 963-976.e6. 
