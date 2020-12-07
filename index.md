@@ -40,7 +40,8 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 	</a>
 </svg>
 
-\ 
+
+
 
 - [Small Molecule Properties (SMP)](./smp.html)
 - [Protein Interface Prediction (PIP)](./pip.html)
