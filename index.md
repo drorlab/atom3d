@@ -15,14 +15,14 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 <img src="composite_Datasets.png" usemap="#image-map">
 
 <map name="image-map">
-    <area target="_self" alt="SMP" title="SMP" href="https://drive.google.com/uc?export=download&amp;id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI" coords="1218,2352,1657,1669" shape="rect">
-    <area target="_self" alt="PIP" title="PIP" href="https://drive.google.com/uc?export=download&amp;id=1EL4ybt2SJF7iLzbavBGlU1ImMiZ0dOkH" coords="2668,1138,3597,346" shape="rect">
-    <area target="_self" alt="RES" title="RES" href="https://drive.google.com/uc?export=download&amp;id=1CzLiTDFgApIBaI1znLjEk2d3T0Zh4Yjo" coords="1889,1663,2620,2384" shape="rect">
-    <area target="_self" alt="MSP" title="MSP" href="https://drive.google.com/uc?export=download&amp;id=186MLykFkC3IbslXhLfHIwQwnDOy1Sr49" coords="2633,1256,3571,1898" shape="rect">
-    <area target="_self" alt="LBA" title="LBA" href="https://drive.google.com/uc?export=download&amp;id=1pj0RCW3mOMnB2FYQPmMv6XFMS0Ps7RvY" coords="1899,29,2659,652" shape="rect">
-    <area target="_self" alt="LEP" title="LEP" href="https://drive.google.com/uc?export=download&amp;id=1NykcNi0im_XfUK4NuO-g4LlsSJoQl7jQ" coords="80,1240,1024,1999" shape="rect">
-    <area target="_self" alt="RSR" title="RSR" href="https://drive.google.com/uc?export=download&amp;id=1imQiQI6kyDnA4t-rxju0PetgJsASkx7S" coords="731,22,843,404,1056,728,1492,709,1784,346,1771,29" shape="poly">
-    <area target="_self" alt="PSR" title="PSR" href="https://drive.google.com/uc?export=download&amp;id=1-Hn2f60BC4aJYGKLCeL_gebXVQYF6ZGS" coords="270,305,786,318,1062,798,1024,1167,92,1163" shape="poly">
+    <area target="_blank" alt="SMP" title="SMP" href="https://drive.google.com/uc?export=download&amp;id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI" coords="1205,1666,1695,2333" shape="rect">
+    <area target="_blank" alt="PIP" title="PIP" href="https://drive.google.com/uc?export=download&amp;id=1EL4ybt2SJF7iLzbavBGlU1ImMiZ0dOkH" coords="2888,327,2586,645,2570,1176,3543,1170,3533,318" shape="poly">
+    <area target="_blank" alt="RES" title="RES" href="https://drive.google.com/uc?export=download&amp;id=1CzLiTDFgApIBaI1znLjEk2d3T0Zh4Yjo" coords="1889,1663,2630,2387" shape="rect">
+    <area target="_blank" alt="MSP" title="MSP" href="https://drive.google.com/uc?export=download&amp;id=186MLykFkC3IbslXhLfHIwQwnDOy1Sr49" coords="2646,1243,3565,1882" shape="rect">
+    <area target="_blank" alt="LBA" title="LBA" href="https://drive.google.com/uc?export=download&amp;id=1pj0RCW3mOMnB2FYQPmMv6XFMS0Ps7RvY" coords="1908,38,1940,661,2541,645,2725,48" shape="poly">
+    <area target="_blank" alt="LEP" title="LEP" href="https://drive.google.com/uc?export=download&amp;id=1NykcNi0im_XfUK4NuO-g4LlsSJoQl7jQ" coords="89,1268,1014,1984" shape="rect">
+    <area target="_blank" alt="PSR" title="PSR" href="https://drive.google.com/uc?export=download&amp;id=1-Hn2f60BC4aJYGKLCeL_gebXVQYF6ZGS" coords="340,337,782,337,1069,877,1084,1192,83,1189,105,591" shape="poly">
+    <area target="_blank" alt="RSR" title="RSR" href="https://drive.google.com/uc?export=download&amp;id=1imQiQI6kyDnA4t-rxju0PetgJsASkx7S" coords="776,48,789,315,1040,747,1463,731,1762,302,1762,38" shape="poly">
 </map>
 
 #### Small Molecule Properties (SMP) [[download]](https://drive.google.com/uc?export=download&id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI)
