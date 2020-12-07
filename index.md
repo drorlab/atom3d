@@ -14,8 +14,8 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 3600 2400">
   <image width="3600" height="2400" xlink:href="composite_Datasets.png"></image>
-  <a xlink:href="https://drive.google.com/uc?export=download&id=1pj0RCW3mOMnB2FYQPmMv6XFMS0Ps7RvY">
-		<rect x="900" y="20" fill="#fff" opacity="0" width="300" height="280" />
+  <a xlink:href="https://drive.google.com/uc?export=download&id=1pj0RCW3mOMnB2FYQPmMv6XFMS0Ps7RvY" alt="LBA">
+		<rect x="1910" y="45" fill="#fff" opacity="0" width="740" height="610" />
 	</a>
 </svg>
 
