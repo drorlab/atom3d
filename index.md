@@ -14,28 +14,28 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 3600 2400">
   <image width="3600" height="2400" xlink:href="composite_Datasets.png"></image>
-	<a xlink:href="./smp.md" alt="SMP">
+	<a xlink:href="./smp.html" alt="SMP">
 		<rect x="1200" y="1675" fill="#fff" opacity="0" width="440" height="660" />
 	</a>
-	<a xlink:href="./pip.md" alt="PIP">
+	<a xlink:href="./pip.html" alt="PIP">
 		<rect x="2650" y="360" fill="#fff" opacity="0" width="885" height="780" />
 	</a>
-	<a xlink:href="./res.md" alt="RES">
+	<a xlink:href="./res.html" alt="RES">
 		<rect x="1890" y="1675" fill="#fff" opacity="0" width="730" height="700" />
 	</a>
-	<a xlink:href="./msp.md" alt="MSP">
+	<a xlink:href="./msp.html" alt="MSP">
 		<rect x="2660" y="1265" fill="#fff" opacity="0" width="880" height="630" />
 	</a>
-  	<a xlink:href="./lba.md" alt="LBA">
+  	<a xlink:href="./lba.html" alt="LBA">
 		<rect x="1910" y="45" fill="#fff" opacity="0" width="740" height="610" />
 	</a>
-	<a xlink:href="./lep.md" alt="LEP">
+	<a xlink:href="./lep.html" alt="LEP">
 		<rect x="70" y="1270" fill="#fff" opacity="0" width="935" height="750" />
 	</a>
-	<a xlink:href="./psr.md" alt="PSR">
+	<a xlink:href="./psr.html" alt="PSR">
 		<rect x="100" y="350" fill="#fff" opacity="0" width="895" height="830" />
 	</a>
-	<a xlink:href="rsr.md" alt="RSR">
+	<a xlink:href="rsr.html" alt="RSR">
 		<rect x="820" y="45" fill="#fff" opacity="0" width="930" height="660" />
 	</a>
 </svg>
