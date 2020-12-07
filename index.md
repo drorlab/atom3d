@@ -12,14 +12,10 @@ ATOM3D is a unified collection of datasets concerning the three-dimensional stru
   
 ATOM3D currently contains eight datasets, which can be roughly grouped into four categories that represent a wide range of problems, spanning single molecular structures and interactions between biomolecules as well as molecular functional and design/engineering tasks. Click on the corresponding dataset to download as `tar.gz` file.
 
-<img src="composite_Datasets.png" id="map-image" style="width: 3600px; max-width: 100%; height: auto;" alt="" usemap="#map" />
-<map name="map">
- {% for s in site.collections['image-maps'] %}
-    <area shape="poly" coords="{{ s.map.coord }}" 
-          href="s.href" 
-          alt="{{ s.name }}" title="{{ s.name }}" >
-{% endfor %}
-</map>
+<p style="position: relative;">
+  <img src="composite_Datasets.png" id="composite" />
+  <a style="position: absolute; top: 62%; left: 44%; width: 20%; height: 22%" href=https://drive.google.com/uc?export=download&id=186MLykFkC3IbslXhLfHIwQwnDOy1Sr49 alt="MSP"></a>
+</p>
 
 
 #### Small Molecule Properties (SMP) [[download]](https://drive.google.com/uc?export=download&id=1Uce6a6VoN9gYAn3V4eR3QC0f6a6mOXpI)
