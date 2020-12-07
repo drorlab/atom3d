@@ -93,28 +93,24 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 
 ### References
 
-Nina M Antikainen and Stephen F Martin. Altering protein specificity: techniques and applications. *Bioorganic & medicinal chemistry*, 13(8):2701–2716, 2005.
+Cruz, J. A., Blanchet, M. F., et al. (2012). RNA, 18(4), 610–625.
 
-José Almeida Cruz, Marc-Frédérick Blanchet, Michal Boniecki, Janusz M Bujnicki, Shi-Jie Chen,Song Cao, Rhiju Das, Feng Ding, Nikolay V Dokholyan, Samuel Coulbourn Flores, et al.  Rna-puzzles: a casp-like evaluation of RNA three-dimensional structure prediction. *RNA*, 18(4):610–625, 2012.
+Friesner, R. A., Banks, J. L., et al. (2004). Journal of Medicinal Chemistry, 47(7), 1739–1749.
 
-Richard A Friesner, Jay L Banks, Robert B Murphy, Thomas A Halgren, Jasna J Klicic, Daniel TMainz,  Matthew  P  Repasky,  Eric  H  Knoll,  Mee  Shelley,  Jason  K  Perry,  et  al.   Glide: a new approach for rapid, accurate docking and scoring. 1. method and assessment of docking accuracy. *Journal of medicinal chemistry*, 47(7):1739–1749, 2004.
+Jankauskaite, J., Jiménez-García, B., et al. (2019). Bioinformatics, 35(3), 462–469.
 
-Justina Jankauskaitė, Brian Jiménez-García, Justas Dapkūnas, Juan Fernández-Recio, and Iain H Moal. Skempi 2.0: an updated benchmark of changes in protein–protein binding energy, kinetics and thermodynamics upon mutation. *Bioinformatics*, 35(3):462–469, 2019.
+Kryshtafovych, A., Schwede, T., et al. (2019). Proteins: Structure, Function and Bioinformatics, 87(12), 1011-1020.
 
-Andriy Kryshtafovych, Torsten Schwede, Maya Topf, Krzysztof Fidelis, and John Moult. Critical assessment of methods of protein structure prediction (CASP)—round XIII. *Proteins:  Structure,Function, and Bioinformatics*, 87(12):1011–1020, 2019.
+Zhihai Liu, et al. *Bioinformatics*, 31(3):405–412, 2015.
 
-Fabrice Lefèvre, Marie-Hélène Rémy, and Jean-Michel Masson. Alanine-stretch scanning mutagenesis: a simple and efficient method to probe protein structure and function. Nucleic acids research, 25(2):447–448, 1997.
+Ramakrishnan, R., Dral, P. O., et al. (2014). Scientific Data, 1:1-7.
 
-Zhihai Liu, Yan Li, Li Han, Jie Li, Jie Liu, Zhixiong Zhao, Wei Nie, Yuchen Liu, and Renxiao Wang. PDB-wide collection of binding data: current status of the PDBbind database. *Bioinformatics*, 31(3):405–412, 2015.
+Ruddigkeit, L., Van Deursen, R., et al. (2012). Journal of Chemical Information and Modeling, 52(11), 2864–2875. 
 
-Raghunathan Ramakrishnan, Pavlo O. Dral, Matthias Rupp, and O. Anatole Von Lilienfeld. Quantum chemistry structures and properties of 134 kilo molecules. *Scientific Data*, 1:1–7, 2014.
+Raphael Townshend, et al. *Advances in Neural Information Processing Systems 32*, pp. 15642–15651. 2019.
 
-Lars Ruddigkeit, Ruud van Deursen, Lorenz C Blum, and Jean-Louis Reymond.  Enumeration of 166 Billion Organic Small Molecules in the Chemical Universe Database GDB-17. *Journal of Chemical Information and Modeling*, 52(11):2864–2875, 2012.
+Vreven, T., Moal, I. H., et al. (2015). Journal of Molecular Biology, 427(19), 3031–3041.
 
-Raphael Townshend, Rishi Bedi, Patricia Suriana, and Ron Dror. End-to-end learning on 3D protein structure for interface prediction.  In H. Wallach, H. Larochelle, A. Beygelzimer, F. d'Alché-Buc, E. Fox, and R. Garnett (eds.), *Advances in Neural Information Processing Systems 32*, pp. 15642–15651. 2019.
+Wang, R., Fang, X., Lu, Y., & Wang, S. (2004). Journal of Medicinal Chemistry, 47(12), 2977–2980.
 
-Thom  Vreven,  Iain  H.  Moal,  Anna  Vangone,  Brian  G.  Pierce,  Panagiotis  L.  Kastritis,  Mieczys-law  Torchala,  Raphael  Chaleil,  Brian  Jiménez-García,  Paul  A.  Bates,  Juan  Fernandez-Recio, Alexandre M.J.J. Bonvin,  and Zhiping Weng. Updates to the integrated protein–protein interaction  benchmarks: Docking  benchmark  version  5  and  affinity  benchmark  version  2. *Journal  of  Molecular  Biology*,  427(19):3031 – 3041,  2015. 
-
-Renxiao Wang, Xueliang Fang, Yipin Lu, and Shaomeng Wang. The PDBBind database: collection of binding affinities for protein-ligand complexes with known three-dimensional structures. *Journal of  Medicinal  Chemistry*,  47(12):2977–2980,  2004.
-
-Andrew M Watkins and Rhiju Das. FARFAR2: Improved de novo Rosetta prediction of complex global RNA folds. *bioRxiv*, pp. 764449, 2019.
+Watkins, A. M., Rangan, R., & Das, R. (2020). Structure, 28(8), 963-976.e6. 
