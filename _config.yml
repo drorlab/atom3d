@@ -1,7 +1,7 @@
 title: ATOM3D - Tasks on Molecules in Three Dimensions
 description: A collection of benchmark datasets for machine learning in structural biology
 logo: /ATOM3D-Picture.png
-theme: jekyll-theme-minimal
+theme: minimal-mistakes-jekyll
 defaults:
   - scope:
       path: ""
