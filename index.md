@@ -6,7 +6,7 @@ ATOM3D is a unified collection of datasets concerning the three-dimensional stru
 
 - **Paper**: Please see our [preprint](arxiv.org/XXXX) for further details on the datasets and benchmarks.
 
-- **NeurIPS LMRL Workshop 2020**: Check out our poster and talk at the Learning Meaningful Representations of Life workshop at NeurIPS 2020.
+- **NeurIPS LMRL Workshop 2020**: Check out our [poster](./2020-12-11-neurips-lmrl-atom3d-poster.pdf) and talk at the Learning Meaningful Representations of Life workshop at NeurIPS 2020.
 
 ### Datasets
   
@@ -40,7 +40,7 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 	</a>
 </svg>
 
-\
+<br/><br/>
 
 - [Small Molecule Properties (SMP)](./smp.html)
 - [Protein Interface Prediction (PIP)](./pip.html)
