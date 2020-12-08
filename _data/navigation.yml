@@ -1,0 +1,26 @@
+docs:
+  - title: Datasets
+    children:
+      - title: Small Molecule Properties (SMP)
+        url: smp.html
+      
+      - title: Protein Interface Prediction (PIP)
+        url: pip.html
+      
+      - title: Residue Identity (RES)
+        url: res.html
+      
+      - title: Mutation Stability Prediction (MSP)
+        url: msp.html
+      
+      - title: Ligand Binding Affinity (LBA)
+        url: lba.html
+      
+      - title: Ligand Efficacy Prediction (LEP)
+        url: lep.html
+      
+      - title: Protein Structure Ranking (PSR)
+        url: psr.html
+      
+      - title: RNA Structure Ranking (RSR)
+        url: rsr.html
