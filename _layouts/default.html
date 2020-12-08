@@ -40,7 +40,12 @@
       </header>
       <section>
 
-      {{ content }}
+      <h2>{{ site.data.sidebar.docs_list_title }}</h2>
+      <ul>
+        {% for item in site.data.sidebar.docs %}
+        <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+        {% endfor %}
+      </ul>
 
       </section>
       <footer>
