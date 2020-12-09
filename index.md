@@ -4,7 +4,7 @@ ATOM3D is a unified collection of datasets concerning the three-dimensional stru
 
 - **Repository**: All dataset processing code and installation instructions can be found at [https://github.com/drorlab/atom3d](https://github.com/drorlab/atom3d)
 
-- **Paper**: Please see our [preprint](arxiv.org/XXXX) for further details on the datasets and benchmarks.
+- **Paper**: Please see our [preprint](https://arxiv.org/abs/2012.04035) for further details on the datasets and benchmarks.
 
 - **NeurIPS LMRL Workshop 2020**: Check out our [poster](./2020-12-11-neurips-lmrl-atom3d-poster.pdf) and talk at the Learning Meaningful Representations of Life workshop at NeurIPS 2020.
 
