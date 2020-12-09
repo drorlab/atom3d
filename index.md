@@ -42,12 +42,4 @@ ATOM3D currently contains eight datasets, which can be roughly grouped into four
 
 <br/><br/>
 
-- [Small Molecule Properties (SMP)](./smp.html)
-- [Protein Interface Prediction (PIP)](./pip.html)
-- [Residue Identity (RES)](./res.html)
-- [Mutation Stability Prediction (MSP)](./msp.html)
-- [Ligand Binding Affinity (LBA)](./lba.html)
-- [Ligand Efficacy Prediction (LEP)](./lep.html)
-- [Protein Structure Ranking (PSR)](./psr.html)
-- [RNA Structure Ranking (RSR)](./rsr.html)
 
