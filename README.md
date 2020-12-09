@@ -3,13 +3,23 @@
 [![Documentation
 Status](https://readthedocs.org/projects/atom3d/badge/?version=latest)](http://atom3d.readthedocs.io/?badge=latest)
 
-ATOM3D enables machine learning on three dimensional molecular structure.
+[ATOM3D](https://www.atom3d.ai/) enables machine learning on three dimensional molecular structure.
 
 ## Features
 
 * Access to several datasets involving 3D molecular structure. 
 * Sharded data format for storing lots of molecules (and associated metadata).
 * Utilities for splitting/filtering data based on many criteria.
+
+
+## Reference
+
+We provide an overview on ATOM3D and details on the preparation of all datasets in our preprint:
+
+> R. J. L. Townshend, M. Vögele, P. Suriana, A. Derry, A. Powers, Y. Laloudakis, S. Balachandar, B. Anderson, S. Eismann, R. Kondor, R. B. Altman, R. O. Dror "ATOM3D: Tasks On Molecules in Three Dimensions", [arXiv:2012.04035](https://arxiv.org/abs/2012.04035)
+  
+Please cite this work if some of the ATOM3D code or datasets are helpful in your scientific endeavours. For specific datasets, please also cite the respective original source, given in the preprint.
+
 
 ## Installation
 
