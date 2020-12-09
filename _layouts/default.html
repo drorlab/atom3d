@@ -31,7 +31,7 @@
         {% endif %}
         
         <h2>{{ site.data.sidebar.docs_list_title }}</h2>
-        <ul style="list-style-type:none;">
+        <ul style="list-style-type:none;" padding=0>
           {% for item in site.data.sidebar.docs %}
           <li width=135px><a href="{{ item.url }}">{{ item.title }}</a></li>
           {% endfor %}
