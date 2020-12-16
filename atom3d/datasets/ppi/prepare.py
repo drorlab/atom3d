@@ -2,6 +2,8 @@
 import numpy as np
 import pandas as pd
 
+import click
+
 import atom3d.datasets.ppi.neighbors as nb
 import atom3d.filters.pdb
 import atom3d.filters.sequence
