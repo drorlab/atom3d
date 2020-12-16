@@ -4,3 +4,4 @@
 # external requirements
 pytest
 sphinx
+tox

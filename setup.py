@@ -26,6 +26,7 @@ setup(
         'python-dotenv>=0.5.1',
         'scipy',
         'tables',
+        'torch',
         'tqdm',
     ],
 )
