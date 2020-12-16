@@ -3,5 +3,5 @@
 
 # external requirements
 pytest
-sphinx
+sphinx=3.1.2
 tox
