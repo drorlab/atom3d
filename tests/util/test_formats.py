@@ -1,6 +1,5 @@
 import pytest
-import os
-from pathlib import Path
+import importlib
 
 import atom3d.util.formats as fo
 
@@ -20,6 +19,8 @@ def test_read_any_mmcif():
     fo.read_any('tests/test_data/mmcif/6h29_pocket.cif')
     fo.read_any('tests/test_data/mmcif/6h2t_protein.cif')
 
+@pytest.mark.skipif(not importlib.util.find_spec("rdkit") is not None,
+                    reason="Reading SDF files requires RDKit!")
 def test_read_any_sdf():
     fo.read_any('tests/test_data/sdf/1j01_ligand.sdf')
     fo.read_any('tests/test_data/sdf/2yme_ligand.sdf')  
