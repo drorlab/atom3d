@@ -179,7 +179,7 @@ def _save_graphs(sharded, shard_num, out_dir):
         torch.save(graph, os.path.join(out_dir, f'data_{shard_num}_{i}.pt'))
 
 if __name__ == "__main__":
-    sharded = sh.Sharded.load(O_DIR + 'atom3d/data/residue_deletion/split/train_envs@1000')
+    sharded = sh.Sharded.load(os.environ['O_DIR'] + 'atom3d/data/residue_deletion/split/train_envs@1000')
 
     if False:
         print('Testing residue deletion generator')

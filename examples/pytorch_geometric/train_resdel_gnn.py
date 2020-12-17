@@ -91,7 +91,7 @@ def adjust_graph_indices(graph):
     return graph
 
 @torch.no_grad()
-def test(batch_size, model, loader, criterion, device):
+def test(model, loader, criterion, device, batch_size):
     model.eval()
 
     losses = []
@@ -181,7 +181,7 @@ def train(data_dir, device, log_dir, checkpoint, seed=None, test_mode=False):
                 print(f'Epoch {epoch}, iter {it}, train loss {train_loss}, avg it/sec {print_frequency / elapsed}')
                 start = time.time()
         print('validating...')
-        curr_val_loss, val_acc, val_top_k_acc = test(batch_size, model, val_loader, criterion, device)
+        curr_val_loss, val_acc, val_top_k_acc = test(model, val_loader, criterion, device, batch_size)
         # logger.info('{:03d}\t{}\t{:.7f}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(epoch, it, train_loss, curr_val_loss, val_acc, val_top_k_acc))
         # print('{:03d}\t{}\t{:.7f}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(epoch, it, train_loss, curr_val_loss, val_acc, v'al_top_k_acc))
         print(f'Epoch {epoch}, iter {it}, val loss {curr_val_loss}, val acc {val_acc}, val top 3 acc {val_top_k_acc}')
@@ -212,7 +212,7 @@ def train(data_dir, device, log_dir, checkpoint, seed=None, test_mode=False):
         model.eval()
         cpt = torch.load(os.path.join(log_dir, f'best_weights.pt'))
         model.load_state_dict(cpt['model_state_dict'])
-        test_loss, test_acc, test_top_k_acc = test(model, test_loader, criterion, device)
+        test_loss, test_acc, test_top_k_acc = test(model, test_loader, criterion, device, batch_size)
         print('Test loss: {:7f}, Test Accuracy {:.4f}, Top 3 Accuracy {:4f}, F1 Score {:4f}'.format(test_loss, test_acc, test_top_k_acc, test_f1))
         return test_loss, test_acc, test_top_k_acc
 

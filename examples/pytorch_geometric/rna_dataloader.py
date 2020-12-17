@@ -229,7 +229,7 @@ def _save_graphs(sharded, shard_num, out_dir):
 
 if __name__ == "__main__":
 
-    sharded = sh.Sharded.load(SC_DIR_R + 'atom3d/rna_structure_prediction/split/structures_test@10')
+    sharded = sh.Sharded.load(os.environ['SC_DIR_R'] + 'atom3d/rna_structure_prediction/split/structures_test@10')
 
     if False:
         print('Testing RNA graph generator')
@@ -240,7 +240,7 @@ if __name__ == "__main__":
             print('Generating graph {:} {:} -> nodes {:}, edges {:}, score {:}'.format(
                 i, graph.name, graph.num_nodes, graph.num_edges, graph.y))
 
-    graph_dir = O_DIR+'atom3d/data/rna/graph_pt/test'
+    graph_dir = os.environ['O_DIR'] + 'atom3d/data/rna/graph_pt/test'
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir)
     save_graphs(sharded, graph_dir, num_threads=10)

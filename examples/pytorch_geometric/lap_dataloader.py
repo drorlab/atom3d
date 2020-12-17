@@ -202,13 +202,13 @@ def _save_graphs(sharded, shard_num, out_dir):
 
 if __name__ == "__main__":
 
-    sharded = sh.Sharded.load(SC_DIR_R + 'atom3d/ligand_activity_prediction/split-20200528/pairs_val@10')
+    sharded = sh.Sharded.load(os.environ['SC_DIR_R'] + 'atom3d/ligand_activity_prediction/split-20200528/pairs_val@10')
 
     if False:
         print('Testing LAP graph dataloader')
         # gen = dataset_generator(sharded, range(sharded.get_num_shards()), shuffle=True)
 
-        dset = LAP_Dataset(SC_DIR_R+'atom3d/ligand_activity_prediction/split-20200528/pairs_train@10')
+        dset = LAP_Dataset(os.environ['SC_DIR_R']+'atom3d/ligand_activity_prediction/split-20200528/pairs_train@10')
         loader = DataLoader(dset, batch_size=2, num_workers=8)
 
         for active_graph, inactive_graph in loader:
@@ -217,7 +217,7 @@ if __name__ == "__main__":
                     active_graph.name, active_graph.num_nodes, inactive_graph.num_nodes, active_graph.num_edges, 
                     inactive_graph.num_edges, active_graph.y))
 
-    graph_dir = SC_DIR+'atom3d/ligand_activity_prediction/graph_pt/val'
+    graph_dir = os.environ['SC_DIR'] + 'atom3d/ligand_activity_prediction/graph_pt/val'
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir)
     save_graphs(sharded, graph_dir, num_threads=10)

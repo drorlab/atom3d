@@ -218,8 +218,8 @@ def _save_graphs(sharded, shard_num, out_dir):
             curr_idx += 1
 
 if __name__ == "__main__":
-    sharded = sh.Sharded.load(SC_DIR_R + 'atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
-    scores_dir = SC_DIR_R+'atom3d/protein_structure_prediction/casp/labels/scores'
+    sharded = sh.Sharded.load(os.environ['SC_DIR_R'] + 'atom3d/protein_structure_prediction/casp/split_hdf/decoy_50/test_decoy_all@85')
+    scores_dir = os.environ['SC_DIR_R']+'atom3d/protein_structure_prediction/casp/labels/scores'
 
 
     if False:
@@ -231,7 +231,7 @@ if __name__ == "__main__":
             print('Generating graph {:} {:} -> nodes {:}, edges {:}, score {:}'.format(
                 i, graph.name, graph.num_nodes, graph.num_edges, graph.y))
 
-    graph_dir = O_DIR+'atom3d/data/psp/graph_pt/test'
+    graph_dir = os.environ['O_DIR'] + 'atom3d/data/psp/graph_pt/test'
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir)
     save_graphs(sharded, graph_dir, num_threads=8)

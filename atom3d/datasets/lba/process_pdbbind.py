@@ -100,20 +100,20 @@ def process_files(input_dir):
     structure_dict = {}
     pdb_files = fi.find_files(input_dir, 'pdb')
 
-	for f in tqdm(pdb_files, desc='pdb files'):
-		pdb_id = fi.get_pdb_code(f)
-		if pdb_id not in structure_dict:
-			structure_dict[pdb_id] = {}
-		if '_protein' in f:
-			prot = ft.read_any(f)
-			structure_dict[pdb_id]['protein'] = prot
+    for f in tqdm(pdb_files, desc='pdb files'):
+        pdb_id = fi.get_pdb_code(f)
+        if pdb_id not in structure_dict:
+            structure_dict[pdb_id] = {}
+        if '_protein' in f:
+            prot = ft.read_any(f)
+            structure_dict[pdb_id]['protein'] = prot
 
-	lig_files = fi.find_files(input_dir, 'sdf')
-	for f in tqdm(lig_files, desc='ligand files'):
-		pdb_id = fi.get_pdb_code(f)
-		structure_dict[pdb_id]['ligand'] = get_ligand(f)
+    lig_files = fi.find_files(input_dir, 'sdf')
+    for f in tqdm(lig_files, desc='ligand files'):
+        pdb_id = fi.get_pdb_code(f)
+        structure_dict[pdb_id]['ligand'] = get_ligand(f)
 
-	return structure_dict
+    return structure_dict
 
 
 
@@ -135,12 +135,12 @@ def write_files(pdbid, protein, ligand, pocket, out_path):
     io.set_structure(protein)
     io.save(os.path.join(out_path, f"{pdbid}_protein.cif"))
 
-	# write pocket to mmCIF file
-	io.save(os.path.join(out_path, f"{pdbid}_pocket.cif"), PocketSelect(pocket))
+    # write pocket to mmCIF file
+    io.save(os.path.join(out_path, f"{pdbid}_pocket.cif"), PocketSelect(pocket))
 
-	# write ligand to file
-	writer = Chem.SDWriter(os.path.join(out_path, f"{pdbid}_ligand.sdf"))
-	writer.write(ligand)
+    # write ligand to file
+    writer = Chem.SDWriter(os.path.join(out_path, f"{pdbid}_ligand.sdf"))
+    writer.write(ligand)
 
 
 def produce_cleaned_dataset(structure_dict, out_path, dist=6.0):
@@ -166,26 +166,26 @@ def produce_cleaned_dataset(structure_dict, out_path, dist=6.0):
         write_files(pdb, protein, ligand, pocket_res, out_path)
 
 def generate_labels(data_dir, out_dir):
-	lab.main(data_dir, out_dir)
+    lab.main(data_dir, out_dir)
 
 
 def main():
-	parser = argparse.ArgumentParser()
-	parser.add_argument('data_dir', type=str, help='directory where PDBBind is located')
-	parser.add_argument('--dist', type=float, default=6.0, help='distance cutoff for defining pocket')
-	parser.add_argument('--out_dir', type=str, default=os.getcwd(), help='directory to place cleaned dataset')
-	args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('data_dir', type=str, help='directory where PDBBind is located')
+    parser.add_argument('--dist', type=float, default=6.0, help='distance cutoff for defining pocket')
+    parser.add_argument('--out_dir', type=str, default=os.getcwd(), help='directory to place cleaned dataset')
+    args = parser.parse_args()
 
-	if not os.path.exists(args.data_dir):
-		raise Exception('Path not found. Please enter valid path to PDBBind dataset.')
+    if not os.path.exists(args.data_dir):
+        raise Exception('Path not found. Please enter valid path to PDBBind dataset.')
 
-	if not os.path.exists(args.out_dir):
-		os.mkdir(args.out_dir)
+    if not os.path.exists(args.out_dir):
+        os.mkdir(args.out_dir)
 
-	structures = process_files(args.data_dir)
-	produce_cleaned_dataset(structures, args.out_dir, args.dist)
-	generate_labels(args.data_dir, args.out_dir)
+    structures = process_files(args.data_dir)
+    produce_cleaned_dataset(structures, args.out_dir, args.dist)
+    generate_labels(args.data_dir, args.out_dir)
 
 
 if __name__ == "__main__":
-	main()
+    main()

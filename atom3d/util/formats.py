@@ -11,7 +11,6 @@ import Bio.PDB.Residue
 import Bio.PDB.Structure
 import numpy as np
 import pandas as pd
-from rdkit import Chem
 
 patterns = {
     'pdb': 'pdb[0-9]*$',
@@ -376,6 +375,7 @@ def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
         sanitize (bool): Tries to sanitize the molecule. Default: False
 
     """
+    from rdkit import Chem
 
     suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_h)
 
