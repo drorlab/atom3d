@@ -27,36 +27,45 @@ _regexes = {k: re.compile(v) for k, v in patterns.items()}
 
 
 def is_sharded(f):
-    """If file is in sharded format."""
+    """Check if file is in sharded format."""
     return _regexes['sharded'].search(str(f))
 
 
 def is_pdb(f):
-    """If file is in pdb format."""
+    """Check if file is in pdb format."""
     return _regexes['pdb'].search(str(f))
 
 
 def is_mmcif(f):
-    """If file is in mmcif format."""
+    """Check if file is in mmcif format."""
     return _regexes['mmcif'].search(str(f))
 
 
 def is_sdf(f):
-    """If file is in sdf format."""
+    """Check if file is in sdf format."""
     return _regexes['sdf'].search(str(f))
 
 
 def is_pdb_gz(f):
-    """If file is in mmcif format."""
+    """Check if file is in mmcif format."""
     return _regexes['pdb.gz'].search(str(f))
 
 def is_xyz(f):
-    """If file is in xyz format."""
+    """Check if file is in xyz format."""
     return _regexes['xyz'].search(str(f))
 
 
 def read_any(f, name=None):
-    """Read file into biopython structure."""
+    """Read file into Biopython structure.
+
+    :param f: file path
+    :type f: Union[str, Path]
+    :param name: optional name or identifier for structure. If None (default), use file basename.
+    :type name: str
+
+    :return: Biopython object containing structure
+    :rtype: Bio.PDB.Structure
+    """
     if is_pdb(f):
         return read_pdb(f, name)
     elif is_pdb_gz(f):

@@ -6,9 +6,16 @@ import subprocess
 
 def find_files(path, suffix, relative=None):
     """
-    Find files in path, with given suffix.
+    Find all files in path with given suffix. =
 
-    Optionally can specify path we want to perform the find relative to.
+    :param path: Directory in which to find files.
+    :type path: Union[str, Path]
+    :param suffix: Suffix determining file type to search for.
+    :type suffix: str
+    :param relative: Flag to indicate whether to return absolute or relative path.
+
+    :return: list of paths to all files with suffix.
+    :rtype: list[Path]
     """
     if not relative:
         find_cmd = r"find {:} -regex '.*\.{:}'".format(path, suffix)
@@ -22,9 +29,27 @@ def find_files(path, suffix, relative=None):
     return [Path(x) for x in stdout.decode().split()]
 
 
-def get_pdb_code(path_to_pdb):
-    return path_to_pdb.split('/')[-1][:4].lower()
+def get_pdb_code(path):
+    """
+    Extract 4-character PDB ID code from full path.
+    
+    :param path: Path to PDB file.
+    :type path: str
+
+    :return: PDB filename.
+    :rtype: str
+    """
+    return path.split('/')[-1][:4].lower()
 
 
-def get_pdb_name(path_to_pdb):
-    return path_to_pdb.split('/')[-1]
+def get_pdb_name(path):
+    """
+    Extract filename for PDB file from full path.
+
+    :param path: Path to PDB file.
+    :type path: str
+
+    :return: PDB filename.
+    :rtype: str
+    """
+    return path.split('/')[-1]

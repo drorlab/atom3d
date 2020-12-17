@@ -91,7 +91,7 @@ def adjust_graph_indices(graph):
     return graph
 
 @torch.no_grad()
-def test(model, loader, criterion, device):
+def test(batch_size, model, loader, criterion, device):
     model.eval()
 
     losses = []
@@ -181,7 +181,7 @@ def train(data_dir, device, log_dir, checkpoint, seed=None, test_mode=False):
                 print(f'Epoch {epoch}, iter {it}, train loss {train_loss}, avg it/sec {print_frequency / elapsed}')
                 start = time.time()
         print('validating...')
-        curr_val_loss, val_acc, val_top_k_acc = test(model, val_loader, criterion, device)
+        curr_val_loss, val_acc, val_top_k_acc = test(batch_size, model, val_loader, criterion, device)
         # logger.info('{:03d}\t{}\t{:.7f}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(epoch, it, train_loss, curr_val_loss, val_acc, val_top_k_acc))
         # print('{:03d}\t{}\t{:.7f}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(epoch, it, train_loss, curr_val_loss, val_acc, v'al_top_k_acc))
         print(f'Epoch {epoch}, iter {it}, val loss {curr_val_loss}, val acc {val_acc}, val top 3 acc {val_top_k_acc}')
@@ -192,15 +192,14 @@ def train(data_dir, device, log_dir, checkpoint, seed=None, test_mode=False):
             best_val_loss = curr_val_loss
             best_val_idx = it
             # overwrite best model
-            else:
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss': train_loss,
-                    }, os.path.join(log_dir, f'best_weights.pt'))
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': train_loss,
+                }, os.path.join(log_dir, f'best_weights.pt'))
 
-            model.train()
+        model.train()
 
     if test_mode:
         print('testing...')

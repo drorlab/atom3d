@@ -359,6 +359,9 @@ def serialize(x, serialization_format):
 
 
 def deserialize(x, serialization_format):
+    """
+    Deserializes dataset `x` assuming format given by `serialization_format` (pkl, json, msgpack).
+    """
     if serialization_format == 'pkl':
         return pkl.loads(x)
     elif serialization_format == 'json':
@@ -379,6 +382,21 @@ def get_file_list(input_path, filetype):
 
 
 def load_dataset(file_list, filetype, transform=None, include_bonds=False):
+    """
+    Load files in file_list into corresponding dataset object. All files should be of type filetype.
+
+    :param file_list: List containing paths to silent files. Assumes one structure per file.
+    :type file_list: list[Union[str, Path]]
+    :param filetype: Type of dataset. Allowable types are 'lmdb', 'pdb', 'silent', 'sdf', 'xyz', 'xyz-gdb'.
+    :type filetype: str
+    :param transform: transformation function for data augmentation, defaults to None
+    :type transform: function, optional
+    :param include_bonds: flag for whether to process bond information for small molecules, defaults to False
+    :type include_bonds: bool, optional
+
+    :return dataset: Pytorch Dataset containing data
+    :rtype dataset: torch.utils.data.Dataset
+    """
     if type(file_list) != list:
         file_list = get_file_list(file_list, filetype)
 
