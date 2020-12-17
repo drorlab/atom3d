@@ -222,7 +222,7 @@ if __name__=="__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     base_dir = '../../data/mut'
-    data_dir = SC_DIR+'atom3d/mutation_prediction/graph_pt'
+    data_dir = os.environ['SC_DIR'] + 'atom3d/mutation_prediction/graph_pt'
     log_dir = args.log_dir
 
 

@@ -222,7 +222,7 @@ def _save_graphs(sharded, shard_num, out_dir):
 if __name__ == "__main__":
 
     split = sys.argv[1]
-    sharded = sh.Sharded.load(SC_DIR_R + f'atom3d/mutation_prediction/split/pairs_{split}@40')
+    sharded = sh.Sharded.load(os.environ['SC_DIR_R'] + f'atom3d/mutation_prediction/split/pairs_{split}@40')
 
     # print('Testing MUT graph dataloader')
     # gen = dataset_generator(sharded, range(sharded.get_num_shards()), shuffle=True)
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     # print(np.mean(y_list))
 
     if False:
-        dset = MUT_Dataset(SC_DIR_R + 'atom3d/mutation_prediction/split/pairs_val@40')
+        dset = MUT_Dataset(os.enivorn['SC_DIR_R'] + 'atom3d/mutation_prediction/split/pairs_val@40')
         loader = DataLoader(dset, batch_size=2, num_workers=8)
         for original_graph, mutated_graph in loader:
             n_mut = original_graph.num_mut_atoms[0].item()
@@ -245,7 +245,7 @@ if __name__ == "__main__":
                     mutated_graph.num_edges, original_graph.y))
 
 
-    graph_dir = SC_DIR+f'atom3d/mutation_prediction/graph_pt/{split}-old'
+    graph_dir = os.environ['SC_DIR'] + f'atom3d/mutation_prediction/graph_pt/{split}-old'
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir)
     save_graphs(sharded, graph_dir, num_threads=8)

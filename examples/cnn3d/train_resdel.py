@@ -182,9 +182,9 @@ def train(data_dir, device, log_dir, checkpoint=None, seed=None, test_mode=False
             f.write(f'Batch size: {batch_size}\n')
             f.write(f'Learning rate: {learning_rate}\n')
 
-    train_set = ResDel_Dataset_PT(SC_DIR+'atom3d/residue_deletion/cube_pt/train')
+    train_set = ResDel_Dataset_PT(os.environ['SC_DIR'] + 'atom3d/residue_deletion/cube_pt/train')
     train_loader = data.DataLoader(train_set, batch_size=batch_size, num_workers=8, shuffle=True)
-    val_set = ResDel_Dataset_PT(SC_DIR+'atom3d/residue_deletion/cube_pt/val')
+    val_set = ResDel_Dataset_PT(os.environ['SC_DIR'] + 'atom3d/residue_deletion/cube_pt/val')
     val_loader = data.DataLoader(val_set, batch_size=batch_size, num_workers=8, shuffle=True)
 
     model = cnn_3d_new(nic=in_channels)
@@ -290,7 +290,7 @@ def train(data_dir, device, log_dir, checkpoint=None, seed=None, test_mode=False
         print('testing...')
         model = cnn_3d_new(nic=in_channels).to(device)
         model.eval()
-        test_set = ResDel_Dataset_PT(SC_DIR+'atom3d/residue_deletion/cube_pt/test_unbalanced')
+        test_set = ResDel_Dataset_PT(os.environ['SC_DIR'] + 'atom3d/residue_deletion/cube_pt/test_unbalanced')
         test_loader = data.DataLoader(test_set, batch_size=batch_size, num_workers=8)
         # cpt = torch.load(os.path.join(log_dir, f'best_weights.pt'))
         cpt = torch.load(checkpoint, map_location=device)
@@ -313,7 +313,7 @@ if __name__=='__main__':
     log_dir = args.log_dir
 
     base_dir = '../../data/residue_deletion'
-    data_dir = O_DIR+'atom3d/data/residue_deletion/split'
+    data_dir = os.environ['O_DIR'] + 'atom3d/data/residue_deletion/split'
     if args.checkpoint is None:
         args.checkpoint = os.path.join(data_dir, '../CNN_3D_epoch_004_15000_weights.pt')
 

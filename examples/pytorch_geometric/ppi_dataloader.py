@@ -219,12 +219,12 @@ def _save_graphs(sharded, shard_num, out_dir):
 
 if __name__ == "__main__":
     # split = sys.argv[1]
-    db5_sharded = sh.Sharded.load(f'{SC_DIR_R}atom3d/protein_interface_prediction/DB5/sharded/pairs@10')
+    db5_sharded = sh.Sharded.load(f'{os.environ["SC_DIR_R"]}atom3d/protein_interface_prediction/DB5/sharded/pairs@10')
 
     if False:
         print('Testing PPI graph dataloader')
         # gen = dataset_generator(sharded, range(sharded.get_num_shards()), shuffle=True)
-        dset = PPI_Dataset(f'{SC_DIR_R}atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_val@1000')
+        dset = PPI_Dataset(f'{os.environ["SC_DIR_R"]}atom3d/protein_interface_prediction/DIPS/split/pairs_pruned_val@1000')
         loader = DataLoader(dset, batch_size=2, num_workers=1)
 
         for i, (graph1, graph2) in enumerate(loader):
@@ -233,7 +233,7 @@ if __name__ == "__main__":
                     i, graph1.num_nodes, graph2.num_nodes, graph1.num_edges, 
                     graph2.num_edges, graph1.y))
 
-    graph_dir = f'{SC_DIR}atom3d/protein_interface_prediction/graph_pt/db5'
+    graph_dir = f'{os.environ["SC_DIR"]}atom3d/protein_interface_prediction/graph_pt/db5'
     if not os.path.exists(graph_dir):
         os.makedirs(graph_dir)
     save_graphs(db5_sharded, graph_dir, num_threads=10)
