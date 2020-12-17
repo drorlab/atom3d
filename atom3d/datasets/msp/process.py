@@ -18,7 +18,7 @@ def filter_dup_lines(lines):
             continue
         new_lines.append(lines[i])
         done.add(tuple(lines[i][:3]))
-    print '{} lines after getting rid of duplicates'.format(len(new_lines))
+    print('{} lines after getting rid of duplicates'.format(len(new_lines)))
     return new_lines
 
 #We only want point mutations.
@@ -30,7 +30,7 @@ def filter_multiple_muts(lines):
             notsingle.append(l)
         else:
             single.append(l)
-    print '{} lines after getting rid of multiple mutations'.format(len(single))
+    print('{} lines after getting rid of multiple mutations'.format(len(single)))
     return single
 
 #Some mutants didn't form a complex at all.
@@ -39,7 +39,7 @@ def filter_nonbinders(lines):
     for l in lines:
         if 'n.b.' not in l[6:10] and 'n.b' not in l[6:10] and '' not in l[6:10]:
             filtered.append(l)
-    print '{} lines after getting rid of nonbinders'.format(len(filtered))
+    print('{} lines after getting rid of nonbinders'.format(len(filtered)))
     return filtered
 
 #=========================
@@ -56,10 +56,10 @@ def get_labels(lines):
         else:
             labels.append(0)
         counts[l[3]] += 1
-    print '{} mutations out of {} were increasing'.format(sum(labels), len(labels))
+    print('{} mutations out of {} were increasing'.format(sum(labels), len(labels)))
     for loc in counts:
-        print '{} in location: {}'.format(counts[loc], loc)
-    print ''
+        print('{} in location: {}'.format(counts[loc], loc))
+    print('')
     return labels
 
 def shorten_lines(lines, label):
@@ -77,7 +77,7 @@ def initiate():
 
 def process_pdbs(lines, input_dir, write_dir):
     if not os.path.exists(input_dir):
-        print 'The path {} does not exist'.format(input_dir)
+        print('The path {} does not exist'.format(input_dir))
         return
     written = set()
     counter = 0
@@ -99,11 +99,12 @@ def process_pdbs(lines, input_dir, write_dir):
             if not os.path.exists(os.path.join(write_dir, pdb + '_' + chains1 + '_' + chains2 + '.pdb')):
                 save_path = os.path.join(write_dir, pdb + '_' + chains1 + '_' + chains2 + '.pdb')
                 py.cmd.save(save_path, sel)
-                print 'Actually Wrote {} to {}'.format(pdb, write_dir)
-            print '{} handled'.format(pdb)
+                print('Actually Wrote {} to {}'.format(pdb, write_dir))
+            print('{} handled'.format(pdb))
         written.add(tuple([pdb, chains1, chains2]))
         counter += 1
-    print '{} pdbs handled for {}'.format(counter, write_dir)
+    print('{} pdbs handled for {}'.format(counter, write_dir))
+
 
 def terminate():
     py.cmd.quit()
@@ -117,7 +118,7 @@ def main():
         lines = [l.strip().split(';') for l in f]
     lines = lines[1:] #get rid of header
 
-    print '{} total lines before filtering'.format(len(lines))
+    print('{} total lines before filtering'.format(len(lines)))
     lines = filter_multiple_muts(lines)
     lines = filter_nonbinders(lines)
     lines = filter_dup_lines(lines)

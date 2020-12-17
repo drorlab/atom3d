@@ -103,7 +103,7 @@ def test(model, loader, criterion, device):
             # print(f'skipping batch, {len(graph1.ca_idx)} CA atoms with batch size {batch_size}')
             continue
         graph = adjust_graph_indices(graph)
-        out = model(graph.x, graph.edge_index, graph.edge_attr.view(-1), graph.ca_idx graph.batch)
+        out = model(graph.x, graph.edge_index, graph.edge_attr.view(-1), graph.ca_idx, graph.batch)
         loss = criterion(out, graph.y)
         acc = get_acc(out, graph.y)
         top_k_acc = get_top_k_acc(out, graph.y, k=3)
@@ -130,7 +130,7 @@ def train(data_dir, device, log_dir, checkpoint, seed=None, test_mode=False):
 
     train_set = dl.Resdel_Dataset_PTG(os.path.join(data_dir, 'train'))
     train_loader = DataLoader(train_set, batch_size=batch_size, num_workers=8, shuffle=True)
-    val_set = Resdel_Dataset_PTG(os.path.join(data_dir, 'val'))
+    val_set = dl.Resdel_Dataset_PTG(os.path.join(data_dir, 'val'))
     val_loader = DataLoader(val_set, batch_size=batch_size, num_workers=8, shuffle=True)
 
     for graph in train_loader:
@@ -192,6 +192,7 @@ def train(data_dir, device, log_dir, checkpoint, seed=None, test_mode=False):
             best_val_loss = curr_val_loss
             best_val_idx = it
             # overwrite best model
+            parallel = False
             if parallel:
                 torch.save({
                     'epoch': epoch,

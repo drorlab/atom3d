@@ -88,12 +88,12 @@ def main(data_dir, target_list, labels_dir, struct_format,
 
     with open(target_list, 'r') as f:
         requested_filenames = \
-            [os.path.join(label_dir, '{:}.dat'.format(x.strip())) for x in f]
+            [os.path.join(labels_dir, '{:}.dat'.format(x.strip())) for x in f]
     logger.info("{:} requested keys".format(len(requested_filenames)))
 
     produced_filenames = []
     if not overwrite:
-        produced_filenames = [f for f in fi.find_files(label_dir, 'dat') \
+        produced_filenames = [f for f in fi.find_files(labels_dir, 'dat') \
                               if 'targets' not in f]
     logger.info("{:} produced keys".format(len(produced_filenames)))
 
