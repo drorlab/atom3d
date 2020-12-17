@@ -24,17 +24,16 @@ logger = logging.getLogger(__name__)
 
 class LMDBDataset(Dataset):
     """
-    Creates a dataset from an lmdb file.
+    Creates a dataset from an lmdb file. Adapted from the TAPE repository at https://github.com/songlab-cal/tape/blob/master/tape/datasets.py
 
-    Adapted from:
-    https://github.com/songlab-cal/tape/blob/master/tape/datasets.py
-
-    Args:
-        data_file (Union[str, Path]):
-            Path to lmdb file.
+    :param data_file: path to LMDB file containing dataset
+    :type data_file: Union[str, Path]
     """
 
     def __init__(self, data_file, transform=None):
+        """constructor
+
+        """
         if type(data_file) is list:
             if len(data_file) != 1:
                 raise RuntimeError("Need exactly one filepath for lmdb")
@@ -98,14 +97,18 @@ class LMDBDataset(Dataset):
 
 class PDBDataset(Dataset):
     """
-    Creates a dataset from directory of PDB files.
+    Creates a dataset from a list of PDB files.
 
-    Args:
-        file_list (list[Union[str, Path]]):
-            Path to pdb files.
+    :param file_list: path to LMDB file containing dataset
+    :type file_list: list[Union[str, Path]]
+    :param transform: transformation function for data augmentation, defaults to None
+    :type transform: function, optional
     """
 
     def __init__(self, file_list, transform=None):
+        """constructor
+        
+        """
         self._file_list = [Path(x).absolute() for x in file_list]
         self._num_examples = len(self._file_list)
         self._transform = transform
@@ -131,16 +134,18 @@ class PDBDataset(Dataset):
 
 class SilentDataset(IterableDataset):
     """
-    Creates a dataset from rosetta silent files.
+    Creates a dataset from rosetta silent files. Can either use a directory of silent files, or a path to one.
 
-    Can either use a directory of silent files, or a path to one.
-
-    Args:
-        file_list (list[Union[str, Path]]):
-            Path to silent files.
+    :param file_list: list containing paths to silent files
+    :type file_list: list[Union[str, Path]]
+    :param transform: transformation function for data augmentation, defaults to None
+    :type transform: function, optional
     """
 
     def __init__(self, file_list, transform=None):
+        """constructor
+        
+        """
 
         if not importlib.util.find_spec("rosetta") is not None:
             raise RuntimeError(
@@ -201,14 +206,20 @@ class SilentDataset(IterableDataset):
 
 class XYZDataset(Dataset):
     """
-    Creates a dataset from directory of XYZ files.
+    Creates a dataset from list of XYZ files.
 
-    Args:
-        file_list (list[Union[str, Path]]):
-            Path to xyz files.
+    :param file_list: list containing paths to xyz files
+    :type file_list: list[Union[str, Path]]
+    :param transform: transformation function for data augmentation, defaults to None
+    :type transform: function
+    :param gdb: whether to add new energies with subtracted thermochemical energies (for SMP dataset), defaults to False
+    :type gdb: bool, optional
     """
 
     def __init__(self, file_list, transform=None, gdb=False):
+        """constructor
+        
+        """
         self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
         self._transform = transform
@@ -241,7 +252,7 @@ class XYZDataset(Dataset):
 
     def data_with_subtracted_thchem_energy(self, data, df):
         """
-        Adds energies with subtracted thermochemical energies to the data list
+        Adds energies with subtracted thermochemical energies to the data list.
         We only need this for the QM9 dataset (SMP).
         """
 
@@ -277,15 +288,20 @@ class XYZDataset(Dataset):
 
 class SDFDataset(Dataset):
     """
-    Creates a dataset from directory of SDF files.
-    Assumes one structure per file!
+    Creates a dataset from directory of SDF files. 
 
-    Args:
-        file_list (list[Union[str, Path]]):
-            Path to sdf files.
+    :param file_list: list containing paths to silent files. Assumes one structure per file.
+    :type file_list: list[Union[str, Path]]
+    :param transform: transformation function for data augmentation, defaults to None
+    :type transform: function, optional
+    :param read_bonds: flag for whether to process bond information from SDF, defaults to False
+    :type read_bonds: bool, optional
     """
 
     def __init__(self, file_list, transform=None, read_bonds=False):
+        """constructor
+        
+        """
         self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
         self._transform = transform
@@ -319,6 +335,9 @@ class SDFDataset(Dataset):
 
 
 def serialize(x, serialization_format):
+    """
+    Serializes dataset `x` in format given by `serialization_format` (pkl, json, msgpack).
+    """
     if serialization_format == 'pkl':
         # Pickle
         # Memory efficient but brittle across languages/python versions.
@@ -389,18 +408,18 @@ def make_lmdb_dataset(dataset, output_lmdb,
     """
     Make an LMDB dataset from an input dataset.
 
-    Args:
-        input_file_list (torch.utils.data.Dataset)
-            Path to input files.
-        output_lmdb (Union[str, Path]):
-            Path to output LMDB.
-        filter_fn (lambda x -> True/False):
-            Filter to decided if removing files.
-        serialization_format ('json', 'msgpack', 'pkl'):
-            How to serialize an entry.
-        include_bonds (bool):
-            Include bond information (only available for SDF yet)
+    :param input_file_list: Path to input files.
+    :type input_file_list: torch.utils.data.Dataset
+    :param output_lmdb: Path to output LMDB.
+    :type output_lmdb: Union[str, Path]
+    :param filter_fn: Filter to decided if removing files.
+    :type filter_fn: lambda x -> True/False
+    :param serialization_format: How to serialize an entry.
+    :type serialization_format: 'json', 'msgpack', 'pkl'
+    :param include_bonds: Include bond information (only available for SDF yet)
+    :type include_bonds: bool
     """
+
     num_examples = len(dataset)
 
     logger.info(f'{num_examples} examples')

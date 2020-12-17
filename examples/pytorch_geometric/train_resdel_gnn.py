@@ -192,31 +192,26 @@ def train(data_dir, device, log_dir, checkpoint, seed=None, test_mode=False):
             best_val_loss = curr_val_loss
             best_val_idx = it
             # overwrite best model
-            if parallel:
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': model.module.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss': train_loss,
-                    }, os.path.join(log_dir, f'checkpoint_epoch{epoch}_it{it}.pt'))
             else:
                 torch.save({
                     'epoch': epoch,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': train_loss,
-                    }, os.path.join(log_dir, f'checkpoint_epoch{epoch}_it{it}.pt'))
+                    }, os.path.join(log_dir, f'best_weights.pt'))
 
             model.train()
 
     if test_mode:
         print('testing...')
-        model = cnn_3d_new(nic=in_channels).to(device)
-        model.eval()
         test_set = dl.Resdel_Dataset_PTG(os.path.join(data_dir, 'test_unbalanced'))
         test_loader = DataLoader(test_set, batch_size=batch_size, num_workers=8, shuffle=True)
+        for graph in test_loader:
+            num_features = graph.num_features
+            break
+        model = GCN(num_features, hidden_dim=64).to(device)
+        model.eval()
         cpt = torch.load(os.path.join(log_dir, f'best_weights.pt'))
-        # cpt = torch.load(checkpoint, map_location=device)
         model.load_state_dict(cpt['model_state_dict'])
         test_loss, test_acc, test_top_k_acc = test(model, test_loader, criterion, device)
         print('Test loss: {:7f}, Test Accuracy {:.4f}, Top 3 Accuracy {:4f}, F1 Score {:4f}'.format(test_loss, test_acc, test_top_k_acc, test_f1))
@@ -236,7 +231,7 @@ if __name__=='__main__':
     log_dir = args.log_dir
 
     base_dir = '../../data/residue_deletion'
-    data_dir = SC_DIR+'atom3d/graph_pt'
+    data_dir = os.environ['SC_DIR']+'atom3d/graph_pt'
 
     if args.mode == 'train':
         if log_dir is None:
