@@ -108,7 +108,7 @@ def read_mmcif(mmcif_file, name=None):
 def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False):
     dflist = []
     molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
-                                add_hs=add_hs, remove_hs=remove_hs)
+                                add_h=add_hs, remove_h=remove_hs)
     for im,m in enumerate(molecules):
         if m is not None:
             df = mol_to_df(m, residue=im,
@@ -129,7 +129,7 @@ def read_sdf_multi(sdf_files, name=None, sanitize=False, add_hs=False, remove_hs
     dflist = []
     for sdf_file in sdf_files:
         molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
-                                    add_hs=add_hs, remove_hs=remove_hs)
+                                    add_h=add_hs, remove_h=remove_hs)
         for im,m in enumerate(molecules):
             if m is not None:
                 df = mol_to_df(m, residue=im,
