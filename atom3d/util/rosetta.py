@@ -14,16 +14,14 @@ class Scores(object):
     Track and lookup Rosetta score files.
 
     Args:
-        data_path (Union[str, Path, list[str, Path]]):
+        file_list (list[Union[str, Path]]):
             Path to silent files.
     """
 
-    def __init__(self, data_path):
+    def __init__(self, file_list):
         self._scores = {}
-        score_paths = fi.find_files(data_path, 'sc')
-        if len(score_paths) == 0:
-            raise RuntimeError('No score files found.')
-        for silent_file in score_paths:
+        file_list = [Path(x).absolute() for x in file_list]
+        for silent_file in file_list:
             key = self._key_from_silent_file(silent_file)
             self._scores[key] = self._parse_scores(silent_file)
 
@@ -67,3 +65,7 @@ class Scores(object):
             if entry is not None:
                 result.append(file_path)
         return result
+
+    def __len__(self):
+        """Get number of individual structures across score files."""
+        return len(self._scores)

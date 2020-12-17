@@ -26,7 +26,9 @@ def test_load_dataset_sdf():
                     reason="Reading silent files requires pyrosetta!")
 def test_load_dataset_silent():
     dataset = da.load_dataset('tests/test_data/silent', 'silent')
-    assert len(dataset) == 4
+    for x in dataset:
+        print(x)
+    assert len(dataset) == 8
 
 def test_load_dataset_xyz():
     dataset = da.load_dataset('tests/test_data/xyz-gdb', 'xyz')
