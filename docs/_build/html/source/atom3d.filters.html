@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>atom3d.filters package &#8212; atom3d  documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">atom3d  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atom3d.filters package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="atom3d-filters-package">
+<h1>atom3d.filters package<a class="headerlink" href="#atom3d-filters-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-atom3d.filters.filters">
+<span id="atom3d-filters-filters-module"></span><h2>atom3d.filters.filters module<a class="headerlink" href="#module-atom3d.filters.filters" title="Permalink to this headline">¶</a></h2>
+<p>Common filtering functions.</p>
+<dl class="py function">
+<dt id="atom3d.filters.filters.compose">
+<code class="sig-prename descclassname">atom3d.filters.filters.</code><code class="sig-name descname">compose</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em>, <em class="sig-param"><span class="n">g</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.filters.compose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.filters.first_model_filter">
+<code class="sig-prename descclassname">atom3d.filters.filters.</code><code class="sig-name descname">first_model_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.filters.first_model_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove anything beyond first model in structure.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.filters.form_filter_against_list">
+<code class="sig-prename descclassname">atom3d.filters.filters.</code><code class="sig-name descname">form_filter_against_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">against</span></em>, <em class="sig-param"><span class="n">column</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.filters.form_filter_against_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter against list for column of dataframe.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.filters.identity_filter">
+<code class="sig-prename descclassname">atom3d.filters.filters.</code><code class="sig-name descname">identity_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.filters.identity_filter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.filters.single_chain_filter">
+<code class="sig-prename descclassname">atom3d.filters.filters.</code><code class="sig-name descname">single_chain_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.filters.single_chain_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove anything that has more than one model/chain.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.filters.standard_residue_filter">
+<code class="sig-prename descclassname">atom3d.filters.filters.</code><code class="sig-name descname">standard_residue_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.filters.standard_residue_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter out non-standard residues.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.filters.pdb">
+<span id="atom3d-filters-pdb-module"></span><h2>atom3d.filters.pdb module<a class="headerlink" href="#module-atom3d.filters.pdb" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="atom3d.filters.pdb.form_molecule_type_filter">
+<code class="sig-prename descclassname">atom3d.filters.pdb.</code><code class="sig-name descname">form_molecule_type_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">allowed</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">excluded</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.pdb.form_molecule_type_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter by biomolecule type.</p>
+<p>Valid entries are prot, prot-nuc, nuc, carb, other.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.pdb.form_resolution_filter">
+<code class="sig-prename descclassname">atom3d.filters.pdb.</code><code class="sig-name descname">form_resolution_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">threshold</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.pdb.form_resolution_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter by resolution of method used to determine.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.pdb.form_size_filter">
+<code class="sig-prename descclassname">atom3d.filters.pdb.</code><code class="sig-name descname">form_size_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">max_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">min_size</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.pdb.form_size_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter by number of residues.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.pdb.form_source_filter">
+<code class="sig-prename descclassname">atom3d.filters.pdb.</code><code class="sig-name descname">form_source_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">allowed</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">excluded</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.pdb.form_source_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter by experimental source.</p>
+<p>Valid entries are diffraction, NMR, EM, other.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.filters.scop">
+<span id="atom3d-filters-scop-module"></span><h2>atom3d.filters.scop module<a class="headerlink" href="#module-atom3d.filters.scop" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="atom3d.filters.scop.form_scop_filter">
+<code class="sig-prename descclassname">atom3d.filters.scop.</code><code class="sig-name descname">form_scop_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">level</span></em>, <em class="sig-param"><span class="n">allowed</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">excluded</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.scop.form_scop_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter by SCOP classification at a specified level.</p>
+<p>Valid levels are type, class, fold, superfamily, family.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.filters.scop.form_scop_filter_against">
+<code class="sig-prename descclassname">atom3d.filters.scop.</code><code class="sig-name descname">form_scop_filter_against</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sharded</span></em>, <em class="sig-param"><span class="n">level</span></em>, <em class="sig-param"><span class="n">conservative</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.scop.form_scop_filter_against" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove structures with matching scop class to a chain in sharded.</p>
+<p>We consider each chain in each structure separately, and remove the
+structure if any of them matches any chain in sharded.</p>
+<p>This is done at the specified scop level, which can be one of type, class,
+fold, superfamily, or family.</p>
+<p>Conservative indicates what we should do about pdbs that do not have any
+scop class associated with them.  True means we throw out, False means we
+keep.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.filters.sequence">
+<span id="atom3d-filters-sequence-module"></span><h2>atom3d.filters.sequence module<a class="headerlink" href="#module-atom3d.filters.sequence" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="atom3d.filters.sequence.form_seq_filter_against">
+<code class="sig-prename descclassname">atom3d.filters.sequence.</code><code class="sig-name descname">form_seq_filter_against</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sharded</span></em>, <em class="sig-param"><span class="n">cutoff</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.filters.sequence.form_seq_filter_against" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove structures with too much sequence identity to a chain in sharded.</p>
+<p>We consider each chain in each structure separately, and remove the
+structure if any of them matches any chain in sharded.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.filters">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-atom3d.filters" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">atom3d.filters package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-atom3d.filters.filters">atom3d.filters.filters module</a></li>
+<li><a class="reference internal" href="#module-atom3d.filters.pdb">atom3d.filters.pdb module</a></li>
+<li><a class="reference internal" href="#module-atom3d.filters.scop">atom3d.filters.scop module</a></li>
+<li><a class="reference internal" href="#module-atom3d.filters.sequence">atom3d.filters.sequence module</a></li>
+<li><a class="reference internal" href="#module-atom3d.filters">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/atom3d.filters.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">atom3d  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atom3d.filters package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, ATOM3D Developers..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>

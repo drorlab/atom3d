@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>atom3d.torch package &#8212; atom3d  documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">atom3d  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atom3d.torch package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="atom3d-torch-package">
+<h1>atom3d.torch package<a class="headerlink" href="#atom3d-torch-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-atom3d.torch.graph">
+<span id="atom3d-torch-graph-module"></span><h2>atom3d.torch.graph module<a class="headerlink" href="#module-atom3d.torch.graph" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="atom3d.torch.graph.combine_graphs">
+<code class="sig-prename descclassname">atom3d.torch.graph.</code><code class="sig-name descname">combine_graphs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">graph1</span></em>, <em class="sig-param"><span class="n">graph2</span></em>, <em class="sig-param"><span class="n">edges_between</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.torch.graph.combine_graphs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.torch.graph.edges_between_graphs">
+<code class="sig-prename descclassname">atom3d.torch.graph.</code><code class="sig-name descname">edges_between_graphs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pos1</span></em>, <em class="sig-param"><span class="n">pos2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.torch.graph.edges_between_graphs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.torch.graph.mol_to_graph">
+<code class="sig-prename descclassname">atom3d.torch.graph.</code><code class="sig-name descname">mol_to_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.torch.graph.mol_to_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts Mol object to a graph compatible with Pytorch-Geometric</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>mol (Mol): RDKit Mol object</p>
+</dd>
+<dt>Returns:</dt><dd><p>node_feats (LongTensor): features for each node, one-hot encoded by element
+edge_feats (LongTensor): features for each node, one-hot encoded by element
+edges (LongTensor): edges in COO format
+node_pos (FloatTensor): x-y-z coordinates of each node</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.torch.graph.one_of_k_encoding">
+<code class="sig-prename descclassname">atom3d.torch.graph.</code><code class="sig-name descname">one_of_k_encoding</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">allowable_set</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.torch.graph.one_of_k_encoding" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.torch.graph.one_of_k_encoding_unk">
+<code class="sig-prename descclassname">atom3d.torch.graph.</code><code class="sig-name descname">one_of_k_encoding_unk</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">allowable_set</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.torch.graph.one_of_k_encoding_unk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps inputs not in the allowable set to the last element.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.torch.graph.prot_df_to_graph">
+<code class="sig-prename descclassname">atom3d.torch.graph.</code><code class="sig-name descname">prot_df_to_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">edge_dist_cutoff</span><span class="o">=</span><span class="default_value">4.5</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.torch.graph.prot_df_to_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts protein in dataframe representation to a graph compatible with Pytorch-Geometric</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>df (DataFrame): protein in dataframe format
+edge_dist_cutoff (float): max distance to define an edge between two atoms</p>
+</dd>
+<dt>Returns:</dt><dd><p>node_feats (LongTensor): features for each node, one-hot encoded by element
+edge_feats (LongTensor): features for each node, one-hot encoded by element
+edges (LongTensor): edges in COO format
+node_pos (FloatTensor): x-y-z coordinates of each node</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.torch.graph.prot_df_to_res_graph">
+<code class="sig-prename descclassname">atom3d.torch.graph.</code><code class="sig-name descname">prot_df_to_res_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">edge_dist_cutoff</span><span class="o">=</span><span class="default_value">9.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.torch.graph.prot_df_to_res_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts protein in dataframe representation to a graph compatible with Pytorch-Geometric</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>df (DataFrame): protein in dataframe format
+edge_dist_cutoff (float): max distance to define an edge between two residues (by CA atom)</p>
+</dd>
+<dt>Returns:</dt><dd><p>node_feats (LongTensor): features for each node, one-hot encoded by element
+edge_feats (LongTensor): features for each node, one-hot encoded by element
+edges (LongTensor): edges in COO format
+node_pos (FloatTensor): x-y-z coordinates of each node</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.torch">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-atom3d.torch" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">atom3d.torch package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-atom3d.torch.graph">atom3d.torch.graph module</a></li>
+<li><a class="reference internal" href="#module-atom3d.torch">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/atom3d.torch.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">atom3d  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atom3d.torch package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, ATOM3D Developers..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>

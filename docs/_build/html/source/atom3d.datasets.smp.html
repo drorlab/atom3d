@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>atom3d.datasets.smp package &#8212; atom3d  documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">atom3d  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atom3d.datasets.smp package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="atom3d-datasets-smp-package">
+<h1>atom3d.datasets.smp package<a class="headerlink" href="#atom3d-datasets-smp-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="atom3d-datasets-smp-add-cv-atom-module">
+<h2>atom3d.datasets.smp.add_cv_atom module<a class="headerlink" href="#atom3d-datasets-smp-add-cv-atom-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5">
+<span id="atom3d-datasets-smp-convert-qm9-from-sdf-to-hdf5-module"></span><h2>atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5 module<a class="headerlink" href="#module-atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5.MoleculesDataset">
+<em class="property">class </em><code class="sig-prename descclassname">atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5.</code><code class="sig-name descname">MoleculesDataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">csv_file</span></em>, <em class="sig-param"><span class="n">sdf_file</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'molecules'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5.MoleculesDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Internal data set, including coordinates.</p>
+<dl class="py method">
+<dt id="atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5.MoleculesDataset.write_hdf5">
+<code class="sig-name descname">write_hdf5</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">indices</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">datatypes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5.MoleculesDataset.write_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes (a subset of) the data set as compressed numpy arrays.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>filename (str):  The name of the output file. 
+indices (int[]): The indices of the molecules to write data for.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5.convert_sdfcsv_to_hdf5">
+<code class="sig-prename descclassname">atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5.</code><code class="sig-name descname">convert_sdfcsv_to_hdf5</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_dir_name</span></em>, <em class="sig-param"><span class="n">out_dir_name</span></em>, <em class="sig-param"><span class="n">split_indices</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">datatypes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5.convert_sdfcsv_to_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a data set given as CSV list and SDF coordinates to HDF5 train/validation/test sets.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>in_dir_name (str): Name of the input directory.
+out_dir_name (Str): Name of the output directory.
+split_indices (list): List of int lists [test_indices, vali_indices, train_indices]</p>
+</dd>
+<dt>Returns:</dt><dd><p>ds (MoleculesDataset): The internal data set with all processed information.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.datasets.smp.convert_qm9_from_sdf_to_npz">
+<span id="atom3d-datasets-smp-convert-qm9-from-sdf-to-npz-module"></span><h2>atom3d.datasets.smp.convert_qm9_from_sdf_to_npz module<a class="headerlink" href="#module-atom3d.datasets.smp.convert_qm9_from_sdf_to_npz" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="atom3d.datasets.smp.convert_qm9_from_sdf_to_npz.MoleculesDataset">
+<em class="property">class </em><code class="sig-prename descclassname">atom3d.datasets.smp.convert_qm9_from_sdf_to_npz.</code><code class="sig-name descname">MoleculesDataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">csv_file</span></em>, <em class="sig-param"><span class="n">sdf_file</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'molecules'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.datasets.smp.convert_qm9_from_sdf_to_npz.MoleculesDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Internal data set, including coordinates.</p>
+<dl class="py method">
+<dt id="atom3d.datasets.smp.convert_qm9_from_sdf_to_npz.MoleculesDataset.write_compressed">
+<code class="sig-name descname">write_compressed</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">indices</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">datatypes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.datasets.smp.convert_qm9_from_sdf_to_npz.MoleculesDataset.write_compressed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes (a subset of) the data set as compressed numpy arrays.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>filename (str):  The name of the output file. 
+indices (int[]): The indices of the molecules to write data for.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="atom3d.datasets.smp.convert_qm9_from_sdf_to_npz.convert_sdfcsv_to_npz">
+<code class="sig-prename descclassname">atom3d.datasets.smp.convert_qm9_from_sdf_to_npz.</code><code class="sig-name descname">convert_sdfcsv_to_npz</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_dir_name</span></em>, <em class="sig-param"><span class="n">out_dir_name</span></em>, <em class="sig-param"><span class="n">split_indices</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">datatypes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.datasets.smp.convert_qm9_from_sdf_to_npz.convert_sdfcsv_to_npz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a data set given as CSV list and SDF coordinates to npz train/validation/test sets.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>in_dir_name (str): NAme of the input directory.
+out_dir_name (Str): Name of the output directory.
+split_indices (list): List of int lists [test_indices, vali_indices, train_indices]</p>
+</dd>
+<dt>Returns:</dt><dd><p>ds (MoleculesDataset): The internal data set with all processed information.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.datasets.smp.create_qm9_split">
+<span id="atom3d-datasets-smp-create-qm9-split-module"></span><h2>atom3d.datasets.smp.create_qm9_split module<a class="headerlink" href="#module-atom3d.datasets.smp.create_qm9_split" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="atom3d.datasets.smp.create_qm9_split.generate_split">
+<code class="sig-prename descclassname">atom3d.datasets.smp.create_qm9_split.</code><code class="sig-name descname">generate_split</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">excl_uncharacterized</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">excl_rdkitfails</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">out_dir_name</span><span class="o">=</span><span class="default_value">'.'</span></em>, <em class="sig-param"><span class="n">seed</span><span class="o">=</span><span class="default_value">42</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.datasets.smp.create_qm9_split.generate_split" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.datasets.smp.create_splits">
+<span id="atom3d-datasets-smp-create-splits-module"></span><h2>atom3d.datasets.smp.create_splits module<a class="headerlink" href="#module-atom3d.datasets.smp.create_splits" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-atom3d.datasets.smp.labels">
+<span id="atom3d-datasets-smp-labels-module"></span><h2>atom3d.datasets.smp.labels module<a class="headerlink" href="#module-atom3d.datasets.smp.labels" title="Permalink to this headline">¶</a></h2>
+<p>Label structures with deviation.</p>
+</div>
+<div class="section" id="module-atom3d.datasets.smp.qm9">
+<span id="atom3d-datasets-smp-qm9-module"></span><h2>atom3d.datasets.smp.qm9 module<a class="headerlink" href="#module-atom3d.datasets.smp.qm9" title="Permalink to this headline">¶</a></h2>
+<p>QM9 functions.</p>
+<dl class="py function">
+<dt id="atom3d.datasets.smp.qm9.qm9_ensembler">
+<code class="sig-prename descclassname">atom3d.datasets.smp.qm9.</code><code class="sig-name descname">qm9_ensembler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sdf_files</span></em><span class="sig-paren">)</span><a class="headerlink" href="#atom3d.datasets.smp.qm9.qm9_ensembler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-atom3d.datasets.smp">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-atom3d.datasets.smp" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">atom3d.datasets.smp package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#atom3d-datasets-smp-add-cv-atom-module">atom3d.datasets.smp.add_cv_atom module</a></li>
+<li><a class="reference internal" href="#module-atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5">atom3d.datasets.smp.convert_qm9_from_sdf_to_hdf5 module</a></li>
+<li><a class="reference internal" href="#module-atom3d.datasets.smp.convert_qm9_from_sdf_to_npz">atom3d.datasets.smp.convert_qm9_from_sdf_to_npz module</a></li>
+<li><a class="reference internal" href="#module-atom3d.datasets.smp.create_qm9_split">atom3d.datasets.smp.create_qm9_split module</a></li>
+<li><a class="reference internal" href="#module-atom3d.datasets.smp.create_splits">atom3d.datasets.smp.create_splits module</a></li>
+<li><a class="reference internal" href="#module-atom3d.datasets.smp.labels">atom3d.datasets.smp.labels module</a></li>
+<li><a class="reference internal" href="#module-atom3d.datasets.smp.qm9">atom3d.datasets.smp.qm9 module</a></li>
+<li><a class="reference internal" href="#module-atom3d.datasets.smp">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/atom3d.datasets.smp.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">atom3d  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">atom3d.datasets.smp package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, ATOM3D Developers..
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.3.1.
+    </div>
+  </body>
+</html>
