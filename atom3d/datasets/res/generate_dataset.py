@@ -6,7 +6,7 @@ import pandas as pd
 import parallel as par
 import scipy.spatial
 import torch
-from util import *
+from atom3d.util import *
 
 # import atom3d.util.datatypes as dt
 import atom3d.shard.shard as sh

@@ -18,6 +18,7 @@ setup(
         'biopython',
         'click',
         'easy-parallel',
+        'freesasa',
         'h5py',
         'lmdb',
         'msgpack',

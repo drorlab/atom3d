@@ -11,6 +11,7 @@ import Bio.PDB.Residue
 import Bio.PDB.Structure
 import numpy as np
 import pandas as pd
+from rdkit import Chem
 
 patterns = {
     'pdb': 'pdb[0-9]*$',

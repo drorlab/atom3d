@@ -138,7 +138,7 @@ def run_psipred(blast_path, nr_path, psipred_path, pssms_dir, psfms_dir,
 @click.option('--psipred_path', '-psi',
               default=os.environ['PSIPRERD_PATH'])
 def main(data_dir, target_list, fastas_dir, pssms_dir, psfms_dir,
-         secstructs_dir, num_cpus, blast_path, nr_path, psipred_path):
+         secstructs_dir, tmp_dir, num_cpus, blast_path, nr_path, psipred_path):
     """ Run psipreds to generate the PSSMs and secondary structure predictions
     for each residue in a protein structure.
     """

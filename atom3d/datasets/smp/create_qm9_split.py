@@ -17,7 +17,7 @@ def generate_split(excl_uncharacterized=True, excl_rdkitfails=True, out_dir_name
         assert len(exclude) == 3054 
     elif excl_uncharacterized and excl_rdkitfails:
         exclude = np.loadtxt('../../data/qm9/splits/excl.dat',dtype=int).tolist()
-    elif ecl_rdkitfails and not excl_uncharacterized:
+    elif excl_rdkitfails and not excl_uncharacterized:
         print('Excluding only RDKit fails is not implemented.')
         return
     else:
