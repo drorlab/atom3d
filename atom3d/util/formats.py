@@ -106,6 +106,10 @@ def read_mmcif(mmcif_file, name=None):
 
 
 def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False):
+    """Reads an SDF file to biopython format."""
+
+    from rdkit import Chem
+
     dflist = []
     molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
                                 add_h=add_hs, remove_h=remove_hs)
@@ -126,6 +130,9 @@ def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False)
 
 
 def read_sdf_multi(sdf_files, name=None, sanitize=False, add_hs=False, remove_hs=False):
+
+    from rdkit import Chem
+
     dflist = []
     for sdf_file in sdf_files:
         molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
