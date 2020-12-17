@@ -160,13 +160,13 @@ class SilentDataset(IterableDataset):
             self.pyrosetta.init("-mute all")
 
         self._file_list = [Path(x).absolute() for x in file_list]
-        self._num_examples = sum(
-            [x.shape[0] for x in self._file_scores.values()])
         self._transform = transform
 
         self._file_scores = {}
         for silent_file in self._file_list:
             self._file_scores[silent_file] = ar.parse_scores(silent_file)
+        self._num_examples = sum(
+            [x.shape[0] for x in self._file_scores.values()])
 
     def __len__(self) -> int:
         return self._num_examples
