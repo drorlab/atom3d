@@ -394,8 +394,8 @@ def load_dataset(file_list, filetype, transform=None, include_bonds=False):
     :param include_bonds: flag for whether to process bond information for small molecules, defaults to False
     :type include_bonds: bool, optional
 
-    :return dataset: Pytorch Dataset containing data
-    :rtype dataset: torch.utils.data.Dataset
+    :return: Pytorch Dataset containing data
+    :rtype: torch.utils.data.Dataset
     """
     if type(file_list) != list:
         file_list = get_file_list(file_list, filetype)

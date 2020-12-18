@@ -55,7 +55,7 @@ def is_xyz(f):
 
 
 def read_any(f, name=None):
-    """Read file into Biopython structure.
+    """Read any ATOM3D file type into Biopython structure (compatible with pdb, pdb.gz, mmcif, sdf, xyz).
 
     :param f: file path
     :type f: Union[str, Path]
@@ -72,7 +72,7 @@ def read_any(f, name=None):
     elif is_mmcif(f):
         return read_mmcif(f, name)
     elif is_sdf(f):
-        return read_sdf(f, name)
+        return read_sdf(f)
     elif is_xyz(f):
         return read_xyz(f, name)
     else:
@@ -80,6 +80,16 @@ def read_any(f, name=None):
 
 
 def read_pdb_gz(pdb_gz_file, name=None):
+    """Read pdb.gz file into Biopython structure.
+
+    :param pdb_gz_file: file path
+    :type pdb_gz_file: Union[str, Path]
+    :param name: optional name or identifier for structure. If None (default), use file basename.
+    :type name: str
+
+    :return: Biopython object containing structure
+    :rtype: Bio.PDB.Structure
+    """
     if name is None:
         name = os.path.basename(pdb_gz_file)
     parser = Bio.PDB.PDBParser(QUIET=True)
@@ -89,7 +99,16 @@ def read_pdb_gz(pdb_gz_file, name=None):
 
 
 def read_pdb(pdb_file, name=None):
-    """Load pdb file in to biopython representation."""
+    """Read pdb file into Biopython structure.
+
+    :param pdb_file: file path
+    :type pdb_file: Union[str, Path]
+    :param name: optional name or identifier for structure. If None (default), use file basename.
+    :type name: str
+
+    :return: Biopython object containing structure
+    :rtype: Bio.PDB.Structure
+    """
     if name is None:
         name = os.path.basename(pdb_file)
     parser = Bio.PDB.PDBParser(QUIET=True)
@@ -98,7 +117,16 @@ def read_pdb(pdb_file, name=None):
 
 
 def read_mmcif(mmcif_file, name=None):
-    """Load mmcif file in to biopython representation."""
+    """Read mmCIF file into Biopython structure.
+
+    :param mmcif_file: file path
+    :type mmcif_file: Union[str, Path]
+    :param name: optional name or identifier for structure. If None (default), use file basename.
+    :type name: str
+
+    :return: Biopython object containing structure
+    :rtype: Bio.PDB.Structure
+    """
     if name is None:
         os.path.basename(mmcif_file)
     parser = Bio.PDB.MMCIFParser(QUIET=True)
@@ -106,6 +134,20 @@ def read_mmcif(mmcif_file, name=None):
 
 
 def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False):
+    """Read SDF file into Biopython structure.
+
+    :param sdf_file: file path
+    :type sdf_file: Union[str, Path]
+    :param sanitize: sanitize structure with RDKit.
+    :type sanitize: bool
+    :param add_hs: add hydrogen atoms with RDKit.
+    :type add_hs: bool
+    :param remove_hs: remove hydrogen atoms with RDKit.
+    :type remove_hs: bool
+
+    :return: Biopython object containing structure
+    :rtype: Bio.PDB.Structure
+    """
     dflist = []
     molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
                                 add_hs=add_hs, remove_hs=remove_hs)
@@ -125,7 +167,21 @@ def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False)
     return bp
 
 
-def read_sdf_multi(sdf_files, name=None, sanitize=False, add_hs=False, remove_hs=False):
+def read_sdf_multi(sdf_files, sanitize=False, add_hs=False, remove_hs=False):
+    """Read multiple SDF files into Biopython structure.
+
+    :param sdf_files: list of paths to SDF files.
+    :type sdf_files: list[Union[str, Path]]
+    :param sanitize: sanitize structures with RDKit.
+    :type sanitize: bool
+    :param add_hs: add hydrogen atoms with RDKit.
+    :type add_hs: bool
+    :param remove_hs: remove hydrogen atoms with RDKit.
+    :type remove_hs: bool
+
+    :return: Biopython object containing structure
+    :rtype: Bio.PDB.Structure
+    """
     dflist = []
     for sdf_file in sdf_files:
         molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
@@ -142,7 +198,13 @@ def read_sdf_multi(sdf_files, name=None, sanitize=False, add_hs=False, remove_hs
 
 
 def combine_sdfs(sdf_files, big_sdf):
-    """Concatenate several SDF files into one."""
+    """Concatenate several SDF files into one.
+    
+    :param sdf_files: list of paths to SDF files.
+    :type sdf_files: list[Union[str, Path]]
+    :param big_sdf: path to combined output SDF file.
+    :type big_sdf: Union[str, Path]
+    """
     with open(big_sdf, 'w') as outfile:
         for fname in sdf_files:
             with open(fname) as infile:
@@ -151,15 +213,27 @@ def combine_sdfs(sdf_files, big_sdf):
 
 
 def write_pdb(out_file, structure, **kwargs):
-    """Write a biopython structure to a pdb file."""
+    """Write a biopython structure to a pdb file. This function accepts any viable arguments to Bio.PDB.PDBIO.save() as keyword arguments.
+
+    :param out_file: Path to output PDB file.
+    :type out_file: Union[str, Path]
+    :param structure: Biopython object containing protein structure.
+    :type structure: Bio.PDB.Structure
+    """
     io = Bio.PDB.PDBIO()
     io.set_structure(structure)
     io.save(out_file, **kwargs)
     return
 
 
-def write_mmcif(out_file, structure):
-    """Write a biopython structure to an mmcif file."""
+def write_mmcif(out_file, structure, **kwargs):
+    """Write a biopython structure to an mmcif file. This function accepts any viable arguments to Bio.PDB.MMCIFIO.save() as keyword arguments.
+
+    :param out_file: Path to output mmCIF file.
+    :type out_file: Union[str, Path]
+    :param structure: Biopython object containing protein structure.
+    :type structure: Bio.PDB.structure
+    """
     io = Bio.PDB.MMCIFIO()
     io.set_structure(structure)
     io.save(out_file)
@@ -167,7 +241,20 @@ def write_mmcif(out_file, structure):
 
 
 def read_xyz_to_df(inputfile, gdb_data=False):
-    """Read an XYZ file (optionally with GDB9-specific data)"""
+    """Read an XYZ file into Pandas DataFrame representation (optionally with GDB9-specific data)
+
+    :param inputfile: Path to input file in XYZ format.
+    :type inputfile: Union[str, Path]
+    :param gdb_data: Specifies whether to process and return GDB9-specific data.
+    :type gdb_date: bool
+
+    :return: If `gdb=False`, returns DataFrame containing molecule structure. If `gdb=True`, returns tuple containing
+        - molecule (pandas.DataFrame): Pandas DataFrame containing molecule structure.
+        - data (list[float]): Scalar molecular properties. Returned only when `gdb=True`.
+        - freq (list[float]): Harmonic vibrational frequencies (:math:`3n_{atoms}−5` or :math:`3n_{atoms}-6`, in :math:`cm^{−1}`).  Returned only when `gdb=True`.
+        - smiles (str): SMILES string from GDB-17 and from B3LYP relaxation. Returned only when `gdb=True`.
+        - inchi (str): InChI string for Corina and B3LYP geometries. Returned only when `gdb=True`.
+    """
     with open(inputfile) as f:
         # Reading number of atoms in the molecule
         num_atoms = int(f.readline().strip())
@@ -201,7 +288,20 @@ def read_xyz_to_df(inputfile, gdb_data=False):
 
 
 def read_xyz(xyz_file, name=None, gdb=False):
-    """Load xyz file in to biopython representation."""
+    """Read an XYZ file into Biopython representation (optionally with GDB9-specific data)
+
+    :param inputfile: Path to input file in XYZ format.
+    :type inputfile: Union[str, Path]
+    :param gdb_data: Specifies whether to process and return GDB9-specific data.
+    :type gdb_date: bool
+
+    :return: If `gdb=False`, returns Biopython Structure object containing molecule structure. If `gdb=True`, returns tuple containing
+        - bp (Bio.PDB.Structure): Biopython object containing molecule structure.
+        - data (list[float]): Scalar molecular properties.
+        - freq (list[float]): Harmonic vibrational frequencies (:math:`3n_{atoms}−5` or :math:`3n_{atoms}-6`, in :math:`cm^{−1}`).
+        - smiles (str): SMILES string from GDB-17 and from B3LYP relaxation.
+        - inchi (str): InChI string for Corina and B3LYP geometries.
+    """
     # Load the xyz file into a dataframe
     if gdb:
         df, data, freq, smiles, inchi = read_xyz_to_df(xyz_file, gdb_data=True)
@@ -243,7 +343,14 @@ def read_xyz(xyz_file, name=None, gdb=False):
 
 
 def bp_to_df(bp):
-    """Convert biopython representation to pandas dataframe representation."""
+    """Convert biopython representation to ATOM3D dataframe representation.
+    
+    :param bp: Molecular structure in Biopython representation.
+    :type bp: Bio.PDB.Structure
+
+    :return: Molecular structure in ATOM3D dataframe format.
+    :rtype: pandas.DataFrame
+    """
     df = col.defaultdict(list)
     for atom in Bio.PDB.Selection.unfold_entities(bp, 'A'):
         residue = atom.get_parent()
@@ -274,7 +381,14 @@ def bp_to_df(bp):
 
 
 def df_to_bp(df_in):
-    """Convert dataframe representaion to biopython representation."""
+    """Convert ATOM3D dataframe representation to biopython representation. Assumes dataframe contains only one structure.
+    
+    :param df_in: Molecular structure in ATOM3D dataframe format.
+    :type df_in: pandas.DataFrame
+
+    :return: Molecular structure in BioPython format.
+    :rtype: Bio.PDB.Structure
+    """
     all_structures = df_to_bps(df_in)
     if len(all_structures) > 1:
         raise RuntimeError('More than one structure in provided dataframe.')
@@ -282,7 +396,14 @@ def df_to_bp(df_in):
 
 
 def df_to_bps(df_in):
-    """Convert dataframe representation to biopython representations."""
+    """Convert ATOM3D dataframe representation containing multiple structures to list of Biopython structures. Assumes different structures are specified by `ensemble` and `structure` columns of dataframe.
+    
+    :param df_in: Molecular structures in ATOM3D dataframe format.
+    :type df_in: pandas.DataFrame
+
+    :return : List of molecular structures in BioPython format.
+    :rtype: list[Bio.PDB.Structure]
+    """
     df = df_in.copy()
     all_structures = []
     for (structure, s_atoms) in split_df(df_in, ['ensemble', 'structure']):
@@ -317,15 +438,34 @@ def df_to_bps(df_in):
 
 
 def split_df(df, key):
+    """
+    Split dataframe containing structure(s) based on specified key. Most commonly used to split by ensemble (`key="ensemble"`) or subunit (`key=["ensemble", "subunit"]`).
+
+    :param df: Molecular structure(s) in ATOM3D dataframe format.
+    :type df: pandas.DataFrame
+    :param key: key on which to split dataframe. To split on multiple keys, provide all keys in a list. Must be compatible with dataframe hierarchy, i.e. ensemble > subunit > structure > model > chain.
+    :type key: Union[str, list[str]]
+
+    :return: List of tuples containing keys and corresponding sub-dataframes.
+    :rtypes: list[tuple]
+    """
     return [(x, y) for x, y in df.groupby(key)]
 
 
 def merge_dfs(dfs):
+    """Combine a list of dataframes into a single dataframe. Assumes dataframes contain the same columns."""
     return pd.concat(dfs).reset_index(drop=True)
 
 
 def bp_from_xyz_dict(data, struct_name='structure'):
-    """Construct a biopython structure from xyz data (stored in a dict)."""
+    """Construct a biopython structure from XYZ data (stored in a dict).
+    
+    :param data: XYZ data in dictionary format with keys 'elements', 'charges', and 'coordinates', which contain data for each atom in the molecule.
+    :type data: dict
+
+    :return: Biopython structure containing molecule.
+    :rtype: Bio.PDB.Structure
+    """
     # Read info from dictionary
     elements = data['elements']
     charges = data['charges']
@@ -369,11 +509,15 @@ def bp_from_xyz_dict(data, struct_name='structure'):
 def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
     """Reads a list of molecules from an SDF file.
 
-    Args:
-        add_h (bool): Adds hydrogens. Default: False
-        remove_h (bool): Removes hydrogen. Default: False
-        sanitize (bool): Tries to sanitize the molecule. Default: False
+    :param add_h: Specifies whether to add hydrogens. Defaults to False
+    :type add_h: bool
+    :param remove_h: Specifies whether to remove hydrogens. Defaults to False
+    :type remove_h: bool
+    :param sanitize: Specifies whether to sanitize the molecule. Defaults to False
+    :type sanitize: bool
 
+    :return: list of molecules in RDKit format.
+    :rtype: list[rdkit.Chem.rdchem.Mol]
     """
     from rdkit import Chem
 
@@ -390,14 +534,13 @@ def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
 
 
 def get_coordinates_of_conformer(mol):
-    """Reads the coordinates of the conformer
+    """Reads the coordinates of a conformer.
 
-    Args:
-        mol (Mol): Molecule in RDKit format.
+    :params mol: Molecule in RDKit format.
+    :type mol: rdkit.Chem.rdchem.Mol
 
-    Returns:
-        xyz (float array): Coordinates
-
+    :return: XYZ coordinates of molecule as N x 3 float array.
+    :rtype: numpy.ndarray
     """
 
     symb = [a.GetSymbol() for a in mol.GetAtoms()]
@@ -412,14 +555,13 @@ def get_coordinates_of_conformer(mol):
 
 
 def get_connectivity_matrix_from_mol(mol):
-    """Generates the connection matrix from a molecule.
+    """Calculates the binary bond connectivity matrix from a molecule.
 
-    Args:
-        mol (Mol): a molecule in RDKit format
+    :param mol: Molecule in RDKit format.
+    :type mol: rdkit.Chem.rdchem.Mol
 
-    Returns:
-        connect_matrix (2D numpy array): connectivity matrix
-
+    :return: Binary connectivity matrix (N x N) containing all molecular bonds.
+    :rtype: numpy.ndarray
     """
 
     # Initialization
@@ -438,18 +580,18 @@ def get_connectivity_matrix_from_mol(mol):
 
 def get_bonds_matrix_from_mol(mol):
     """
-    Provides bond matrix from a molecule.
+    Calculates matrix of bond types from a molecule and returns as numpy array.
     Bond types are encoded as double:
      single bond (1.0)
      double bond (2.0)
      triple bond (3.0)
      aromatic bond (1.5).
 
-    Args:
-        mol (Mol): a molecule in RDKit format
+    :param mol: Molecule in RDKit format.
+    :type mol: rdkit.Chem.rdchem.Mol
 
-    Returns:
-        connect_matrix (2D numpy array): connectivity matrix
+    :return: Bond matrix (N x N) with bond types encoded as double.
+    :rtype: numpy.ndarray
 
     """
 
@@ -470,18 +612,18 @@ def get_bonds_matrix_from_mol(mol):
 
 def get_bonds_list_from_mol(mol):
     """
-    Extract bonds from a molecule.
+    Calculates all bonds and bond types from a molecule and returns as dataframe.
     Bond types are encoded as double:
      single bond (1.0)
      double bond (2.0)
      triple bond (3.0)
      aromatic bond (1.5).
 
-    Args:
-        mol (Mol): a molecule in RDKit format
+    :param mol: Molecule in RDKit format.
+    :type mol: rdkit.Chem.rdchem.Mol
 
-    Returns:
-        bonds_df (pandas dataframe): list of bonds
+    :return: Bond information as dataframe with columns `atom1`, `atom2`, `type`.
+    :rtype: pandas.DataFrame
 
     """
     bonds_list = []
@@ -497,8 +639,15 @@ def get_bonds_list_from_mol(mol):
 
 def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, residue=999):
     """
-    Convert Mol object to dataframe format (with PDB columns)
+    Convert molecule in RDKit format to ATOM3D dataframe format, with PDB-style columns.
+
+    :param mol: Molecule in RDKit format.
+    :type mol: rdkit.Chem.rdchem.Mol
+
+    :return: Dataframe in standard ATOM3D format.
+    :rtype: pandas.DataFrame
     """
+
     from rdkit import Chem
     df = col.defaultdict(list)
     if add_hs:
@@ -539,6 +688,14 @@ def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, resi
 
 
 def get_coordinates_from_df(df):
+    """Extract XYZ coordinates from molecule in dataframe format.
+    
+    :param df: Dataframe containing molecular structure. Must have columns named `x`, `y`, and `z`.
+    :type df: pandas.DataFrame
+
+    :return: XYZ coordinates as N x 3 array
+    :rtype: numpy.ndarray
+    """
     xyz = np.empty([len(df), 3])
 
     xyz[:, 0] = np.array(df.x)
