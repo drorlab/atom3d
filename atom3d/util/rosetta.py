@@ -11,11 +11,10 @@ import atom3d.util.file as fi
 
 class Scores(object):
     """
-    Track and lookup Rosetta score files.
+    Class for tracking and looking up Rosetta score files.
 
-    Args:
-        data_path (Union[str, Path, list[str, Path]]):
-            Path to silent files.
+    :param data_path: Path to Rosetta silent files.
+    :type data_path: Union[str, Path, list[str, Path]]
     """
 
     def __init__(self, data_path):
