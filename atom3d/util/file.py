@@ -26,7 +26,9 @@ def find_files(path, suffix, relative=None):
         find_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         cwd=os.getcwd(), shell=True)
     (stdout, stderr) = out.communicate()
-    return [Path(x) for x in stdout.decode().split()]
+    name_list = stdout.decode().split()
+    name_list.sort()
+    return [Path(x) for x in name_list]
 
 
 def get_pdb_code(path):

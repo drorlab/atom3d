@@ -160,16 +160,13 @@ class SilentDataset(IterableDataset):
             self.pyrosetta.init("-mute all")
 
         self._file_list = [Path(x).absolute() for x in file_list]
-        self._num_examples = sum(
-            [x.shape[0] for x in self._file_scores.values()])
+        self._scores = ar.Scores(self._file_list)
         self._transform = transform
 
-        self._file_scores = {}
-        for silent_file in self._file_list:
-            self._file_scores[silent_file] = ar.parse_scores(silent_file)
+        self._num_examples = len(self._scores)
 
     def __len__(self) -> int:
-        return self._num_examples
+        return len(self._scores)
 
     def __iter__(self):
         for silent_file in self._file_list:
@@ -183,8 +180,7 @@ class SilentDataset(IterableDataset):
                     'id': self.pyrpose.tag_from_pose(pose),
                     'file_path': str(silent_file),
                 }
-                item['scores'] = \
-                    self._file_scores[silent_file].loc[item['id']].to_dict()
+                item['scores'] = self._scores(item)
 
                 if self._transform:
                     item = self._transform(item)
