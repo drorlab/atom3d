@@ -2,7 +2,7 @@
 layout: default
 ---
 
-## Protein Structure Ranking (PSR) [[download]](https://drive.google.com/uc?export=download&id=1-Hn2f60BC4aJYGKLCeL_gebXVQYF6ZGS)
+## Protein Structure Ranking (PSR) [[download]](https://drive.google.com/uc?export=download&id=1rvxf9JKTq0OvU3QLkxNYomfyXg5sd2CO)
   - **Impact:** Proteins are one of the primary workhorses of the cell, and knowing their structure is often critical to understanding (and engineering) their function.
   - **Dataset description:** The Critical Assessment of Structure Prediction (CASP) (Kryshtafovych et al., 2019) is a blind international competition for predicting protein structure.
   - **Task:** We formulate this as a regression task, where we predict the global distance test (GDT_TS) from the true structure for each of the predicted structures submitted in the last 18 years of CASP.
