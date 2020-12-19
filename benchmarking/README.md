@@ -1,6 +1,6 @@
 # Benchmarking for the ATOM3D paper
 
-This directory contains scripts we used for the benchmarking described in the [ATOM3D paper](https://arxiv.org/abs/2012.04035) and corresponding (though incomplete) documentation..
+This directory contains scripts we used for the benchmarking described in the [ATOM3D paper](https://arxiv.org/abs/2012.04035) and corresponding (though incomplete) documentation.
 Parts of the code here rely on datasets in an outdated format that we can only access locally. We are trying to update them over time to make them more usable. 
 
 
@@ -9,8 +9,8 @@ Parts of the code here rely on datasets in an outdated format that we can only a
 We benchmark the following prototypical architectures:
 * 3D-CNNs: three-dimensional convolutional neural networks (based on SASnet)  
 * GNNs: graph neural networks (based on pytorch-geometric)
-* ENNs: equivariant neural networks 
-
+* ENNs: equivariant neural networks (Cormorant)
+See the README files in the corresponding folders for details.
 
 ## Reference
 
