@@ -21,7 +21,7 @@ def prot_df_to_graph(df, feat_col, allowable_feats, edge_dist_cutoff=4.5):
     r"""
     Converts protein in dataframe representation to a graph compatible with Pytorch-Geometric, where each node is an atom.
 
-    :params df: Protein structure in dataframe format.
+    :param df: Protein structure in dataframe format.
     :type df: pandas.DataFrame
     :param node_col: Column of dataframe to find node feature values. For example, for atoms use ``feat_col="element"`` and for residues use ``feat_col="resname"``
     :type node_col: str
@@ -30,10 +30,14 @@ def prot_df_to_graph(df, feat_col, allowable_feats, edge_dist_cutoff=4.5):
     :param edge_dist_cutoff: Maximum distance cutoff (in Angstroms) to define an edge between two atoms, defaults to 4.5.
     :type edge_dist_cutoff: float, optional
 
-    :return: tuple containing 
-        - node_feats (torch.LongTensor): Features for each node, one-hot encoded by residue in ['ALA', 'CYS', 'ASP', 'GLU', 'PHE', 'GLY', 'HIS', 'ILE', 'LYS', 'LEU', 'MET', 'ASN', 'PRO', 'GLN', 'ARG', 'SER', 'THR', 'VAL', 'TRP', 'TYR', 'UNK'].
+    :return: tuple containing
+
+        - node_feats (torch.LongTensor): Features for each node, one-hot encoded by values in ``allowable_feats``.
+
         - edges (torch.LongTensor): Edges in COO format
+
         - edge_weights (torch.LongTensor): Edge weights, defined as a function of distance between atoms given by :math:`w_{i,j} = \frac{1}{d(i,j)}`, where :math:`d(i, j)` is the Euclidean distance between node :math:`i` and node :math:`j`.
+
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node
     :rtype: Tuple
     """ 
@@ -52,19 +56,22 @@ def prot_df_to_graph(df, feat_col, allowable_feats, edge_dist_cutoff=4.5):
     return node_feats, edges, edge_weights, node_pos
 
 
-def mol_to_graph(mol):
+def mol_df_to_graph(mol, allowable_atoms=mol_atoms):
     """
     Converts molecule to a graph compatible with Pytorch-Geometric
+
     TODO: Change to operate on dataframe representation instead of Mol object
 
-    Args:
-        mol (Mol): RDKit Mol object
+    :param mol: Molecule structure in RDKit format
+    :type mol: rdkit.Chem.rdchem.Mol
+    :param allowable_atoms: List containing allowable atom types
+    :type allowable_atoms: list[str], optional
 
-    Returns:
-        node_feats (LongTensor): features for each node, one-hot encoded by element
-        edge_feats (LongTensor): features for each node, one-hot encoded by element
-        edges (LongTensor): edges in COO format
-        node_pos (FloatTensor): x-y-z coordinates of each node
+    :return: Tuple containing \n
+        - node_feats (torch.LongTensor): Features for each node, one-hot encoded by atom type in ``allowable_atoms``.
+        - edges (torch.LongTensor): Edges from chemical bond graph in COO format.
+        - edge_feats (torch.FloatTensor): Edge features given by bond type. Single = 1.0, Double = 2.0, Triple = 3.0, Aromatic = 1.5.
+        - node_pos (torch.FloatTensor): x-y-z coordinates of each node.
     """
     node_pos = torch.FloatTensor(dt.get_coordinates_of_conformer(mol))
     bonds = dt.get_bonds_matrix(mol)
@@ -88,10 +95,10 @@ def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
     :type edges_between: bool, optional
     :param edges_between_dist: Distance cutoff in Angstroms for adding edges between graphs, defaults to 4.5.
     :type edges_between_dist: float, optional
-    :return: tuple containing 
-        - node_feats (torch.LongTensor): Features for each node in the combined graph, concatenated along the feature dimension.
-        - edges (torch.LongTensor): Edges of combined graph in COO format, including edges from two input graphs and edges between them, if specified.
-        - edge_weights (torch.LongTensor): Concatenated edge features from two input graphs and edges between them, if specified.
+    :return: Tuple containing \n
+        - node_feats (torch.LongTensor): Features for each node in the combined graph, concatenated along the feature dimension.\n
+        - edges (torch.LongTensor): Edges of combined graph in COO format, including edges from two input graphs and edges between them, if specified.\n
+        - edge_weights (torch.LongTensor): Concatenated edge features from two input graphs and edges between them, if specified.\n
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node in combined graph.
     :rtype: Tuple
     """    
@@ -126,9 +133,9 @@ def edges_between_graphs(pos1, pos2, dist=4.5):
     :type pos1: torch.FloatTensor or numpy.ndarray
     :param pos2: x-y-z node coordinates from Graph 2
     :type pos2: torch.FloatTensor or numpy.ndarray
-    :return: Tuple containing
-        - edges (torch.LongTensor): Edges between two graphs, in COO format.
-        - edge_weights (torch.FloatTensor): Edge weights between two graphs.
+    :return: Tuple containing\n
+        - edges (torch.LongTensor): Edges between two graphs, in COO format.\n
+        - edge_weights (torch.FloatTensor): Edge weights between two graphs.\n
     :rtype: Tuple
     """    
     tree1 = ss.KDTree(pos1)

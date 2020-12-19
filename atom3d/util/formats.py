@@ -249,12 +249,12 @@ def read_xyz_to_df(inputfile, gdb_data=False):
     :param gdb_data: Specifies whether to process and return GDB9-specific data.
     :type gdb_date: bool
 
-    :return: If `gdb=False`, returns DataFrame containing molecule structure. If `gdb=True`, returns tuple containing
-        - molecule (pandas.DataFrame): Pandas DataFrame containing molecule structure.
-        - data (list[float]): Scalar molecular properties. Returned only when `gdb=True`.
-        - freq (list[float]): Harmonic vibrational frequencies (:math:`3n_{atoms}−5` or :math:`3n_{atoms}-6`, in :math:`cm^{−1}`).  Returned only when `gdb=True`.
-        - smiles (str): SMILES string from GDB-17 and from B3LYP relaxation. Returned only when `gdb=True`.
-        - inchi (str): InChI string for Corina and B3LYP geometries. Returned only when `gdb=True`.
+    :return: If `gdb=False`, returns DataFrame containing molecule structure. If `gdb=True`, returns tuple containing\n
+        \t- molecule (pandas.DataFrame): Pandas DataFrame containing molecule structure.\n
+        \t- data (list[float]): Scalar molecular properties. Returned only when `gdb=True`.\n
+        \t- freq (list[float]): Harmonic vibrational frequencies (:math:`3n_{atoms}−5` or :math:`3n_{atoms}-6`, in :math:`cm^{−1}`).  Returned only when `gdb=True`.\n
+        \t- smiles (str): SMILES string from GDB-17 and from B3LYP relaxation. Returned only when `gdb=True`.\n
+        \t- inchi (str): InChI string for Corina and B3LYP geometries. Returned only when `gdb=True`.\n
     """
     with open(inputfile) as f:
         # Reading number of atoms in the molecule
@@ -296,12 +296,12 @@ def read_xyz(xyz_file, name=None, gdb=False):
     :param gdb_data: Specifies whether to process and return GDB9-specific data.
     :type gdb_date: bool
 
-    :return: If `gdb=False`, returns Biopython Structure object containing molecule structure. If `gdb=True`, returns tuple containing
-        - bp (Bio.PDB.Structure): Biopython object containing molecule structure.
-        - data (list[float]): Scalar molecular properties.
-        - freq (list[float]): Harmonic vibrational frequencies (:math:`3n_{atoms}−5` or :math:`3n_{atoms}-6`, in :math:`cm^{−1}`).
-        - smiles (str): SMILES string from GDB-17 and from B3LYP relaxation.
-        - inchi (str): InChI string for Corina and B3LYP geometries.
+    :return: If `gdb=False`, returns Biopython Structure object containing molecule structure. If `gdb=True`, returns tuple containing \n
+        \t- bp (Bio.PDB.Structure): Biopython object containing molecule structure.\n
+        \t- data (list[float]): Scalar molecular properties.\n
+        \t- freq (list[float]): Harmonic vibrational frequencies (:math:`3n_{atoms}−5` or :math:`3n_{atoms}-6`, in :math:`cm^{−1}`).\n
+        \t- smiles (str): SMILES string from GDB-17 and from B3LYP relaxation.\n
+        \t- inchi (str): InChI string for Corina and B3LYP geometries.
     """
     # Load the xyz file into a dataframe
     if gdb:
