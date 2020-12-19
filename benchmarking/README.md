@@ -10,6 +10,7 @@ We benchmark the following prototypical architectures:
 * 3D-CNNs: three-dimensional convolutional neural networks (based on SASnet)  
 * GNNs: graph neural networks (based on pytorch-geometric)
 * ENNs: equivariant neural networks (Cormorant)
+
 See the README files in the corresponding folders for details.
 
 ## Reference
