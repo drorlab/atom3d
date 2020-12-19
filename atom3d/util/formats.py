@@ -12,46 +12,12 @@ import Bio.PDB.Structure
 import numpy as np
 import pandas as pd
 
-patterns = {
-    'pdb': 'pdb[0-9]*$',
-    'pdb.gz': 'pdb[0-9]*\.gz$',
-    'mmcif': '(mm)?cif$',
-    'sharded': '@[0-9]+',
-    'sdf': 'sdf[0-9]*$',
-    'xyz': 'xyz[0-9]*$',
-    'silent': 'out$',
-}
 
-_regexes = {k: re.compile(v) for k, v in patterns.items()}
+# -- READING FILES -- #
 
 
-def is_sharded(f):
-    """Check if file is in sharded format."""
-    return _regexes['sharded'].search(str(f))
-
-
-def is_pdb(f):
-    """Check if file is in pdb format."""
-    return _regexes['pdb'].search(str(f))
-
-
-def is_mmcif(f):
-    """Check if file is in mmcif format."""
-    return _regexes['mmcif'].search(str(f))
-
-
-def is_sdf(f):
-    """Check if file is in sdf format."""
-    return _regexes['sdf'].search(str(f))
-
-
-def is_pdb_gz(f):
-    """Check if file is in mmcif format."""
-    return _regexes['pdb.gz'].search(str(f))
-
-def is_xyz(f):
-    """Check if file is in xyz format."""
-    return _regexes['xyz'].search(str(f))
+## general reader function
+#  (not suported: sharded, silent, xyz-gdb)
 
 
 def read_any(f, name=None):
@@ -79,23 +45,53 @@ def read_any(f, name=None):
         raise ValueError(f"Unrecognized filetype for {f:}")
 
 
-def read_pdb_gz(pdb_gz_file, name=None):
-    """Read pdb.gz file into Biopython structure.
+## functions to check file format
 
-    :param pdb_gz_file: file path
-    :type pdb_gz_file: Union[str, Path]
-    :param name: optional name or identifier for structure. If None (default), use file basename.
-    :type name: str
 
-    :return: Biopython object containing structure
-    :rtype: Bio.PDB.Structure
-    """
-    if name is None:
-        name = os.path.basename(pdb_gz_file)
-    parser = Bio.PDB.PDBParser(QUIET=True)
-    bp = parser.get_structure(
-        name, gzip.open(pdb_gz_file, mode='rt', encoding='latin1'))
-    return bp
+patterns = {
+    'pdb': 'pdb[0-9]*$',
+    'pdb.gz': 'pdb[0-9]*\.gz$',
+    'mmcif': '(mm)?cif$',
+    'sdf': 'sdf[0-9]*$',
+    'xyz': 'xyz[0-9]*$',
+    'silent': 'out$',
+    'sharded': '@[0-9]+',
+}
+
+_regexes = {k: re.compile(v) for k, v in patterns.items()}
+
+
+def is_pdb(f):
+    """Check if file is in pdb format."""
+    return _regexes['pdb'].search(str(f))
+
+
+def is_pdb_gz(f):
+    """Check if file is in mmcif format."""
+    return _regexes['pdb.gz'].search(str(f))
+
+
+def is_mmcif(f):
+    """Check if file is in mmcif format."""
+    return _regexes['mmcif'].search(str(f))
+
+
+def is_sdf(f):
+    """Check if file is in sdf format."""
+    return _regexes['sdf'].search(str(f))
+
+
+def is_xyz(f):
+    """Check if file is in xyz format."""
+    return _regexes['xyz'].search(str(f))
+
+
+def is_sharded(f):
+    """Check if file is in sharded format."""
+    return _regexes['sharded'].search(str(f))
+
+
+## reader functions for specific file formats
 
 
 def read_pdb(pdb_file, name=None):
@@ -113,6 +109,25 @@ def read_pdb(pdb_file, name=None):
         name = os.path.basename(pdb_file)
     parser = Bio.PDB.PDBParser(QUIET=True)
     bp = parser.get_structure(name, pdb_file)
+    return bp
+
+
+def read_pdb_gz(pdb_gz_file, name=None):
+    """Read pdb.gz file into Biopython structure.
+
+    :param pdb_gz_file: file path
+    :type pdb_gz_file: Union[str, Path]
+    :param name: optional name or identifier for structure. If None (default), use file basename.
+    :type name: str
+
+    :return: Biopython object containing structure
+    :rtype: Bio.PDB.Structure
+    """
+    if name is None:
+        name = os.path.basename(pdb_gz_file)
+    parser = Bio.PDB.PDBParser(QUIET=True)
+    bp = parser.get_structure(
+        name, gzip.open(pdb_gz_file, mode='rt', encoding='latin1'))
     return bp
 
 
@@ -198,47 +213,31 @@ def read_sdf_multi(sdf_files, sanitize=False, add_hs=False, remove_hs=False):
     return bp
 
 
-def combine_sdfs(sdf_files, big_sdf):
-    """Concatenate several SDF files into one.
-    
-    :param sdf_files: list of paths to SDF files.
-    :type sdf_files: list[Union[str, Path]]
-    :param big_sdf: path to combined output SDF file.
-    :type big_sdf: Union[str, Path]
+def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
+    """Reads a list of molecules from an SDF file.
+
+    :param add_h: Specifies whether to add hydrogens. Defaults to False
+    :type add_h: bool
+    :param remove_h: Specifies whether to remove hydrogens. Defaults to False
+    :type remove_h: bool
+    :param sanitize: Specifies whether to sanitize the molecule. Defaults to False
+    :type sanitize: bool
+
+    :return: list of molecules in RDKit format.
+    :rtype: list[rdkit.Chem.rdchem.Mol]
     """
-    with open(big_sdf, 'w') as outfile:
-        for fname in sdf_files:
-            with open(fname) as infile:
-                for line in infile:
-                    outfile.write(line)
+    from rdkit import Chem
 
+    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_h)
 
-def write_pdb(out_file, structure, **kwargs):
-    """Write a biopython structure to a pdb file. This function accepts any viable arguments to Bio.PDB.PDBIO.save() as keyword arguments.
+    molecules = [mol for mol in suppl]
 
-    :param out_file: Path to output PDB file.
-    :type out_file: Union[str, Path]
-    :param structure: Biopython object containing protein structure.
-    :type structure: Bio.PDB.Structure
-    """
-    io = Bio.PDB.PDBIO()
-    io.set_structure(structure)
-    io.save(out_file, **kwargs)
-    return
+    if add_h:
+        for mol in molecules:
+            if mol is not None:
+                mol = Chem.AddHs(mol, addCoords=True)
 
-
-def write_mmcif(out_file, structure, **kwargs):
-    """Write a biopython structure to an mmcif file. This function accepts any viable arguments to Bio.PDB.MMCIFIO.save() as keyword arguments.
-
-    :param out_file: Path to output mmCIF file.
-    :type out_file: Union[str, Path]
-    :param structure: Biopython object containing protein structure.
-    :type structure: Bio.PDB.structure
-    """
-    io = Bio.PDB.MMCIFIO()
-    io.set_structure(structure)
-    io.save(out_file)
-    return
+    return molecules
 
 
 def read_xyz_to_df(inputfile, gdb_data=False):
@@ -341,6 +340,55 @@ def read_xyz(xyz_file, name=None, gdb=False):
         return bp, data, freq, smiles, inchi
     else:
         return bp
+
+
+# -- WRITING AND PROCESSING FILES -- 
+
+
+def write_pdb(out_file, structure, **kwargs):
+    """Write a biopython structure to a pdb file. This function accepts any viable arguments to Bio.PDB.PDBIO.save() as keyword arguments.
+
+    :param out_file: Path to output PDB file.
+    :type out_file: Union[str, Path]
+    :param structure: Biopython object containing protein structure.
+    :type structure: Bio.PDB.Structure
+    """
+    io = Bio.PDB.PDBIO()
+    io.set_structure(structure)
+    io.save(out_file, **kwargs)
+    return
+
+
+def write_mmcif(out_file, structure, **kwargs):
+    """Write a biopython structure to an mmcif file. This function accepts any viable arguments to Bio.PDB.MMCIFIO.save() as keyword arguments.
+
+    :param out_file: Path to output mmCIF file.
+    :type out_file: Union[str, Path]
+    :param structure: Biopython object containing protein structure.
+    :type structure: Bio.PDB.structure
+    """
+    io = Bio.PDB.MMCIFIO()
+    io.set_structure(structure)
+    io.save(out_file)
+    return
+
+
+def combine_sdfs(sdf_files, big_sdf):
+    """Concatenate several SDF files into one.
+    
+    :param sdf_files: list of paths to SDF files.
+    :type sdf_files: list[Union[str, Path]]
+    :param big_sdf: path to combined output SDF file.
+    :type big_sdf: Union[str, Path]
+    """
+    with open(big_sdf, 'w') as outfile:
+        for fname in sdf_files:
+            with open(fname) as infile:
+                for line in infile:
+                    outfile.write(line)
+
+
+# -- CONVERTING INTERNAL FORMATS --
 
 
 def bp_to_df(bp):
@@ -505,33 +553,6 @@ def bp_from_xyz_dict(data, struct_name='structure'):
     s = Bio.PDB.Structure.Structure(struct_name)
     s.add(m)
     return s
-
-
-def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
-    """Reads a list of molecules from an SDF file.
-
-    :param add_h: Specifies whether to add hydrogens. Defaults to False
-    :type add_h: bool
-    :param remove_h: Specifies whether to remove hydrogens. Defaults to False
-    :type remove_h: bool
-    :param sanitize: Specifies whether to sanitize the molecule. Defaults to False
-    :type sanitize: bool
-
-    :return: list of molecules in RDKit format.
-    :rtype: list[rdkit.Chem.rdchem.Mol]
-    """
-    from rdkit import Chem
-
-    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_h)
-
-    molecules = [mol for mol in suppl]
-
-    if add_h:
-        for mol in molecules:
-            if mol is not None:
-                mol = Chem.AddHs(mol, addCoords=True)
-
-    return molecules
 
 
 def get_coordinates_of_conformer(mol):
