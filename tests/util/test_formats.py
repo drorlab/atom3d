@@ -4,23 +4,30 @@ import importlib
 import atom3d.util.formats as fo
 
 
+# Tests for reading PDB-like formats
+
+nrres = {'103l':290,'117e':1029,'11as':740,'2olx':4}
+
 def test_read_any_pdb():
-    fo.read_any('tests/test_data/pdb/103l.pdb')
-    fo.read_any('tests/test_data/pdb/117e.pdb')
-    fo.read_any('tests/test_data/pdb/11as.pdb')
-    fo.read_any('tests/test_data/pdb/2olx.pdb')
-
+    for c in nrres.keys():
+        bp = fo.read_any('tests/test_data/pdb/'+c+'.pdb')
+        nr = len([r for r in bp.get_residues()])
+        assert nr==nrres[c]
+        
 def test_read_any_pdb_gz():
-    fo.read_any('tests/test_data/pdbgz/103l.pdb.gz')
-    fo.read_any('tests/test_data/pdbgz/117e.pdb.gz')
-    fo.read_any('tests/test_data/pdbgz/11as.pdb.gz')
-    fo.read_any('tests/test_data/pdbgz/2olx.pdb.gz')
-
+    for c in nrres.keys():
+        bp = fo.read_any('tests/test_data/pdbgz/'+c+'.pdb.gz')
+        nr = len([r for r in bp.get_residues()])
+        assert nr==nrres[c]
+        
 def test_read_any_mmcif():
-    fo.read_any('tests/test_data/mmcif/1j36_protein.cif')
-    fo.read_any('tests/test_data/mmcif/1j36_protein.cif')
-    fo.read_any('tests/test_data/mmcif/6h29_pocket.cif')
-    fo.read_any('tests/test_data/mmcif/6h2t_protein.cif')
+    for c in nrres.keys():
+        bp = fo.read_any('tests/test_data/pdb/'+c+'.pdb')
+        nr = len([r for r in bp.get_residues()])
+        assert nr==nrres[c]
+
+
+# Tests for reading small-molecule formats
 
 @pytest.mark.skipif(not importlib.util.find_spec("rdkit") is not None,
                     reason="Reading SDF files requires RDKit!")
