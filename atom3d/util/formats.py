@@ -13,10 +13,131 @@ import numpy as np
 import pandas as pd
 
 
+# -- MANIPULATING DATAFRAMES --
+
+
+def split_df(df, key):
+    """
+    Split dataframe containing structure(s) based on specified key. Most commonly used to split by ensemble (`key="ensemble"`) or subunit (`key=["ensemble", "subunit"]`).
+
+    :param df: Molecular structure(s) in ATOM3D dataframe format.
+    :type df: pandas.DataFrame
+    :param key: key on which to split dataframe. To split on multiple keys, provide all keys in a list. Must be compatible with dataframe hierarchy, i.e. ensemble > subunit > structure > model > chain.
+    :type key: Union[str, list[str]]
+
+    :return: List of tuples containing keys and corresponding sub-dataframes.
+    :rtypes: list[tuple]
+    """
+    return [(x, y) for x, y in df.groupby(key)]
+
+
+def merge_dfs(dfs):
+    """Combine a list of dataframes into a single dataframe. Assumes dataframes contain the same columns."""
+    return pd.concat(dfs).reset_index(drop=True)
+
+
+# -- CONVERTING INTERNAL FORMATS --
+
+
+def bp_to_df(bp):
+    """Convert biopython representation to ATOM3D dataframe representation.
+    
+    :param bp: Molecular structure in Biopython representation.
+    :type bp: Bio.PDB.Structure
+
+    :return: Molecular structure in ATOM3D dataframe format.
+    :rtype: pandas.DataFrame
+    """
+    df = col.defaultdict(list)
+    for atom in Bio.PDB.Selection.unfold_entities(bp, 'A'):
+        residue = atom.get_parent()
+        chain = residue.get_parent()
+        model = chain.get_parent()
+        df['ensemble'].append(bp.get_id())
+        df['subunit'].append(0)
+        df['structure'].append(bp.get_id())
+        df['model'].append(model.serial_num)
+        df['chain'].append(chain.id)
+        df['hetero'].append(residue.id[0])
+        df['insertion_code'].append(residue.id[2])
+        df['residue'].append(residue.id[1])
+        df['segid'].append(residue.segid)
+        df['resname'].append(residue.resname)
+        df['altloc'].append(atom.altloc)
+        df['occupancy'].append(atom.occupancy)
+        df['bfactor'].append(atom.bfactor)
+        df['x'].append(atom.coord[0])
+        df['y'].append(atom.coord[1])
+        df['z'].append(atom.coord[2])
+        df['element'].append(atom.element)
+        df['name'].append(atom.name)
+        df['fullname'].append(atom.fullname)
+        df['serial_number'].append(atom.serial_number)
+    df = pd.DataFrame(df)
+    return df
+
+
+def df_to_bp(df_in):
+    """Convert ATOM3D dataframe representation to biopython representation. Assumes dataframe contains only one structure.
+    
+    :param df_in: Molecular structure in ATOM3D dataframe format.
+    :type df_in: pandas.DataFrame
+
+    :return: Molecular structure in BioPython format.
+    :rtype: Bio.PDB.Structure
+    """
+    all_structures = df_to_bps(df_in)
+    if len(all_structures) > 1:
+        raise RuntimeError('More than one structure in provided dataframe.')
+    return all_structures[0]
+
+
+def df_to_bps(df_in):
+    """Convert ATOM3D dataframe representation containing multiple structures to list of Biopython structures. Assumes different structures are specified by `ensemble` and `structure` columns of dataframe.
+    
+    :param df_in: Molecular structures in ATOM3D dataframe format.
+    :type df_in: pandas.DataFrame
+
+    :return : List of molecular structures in BioPython format.
+    :rtype: list[Bio.PDB.Structure]
+    """
+    df = df_in.copy()
+    all_structures = []
+    for (structure, s_atoms) in split_df(df_in, ['ensemble', 'structure']):
+        new_structure = Bio.PDB.Structure.Structure(structure[1])
+        for (model, m_atoms) in df.groupby(['model']):
+            new_model = Bio.PDB.Model.Model(model)
+            for (chain, c_atoms) in m_atoms.groupby(['chain']):
+                new_chain = Bio.PDB.Chain.Chain(chain)
+                for (residue, r_atoms) in c_atoms.groupby(
+                        ['hetero', 'residue', 'insertion_code']):
+                    # Take first atom as representative for residue values.
+                    rep = r_atoms.iloc[0]
+                    new_residue = Bio.PDB.Residue.Residue(
+                        (rep['hetero'], rep['residue'], rep['insertion_code']),
+                        rep['resname'], rep['segid'])
+                    for row, atom in r_atoms.iterrows():
+                        new_atom = Bio.PDB.Atom.Atom(
+                            atom['name'],
+                            [atom['x'], atom['y'], atom['z']],
+                            atom['bfactor'],
+                            atom['occupancy'],
+                            atom['altloc'],
+                            atom['fullname'],
+                            atom['serial_number'],
+                            atom['element'])
+                        new_residue.add(new_atom)
+                    new_chain.add(new_residue)
+                new_model.add(new_chain)
+            new_structure.add(new_model)
+        all_structures.append(new_structure)
+    return all_structures
+
+
 # -- READING FILES -- #
 
 
-## general reader function
+## general reader function to get a Biopython structure
 #  (not suported: sharded, silent, xyz-gdb)
 
 
@@ -49,13 +170,13 @@ def read_any(f, name=None):
 
 
 patterns = {
-    'pdb': 'pdb[0-9]*$',
-    'pdb.gz': 'pdb[0-9]*\.gz$',
-    'mmcif': '(mm)?cif$',
-    'sdf': 'sdf[0-9]*$',
-    'xyz': 'xyz[0-9]*$',
-    'silent': 'out$',
-    'sharded': '@[0-9]+',
+    'pdb': r'pdb[0-9]*$',
+    'pdb.gz': r'pdb[0-9]*\.gz$',
+    'mmcif': r'(mm)?cif$',
+    'sdf': r'sdf[0-9]*$',
+    'xyz': r'xyz[0-9]*$',
+    'silent': r'out$',
+    'sharded': r'@[0-9]+',
 }
 
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
@@ -183,36 +304,6 @@ def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False)
     return bp
 
 
-def read_sdf_multi(sdf_files, sanitize=False, add_hs=False, remove_hs=False):
-    """Read multiple SDF files into Biopython structure.
-
-    :param sdf_files: list of paths to SDF files.
-    :type sdf_files: list[Union[str, Path]]
-    :param sanitize: sanitize structures with RDKit.
-    :type sanitize: bool
-    :param add_hs: add hydrogen atoms with RDKit.
-    :type add_hs: bool
-    :param remove_hs: remove hydrogen atoms with RDKit.
-    :type remove_hs: bool
-
-    :return: Biopython object containing structure
-    :rtype: Bio.PDB.Structure
-    """
-    dflist = []
-    for sdf_file in sdf_files:
-        molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
-                                    add_h=add_hs, remove_h=remove_hs)
-        for im,m in enumerate(molecules):
-            if m is not None:
-                df = mol_to_df(m, residue=im,
-                               ensemble = m.GetProp("_Name"),
-                               structure = m.GetProp("_Name"),
-                               model = m.GetProp("_Name"))
-                dflist.append(df)
-    bp = df_to_bp(merge_dfs(dflist))
-    return bp
-
-
 def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
     """Reads a list of molecules from an SDF file.
 
@@ -240,51 +331,54 @@ def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
     return molecules
 
 
-def read_xyz_to_df(inputfile, gdb_data=False):
-    """Read an XYZ file into Pandas DataFrame representation (optionally with GDB9-specific data)
-
-    :param inputfile: Path to input file in XYZ format.
-    :type inputfile: Union[str, Path]
-    :param gdb_data: Specifies whether to process and return GDB9-specific data.
-    :type gdb_date: bool
-
-    :return: If `gdb=False`, returns DataFrame containing molecule structure. If `gdb=True`, returns tuple containing\n
-        \t- molecule (pandas.DataFrame): Pandas DataFrame containing molecule structure.\n
-        \t- data (list[float]): Scalar molecular properties. Returned only when `gdb=True`.\n
-        \t- freq (list[float]): Harmonic vibrational frequencies (:math:`3n_{atoms}−5` or :math:`3n_{atoms}-6`, in :math:`cm^{−1}`).  Returned only when `gdb=True`.\n
-        \t- smiles (str): SMILES string from GDB-17 and from B3LYP relaxation. Returned only when `gdb=True`.\n
-        \t- inchi (str): InChI string for Corina and B3LYP geometries. Returned only when `gdb=True`.\n
+def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, residue=999):
     """
-    with open(inputfile) as f:
-        # Reading number of atoms in the molecule
-        num_atoms = int(f.readline().strip())
-        # Loading GDB ID and label data
-        line_labels = f.readline().strip().split('\t')
-        name = line_labels[0]
-        if gdb_data: data = [float(ll) for ll in line_labels[1:]]
-        # Skip atom data (will be read using pandas below)
-        for n in range(num_atoms): f.readline()
-        # Harmonic vibrational frequencies
-        if gdb_data:
-            freq = [float(ll) for ll in f.readline().strip().split('\t')]
-        # SMILES and InChI
-        if gdb_data: smiles = f.readline().strip().split('\t')[0]
-        if gdb_data: inchi  = f.readline().strip().split('\t')[0]
-    # Define columns: element, x, y, z, Mulliken charges (GDB only)
-    columns = ['element','x', 'y', 'z']
-    if gdb_data: columns += ['charge']
-    # Load atom information
-    molecule = pd.read_table(inputfile, names=columns,
-                             skiprows=2, nrows=num_atoms,
-                             delim_whitespace=True)
-    # Name the dataframe
-    molecule.name = name
-    molecule.index.name = name
-    # return molecule info
-    if gdb_data:
-        return molecule, data, freq, smiles, inchi
-    else:
-        return molecule
+    Convert molecule in RDKit format to ATOM3D dataframe format, with PDB-style columns.
+
+    :param mol: Molecule in RDKit format.
+    :type mol: rdkit.Chem.rdchem.Mol
+
+    :return: Dataframe in standard ATOM3D format.
+    :rtype: pandas.DataFrame
+    """
+
+    from rdkit import Chem
+    df = col.defaultdict(list)
+    if add_hs:
+        mol = Chem.AddHs(mol, addCoords=True)
+    conf = mol.GetConformer()
+    for i, a in enumerate(mol.GetAtoms()):
+        position = conf.GetAtomPosition(i)
+        df['ensemble'].append(ensemble)
+        df['structure'].append(structure)
+        df['model'].append(model)
+        df['chain'].append('LIG')
+        df['hetero'].append('')
+        df['insertion_code'].append('')
+        df['residue'].append(residue)
+        df['segid'].append('')
+        df['resname'].append('LIG')
+        df['altloc'].append('')
+        df['occupancy'].append(1)
+        df['bfactor'].append(0)
+        df['x'].append(position.x)
+        df['y'].append(position.y)
+        df['z'].append(position.z)
+        df['element'].append(a.GetSymbol())
+        df['serial_number'].append(i)
+    df = pd.DataFrame(df)
+    # Make up atom names
+    elements = df['element'].unique()
+    el_count = {}
+    for e in elements:
+        el_count[e] = 0
+    new_name = []
+    for el in df['element']:
+        el_count[el] += 1
+        new_name.append('%s%i'%(el,el_count[el]))
+    df['name'] = new_name
+    df['fullname'] = new_name
+    return df
 
 
 def read_xyz(xyz_file, name=None, gdb=False):
@@ -340,9 +434,56 @@ def read_xyz(xyz_file, name=None, gdb=False):
         return bp, data, freq, smiles, inchi
     else:
         return bp
+    
+
+def read_xyz_to_df(inputfile, gdb_data=False):
+    """Read an XYZ file into Pandas DataFrame representation (optionally with GDB9-specific data)
+
+    :param inputfile: Path to input file in XYZ format.
+    :type inputfile: Union[str, Path]
+    :param gdb_data: Specifies whether to process and return GDB9-specific data.
+    :type gdb_date: bool
+
+    :return: If `gdb=False`, returns DataFrame containing molecule structure. If `gdb=True`, returns tuple containing\n
+        \t- molecule (pandas.DataFrame): Pandas DataFrame containing molecule structure.\n
+        \t- data (list[float]): Scalar molecular properties. Returned only when `gdb=True`.\n
+        \t- freq (list[float]): Harmonic vibrational frequencies (:math:`3n_{atoms}−5` or :math:`3n_{atoms}-6`, in :math:`cm^{−1}`).  Returned only when `gdb=True`.\n
+        \t- smiles (str): SMILES string from GDB-17 and from B3LYP relaxation. Returned only when `gdb=True`.\n
+        \t- inchi (str): InChI string for Corina and B3LYP geometries. Returned only when `gdb=True`.\n
+    """
+    with open(inputfile) as f:
+        # Reading number of atoms in the molecule
+        num_atoms = int(f.readline().strip())
+        # Loading GDB ID and label data
+        line_labels = f.readline().strip().split('\t')
+        name = line_labels[0]
+        if gdb_data: data = [float(ll) for ll in line_labels[1:]]
+        # Skip atom data (will be read using pandas below)
+        for n in range(num_atoms): f.readline()
+        # Harmonic vibrational frequencies
+        if gdb_data:
+            freq = [float(ll) for ll in f.readline().strip().split('\t')]
+        # SMILES and InChI
+        if gdb_data: smiles = f.readline().strip().split('\t')[0]
+        if gdb_data: inchi  = f.readline().strip().split('\t')[0]
+    # Define columns: element, x, y, z, Mulliken charges (GDB only)
+    columns = ['element','x', 'y', 'z']
+    if gdb_data: columns += ['charge']
+    # Load atom information
+    molecule = pd.read_table(inputfile, names=columns,
+                             skiprows=2, nrows=num_atoms,
+                             delim_whitespace=True)
+    # Name the dataframe
+    molecule.name = name
+    molecule.index.name = name
+    # return molecule info
+    if gdb_data:
+        return molecule, data, freq, smiles, inchi
+    else:
+        return molecule
 
 
-# -- WRITING AND PROCESSING FILES -- 
+# -- WRITING FILES -- 
 
 
 def write_pdb(out_file, structure, **kwargs):
@@ -373,186 +514,26 @@ def write_mmcif(out_file, structure, **kwargs):
     return
 
 
-def combine_sdfs(sdf_files, big_sdf):
-    """Concatenate several SDF files into one.
+# -- CONVENIENCE FUNCTIONS --
+#    (needed in old-style data conversions)
+
+
+def get_coordinates_from_df(df):
+    """Extract XYZ coordinates from molecule in dataframe format.
     
-    :param sdf_files: list of paths to SDF files.
-    :type sdf_files: list[Union[str, Path]]
-    :param big_sdf: path to combined output SDF file.
-    :type big_sdf: Union[str, Path]
-    """
-    with open(big_sdf, 'w') as outfile:
-        for fname in sdf_files:
-            with open(fname) as infile:
-                for line in infile:
-                    outfile.write(line)
-
-
-# -- CONVERTING INTERNAL FORMATS --
-
-
-def bp_to_df(bp):
-    """Convert biopython representation to ATOM3D dataframe representation.
-    
-    :param bp: Molecular structure in Biopython representation.
-    :type bp: Bio.PDB.Structure
-
-    :return: Molecular structure in ATOM3D dataframe format.
-    :rtype: pandas.DataFrame
-    """
-    df = col.defaultdict(list)
-    for atom in Bio.PDB.Selection.unfold_entities(bp, 'A'):
-        residue = atom.get_parent()
-        chain = residue.get_parent()
-        model = chain.get_parent()
-        df['ensemble'].append(bp.get_id())
-        df['subunit'].append(0)
-        df['structure'].append(bp.get_id())
-        df['model'].append(model.serial_num)
-        df['chain'].append(chain.id)
-        df['hetero'].append(residue.id[0])
-        df['insertion_code'].append(residue.id[2])
-        df['residue'].append(residue.id[1])
-        df['segid'].append(residue.segid)
-        df['resname'].append(residue.resname)
-        df['altloc'].append(atom.altloc)
-        df['occupancy'].append(atom.occupancy)
-        df['bfactor'].append(atom.bfactor)
-        df['x'].append(atom.coord[0])
-        df['y'].append(atom.coord[1])
-        df['z'].append(atom.coord[2])
-        df['element'].append(atom.element)
-        df['name'].append(atom.name)
-        df['fullname'].append(atom.fullname)
-        df['serial_number'].append(atom.serial_number)
-    df = pd.DataFrame(df)
-    return df
-
-
-def df_to_bp(df_in):
-    """Convert ATOM3D dataframe representation to biopython representation. Assumes dataframe contains only one structure.
-    
-    :param df_in: Molecular structure in ATOM3D dataframe format.
-    :type df_in: pandas.DataFrame
-
-    :return: Molecular structure in BioPython format.
-    :rtype: Bio.PDB.Structure
-    """
-    all_structures = df_to_bps(df_in)
-    if len(all_structures) > 1:
-        raise RuntimeError('More than one structure in provided dataframe.')
-    return all_structures[0]
-
-
-def df_to_bps(df_in):
-    """Convert ATOM3D dataframe representation containing multiple structures to list of Biopython structures. Assumes different structures are specified by `ensemble` and `structure` columns of dataframe.
-    
-    :param df_in: Molecular structures in ATOM3D dataframe format.
-    :type df_in: pandas.DataFrame
-
-    :return : List of molecular structures in BioPython format.
-    :rtype: list[Bio.PDB.Structure]
-    """
-    df = df_in.copy()
-    all_structures = []
-    for (structure, s_atoms) in split_df(df_in, ['ensemble', 'structure']):
-        new_structure = Bio.PDB.Structure.Structure(structure[1])
-        for (model, m_atoms) in df.groupby(['model']):
-            new_model = Bio.PDB.Model.Model(model)
-            for (chain, c_atoms) in m_atoms.groupby(['chain']):
-                new_chain = Bio.PDB.Chain.Chain(chain)
-                for (residue, r_atoms) in c_atoms.groupby(
-                        ['hetero', 'residue', 'insertion_code']):
-                    # Take first atom as representative for residue values.
-                    rep = r_atoms.iloc[0]
-                    new_residue = Bio.PDB.Residue.Residue(
-                        (rep['hetero'], rep['residue'], rep['insertion_code']),
-                        rep['resname'], rep['segid'])
-                    for row, atom in r_atoms.iterrows():
-                        new_atom = Bio.PDB.Atom.Atom(
-                            atom['name'],
-                            [atom['x'], atom['y'], atom['z']],
-                            atom['bfactor'],
-                            atom['occupancy'],
-                            atom['altloc'],
-                            atom['fullname'],
-                            atom['serial_number'],
-                            atom['element'])
-                        new_residue.add(new_atom)
-                    new_chain.add(new_residue)
-                new_model.add(new_chain)
-            new_structure.add(new_model)
-        all_structures.append(new_structure)
-    return all_structures
-
-
-def split_df(df, key):
-    """
-    Split dataframe containing structure(s) based on specified key. Most commonly used to split by ensemble (`key="ensemble"`) or subunit (`key=["ensemble", "subunit"]`).
-
-    :param df: Molecular structure(s) in ATOM3D dataframe format.
+    :param df: Dataframe containing molecular structure. Must have columns named `x`, `y`, and `z`.
     :type df: pandas.DataFrame
-    :param key: key on which to split dataframe. To split on multiple keys, provide all keys in a list. Must be compatible with dataframe hierarchy, i.e. ensemble > subunit > structure > model > chain.
-    :type key: Union[str, list[str]]
 
-    :return: List of tuples containing keys and corresponding sub-dataframes.
-    :rtypes: list[tuple]
+    :return: XYZ coordinates as N x 3 array
+    :rtype: numpy.ndarray
     """
-    return [(x, y) for x, y in df.groupby(key)]
+    xyz = np.empty([len(df), 3])
 
+    xyz[:, 0] = np.array(df.x)
+    xyz[:, 1] = np.array(df.y)
+    xyz[:, 2] = np.array(df.z)
 
-def merge_dfs(dfs):
-    """Combine a list of dataframes into a single dataframe. Assumes dataframes contain the same columns."""
-    return pd.concat(dfs).reset_index(drop=True)
-
-
-def bp_from_xyz_dict(data, struct_name='structure'):
-    """Construct a biopython structure from XYZ data (stored in a dict).
-    
-    :param data: XYZ data in dictionary format with keys 'elements', 'charges', and 'coordinates', which contain data for each atom in the molecule.
-    :type data: dict
-
-    :return: Biopython structure containing molecule.
-    :rtype: Bio.PDB.Structure
-    """
-    # Read info from dictionary
-    elements = data['elements']
-    charges = data['charges']
-    coordinates = data['coordinates']
-    # Create a residue
-    # (each small molecule is counted as just one residue)
-    r = Bio.PDB.Residue.Residue((' ', 1, ' '), 'res', 0)
-    # Iterate through all atoms and collect info
-    for i in range(len(charges)):
-        atom_name = elements[i] + str(i)
-        position = coordinates[i]
-        full_name = elements[i] + str(i)
-        b_factor = 0.0
-        occupancy = 1.0
-        alt_loc = ' '
-        serial_n = i
-        element = elements[i]
-        # Create an atom with the provided information
-        a = Bio.PDB.Atom.Atom(atom_name,
-                              position,
-                              b_factor,
-                              occupancy,
-                              alt_loc,
-                              full_name,
-                              serial_n,
-                              element=element)
-        # Add the atom to the residue
-        r.add(a)
-    # Create one chain and add the residue
-    c = Bio.PDB.Chain.Chain('A')
-    c.add(r)
-    # Create one model and add the chain
-    m = Bio.PDB.Model.Model(0)
-    m.add(c)
-    # Create one structure and add the model
-    s = Bio.PDB.Structure.Structure(struct_name)
-    s.add(m)
-    return s
+    return xyz
 
 
 def get_coordinates_of_conformer(mol):
@@ -657,72 +638,3 @@ def get_bonds_list_from_mol(mol):
     col = ['atom1','atom2','type']
     bonds_df = pd.DataFrame(bonds_list, columns=col)
     return bonds_df
-
-
-def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, residue=999):
-    """
-    Convert molecule in RDKit format to ATOM3D dataframe format, with PDB-style columns.
-
-    :param mol: Molecule in RDKit format.
-    :type mol: rdkit.Chem.rdchem.Mol
-
-    :return: Dataframe in standard ATOM3D format.
-    :rtype: pandas.DataFrame
-    """
-
-    from rdkit import Chem
-    df = col.defaultdict(list)
-    if add_hs:
-        mol = Chem.AddHs(mol, addCoords=True)
-    conf = mol.GetConformer()
-    for i, a in enumerate(mol.GetAtoms()):
-        position = conf.GetAtomPosition(i)
-        df['ensemble'].append(ensemble)
-        df['structure'].append(structure)
-        df['model'].append(model)
-        df['chain'].append('LIG')
-        df['hetero'].append('')
-        df['insertion_code'].append('')
-        df['residue'].append(residue)
-        df['segid'].append('')
-        df['resname'].append('LIG')
-        df['altloc'].append('')
-        df['occupancy'].append(1)
-        df['bfactor'].append(0)
-        df['x'].append(position.x)
-        df['y'].append(position.y)
-        df['z'].append(position.z)
-        df['element'].append(a.GetSymbol())
-        df['serial_number'].append(i)
-    df = pd.DataFrame(df)
-    # Make up atom names
-    elements = df['element'].unique()
-    el_count = {}
-    for e in elements:
-        el_count[e] = 0
-    new_name = []
-    for el in df['element']:
-        el_count[el] += 1
-        new_name.append('%s%i'%(el,el_count[el]))
-    df['name'] = new_name
-    df['fullname'] = new_name
-    return df
-
-
-def get_coordinates_from_df(df):
-    """Extract XYZ coordinates from molecule in dataframe format.
-    
-    :param df: Dataframe containing molecular structure. Must have columns named `x`, `y`, and `z`.
-    :type df: pandas.DataFrame
-
-    :return: XYZ coordinates as N x 3 array
-    :rtype: numpy.ndarray
-    """
-    xyz = np.empty([len(df), 3])
-
-    xyz[:, 0] = np.array(df.x)
-    xyz[:, 1] = np.array(df.y)
-    xyz[:, 2] = np.array(df.z)
-
-    return xyz
-

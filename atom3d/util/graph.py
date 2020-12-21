@@ -2,7 +2,7 @@ import numpy as np
 import scipy.spatial as ss
 import torch
 
-import atom3d.util.formats as dt
+import atom3d.util.formats as fo
 
 # PDB atom names -- these include co-crystallized metals
 prot_atoms = ['C', 'H', 'O', 'N', 'S', 'P', 'ZN', 'NA', 'FE', 'CA', 'MN', 'NI', 'CO', 'MG', 'CU', 'CL', 'SE', 'F']
@@ -73,8 +73,8 @@ def mol_df_to_graph(mol, allowable_atoms=mol_atoms):
         - edge_feats (torch.FloatTensor): Edge features given by bond type. Single = 1.0, Double = 2.0, Triple = 3.0, Aromatic = 1.5.
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node.
     """
-    node_pos = torch.FloatTensor(dt.get_coordinates_of_conformer(mol))
-    bonds = dt.get_bonds_matrix(mol)
+    node_pos = torch.FloatTensor(fo.get_coordinates_of_conformer(mol))
+    bonds = fo.get_bonds_matrix_from_mol(mol)
     edge_tuples = np.argwhere(bonds)
     edges = torch.LongTensor(edge_tuples).t().contiguous()
 
@@ -153,6 +153,7 @@ def edges_between_graphs(pos1, pos2, dist=4.5):
     edges = torch.LongTensor(edges).t().contiguous()
     edge_weights = torch.FloatTensor(edge_weights).view(-1, 1)
     return edges, edge_weights
+
 
 def find_neighbors(df, pos, dist):
     """Returns dataframe containing all atoms within ``dist`` of query position ``pos``.
