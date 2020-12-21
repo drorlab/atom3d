@@ -11,7 +11,10 @@ def test_read_any_pdb():
     fo.read_any('tests/test_data/pdb/2olx.pdb')
 
 def test_read_any_pdb_gz():
-    pass
+    fo.read_any('tests/test_data/pdbgz/103l.pdb.gz')
+    fo.read_any('tests/test_data/pdbgz/117e.pdb.gz')
+    fo.read_any('tests/test_data/pdbgz/11as.pdb.gz')
+    fo.read_any('tests/test_data/pdbgz/2olx.pdb.gz')
 
 def test_read_any_mmcif():
     fo.read_any('tests/test_data/mmcif/1j36_protein.cif')
