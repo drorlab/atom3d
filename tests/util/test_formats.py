@@ -69,4 +69,37 @@ def test_read_xyz_gdb():
         assert inchi_gdb[c] == inchi
 
 
+# -- Handling data frames --
+#
+#  These tests rely on the pdb reader
+#
+
+def test_merge_dfs():
+    df_list = []
+    num_at = []
+    for c in numres.keys():
+        bp = fo.read_any('tests/test_data/pdb/'+c+'.pdb')
+        df_part = fo.bp_to_df(bp)
+        num_at.append(len(df_part))
+        df_list.append(df_part)
+    df = fo.merge_dfs(df_list)
+    assert len(df) == sum(num_at) == 11602
+
+def test_merge_and_split_dfs():
+    df_list = []
+    num_at = []
+    for c in numres.keys():
+        bp = fo.read_any('tests/test_data/pdb/'+c+'.pdb')
+        df_part = fo.bp_to_df(bp)
+        num_at.append(len(df_part))
+        df_list.append(df_part)
+    df = fo.merge_dfs(df_list)
+    assert len(df) == sum(num_at) == 11602
+    df_split = fo.split_df(df, key="ensemble")
+    num_at_split = [len(d[1]) for d in df_split] 
+    assert num_at_split == num_at == [1404, 4943, 5220, 35]
+
+
+
+
 
