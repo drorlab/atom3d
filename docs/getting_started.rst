@@ -31,43 +31,44 @@ To install with RDKit (needed for processing small molecule files, e.g. SDF/MOL2
 Frequently Asked Questions
 **************************
 
-#. | What pre-curated datasets are available through ATOM3D?
+#. | **What pre-curated datasets are available through ATOM3D?**
 
    | ATOM3D currently contains eight datasets, spanning molecular structure, function, interaction, and design tasks:
 
-     * Small Molecule Properties (SMP)
+     * *Small Molecule Properties (SMP)*
 
        Predicting physico-chemical properties of small molecules is a common task in medicinal chemistry and materials design. SMP is based on the QM9 dataset, which contains structures and energetic, electronic, and thermodynamic properties for 134,000 stable small organic molecules, obtained from quantum-chemical calculations.
 
-     * Protein Interface Prediction (PIP)
+     * *Protein Interface Prediction (PIP)*
      
        Proteins interact with each other in many scenarios—for example, our antibody proteins recognize diseases by binding to antigens. A critical problem in understanding these interactions is to identify which amino acids of two given proteins will interact upon binding. The PIP dataset contains structures from the Database of Interacting Protein Structures (DIPS), a comprehensive dataset of protein complexes mined from the PDB, and the Docking Benchmark 5 (DB5), a smaller gold standard dataset.
      
-     * Residue Identity (RES)
+     * *Residue Identity (RES)*
      
        Understanding the structural role of individual amino acids is important for engineering new proteins. We can understand this role by predicting the substitutabilities of different amino acids at a given protein site based on the surrounding structural environment. The RES dataset consists of atomic environments extracted from nonredundant structures in the PDB.
      
-     * Mutation Stability Prediction (MSP)
+     * *Mutation Stability Prediction (MSP)*
      
        Identifying mutations that stabilize a protein’s interactions is a key task in designing new proteins. Experimental techniques for probing these are labor intensive, motivating the development of efficient computational methods. MSP contains structures from the SKEMPI dataset of protein-protein interactions, with each mutation computationally modeled into the structure.
      
-     * Ligand Binding Affinity (LBA)
+     * *Ligand Binding Affinity (LBA)*
      
        Most therapeutic drugs and many molecules critical for biological signaling take the form of small molecules. Predicting the strength of the protein-small molecule interaction is a challenging but crucial task for drug discovery applications. LBA contains structures from the "refined set" of PDBBind, a curated database containing protein-ligand complexes from the PDB and their corresponding binding strengths.
      
-     * Ligand Efficacy Prediction (LEP)
+     * *Ligand Efficacy Prediction (LEP)*
      
        Many proteins switch on or off their function by changing shape. Predicting which shape a drug will favor is thus an important task in drug design. LEP contains a curated set of proteins from several families with both ”active” and ”inactive” state structures, with 527 small molecules with known activating or inactivating function modeled in using the program Glide.
      
-     * Protein Structure Ranking (PSR)
+     * *Protein Structure Ranking (PSR)*
      
        Assessing the quality of a specific 3D protein conformation is a crucial aspect of computational protein structure prediction. PSR contains data from the Critical Assessment of Structure Prediction (CASP), a blind international competition for predicting protein structure.
      
-     * RNA Structure Ranking (RSR)
+     * *RNA Structure Ranking (RSR)*
      
        Similar to proteins, RNA plays major functional roles (e.g., gene regulation) and can adopt well-defined 3D shapes. However the problem is data-poor, with only a few hundred known structures. PSR contains candidate structures for the first 21 released RNA Puzzle challenges, a blind structure prediction competition for RNA.
      
-#. | How do I download the ATOM3D datasets?
+.. _download ref:
+#. | **How do I download the ATOM3D datasets?**
    
    | All datasets can be downloaded in ``tar.gz`` format from `atom3d.ai <atom3d.ai>`_, or using the Python API:
      
@@ -76,10 +77,11 @@ Frequently Asked Questions
         >>> import atom3d.datasets as ds
         >>> ds.download_dataset('lba', '/path/to/target')
 
-#. | Do I have to use the provided train/val/test splits for ATOM3D datasets?
-   | No, you may create your own splitting functions and apply them to any dataset. Please :doc:`/interacting` for more details.
+#. | **Do I have to use the provided train/val/test splits for ATOM3D datasets?**
 
-Citing ATOM3D
+   | No, you may create your own splitting functions and apply them to any dataset. Please :doc:`/using_datasets` for more details.
+
+Reference
 *************
 If you use ATOM3D in your work, please cite our preprint:
 
