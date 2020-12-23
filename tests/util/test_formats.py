@@ -22,7 +22,7 @@ def test_read_any_pdb_gz():
         
 def test_read_any_mmcif():
     for c in numres.keys():
-        bp = fo.read_any('tests/test_data/pdb/'+c+'.pdb')
+        bp = fo.read_any('tests/test_data/mmcif/'+c+'.cif')
         nr = len([r for r in bp.get_residues()])
         assert nr==numres[c]
 
