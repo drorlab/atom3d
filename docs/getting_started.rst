@@ -98,6 +98,6 @@ Reference
 *************
 If you use ATOM3D in your work, please cite our preprint:
 
-Townshend, R. J. L., Vogele, M., Suriana, P., Derry, A., Powers, A., Laloudakis, Y., Balachandar, S., Anderson, B., Eismann, S., Kondor, R., Altman, R. B., Dror, R. O. (2020). ATOM3D: Tasks On Molecules in Three Dimensions. *arXiv:2012.04035*. http://arxiv.org/abs/2012.04035.
+Townshend, R. J. L., Vögele, M., Suriana, P., Derry, A., Powers, A., Laloudakis, Y., Balachandar, S., Anderson, B., Eismann, S., Kondor, R., Altman, R. B., Dror, R. O. (2020). ATOM3D: Tasks On Molecules in Three Dimensions. *arXiv:2012.04035*. http://arxiv.org/abs/2012.04035.
 
 For specific datasets, please also cite the respective original source(s) as specified in the preprint.
