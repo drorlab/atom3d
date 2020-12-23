@@ -10,7 +10,7 @@ import atom3d.splits.sequence as seqspl
 cutoff = 0.3
 seq_dataset = da.load_dataset('tests/test_data/lmdb', 'lmdb')
 
-
+@pytest.mark.network
 def test_cluster_split():
     cutoff = 0.3
     # Perform the split
@@ -22,6 +22,7 @@ def test_cluster_split():
 
 
 # TODO: code below throws RuntimeError: Need to set BLAST_BIN in .env to use makeblastdb
+@pytest.mark.network
 def test_identity_split():
     # Perform the split
 #    s = seqspl.identity_split(seq_dataset, cutoff, 
