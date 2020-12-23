@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import pandas as pd
 
@@ -9,19 +10,18 @@ def test_find_similar():
     # TODO: write test for seq.find_similar()
     pass
 
-def test_get_pdb_clusters():
+@pytest.mark.network
+def test_get_pdb_clusters_and_find_cluster_members():
     id_level = 0.3
-    pdb2cluster, cluster2pdb = seq.get_pdb_clusters(id_level, pdb_ids=None)
+    clusterings = seq.get_pdb_clusters(id_level, pdb_ids=None)
+    pdb2cluster, cluster2pdb = clusterings
     for cluster in cluster2pdb.keys():
         for pdb in cluster2pdb[cluster]:
             assert cluster in pdb2cluster[pdb]
-            
-def test_find_cluster_members():
-    id_level = 0.3
-    clusterings = seq.get_pdb_clusters(id_level, pdb_ids=None)
-    for pdb in clusterings[0].keys():
+    for pdb in pdb2cluster.keys():
         seq.find_cluster_members(pdb, clusterings)
 
+@pytest.mark.network
 def test_get_chain_sequences():
     dataset = da.load_dataset('tests/test_data/lmdb', 'lmdb')
     cseq = seq.get_chain_sequences(dataset[2]['atoms'])
@@ -30,3 +30,4 @@ def test_get_chain_sequences():
 def test_write_to_blast_db():
     # TODO: write test for seq.write_to_blast_db()
     pass
+
