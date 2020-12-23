@@ -13,6 +13,11 @@ def split(dataset, indices_train, indices_val, indices_test):
     train_dataset = torch.utils.data.Subset(dataset, indices_train)
     val_dataset = torch.utils.data.Subset(dataset, indices_val)
     test_dataset = torch.utils.data.Subset(dataset, indices_test)
+
+    logger.info(f'Size of the training set: {len(indices_train):}')
+    logger.info(f'Size of the validation set: {len(indices_val):}')
+    logger.info(f'Size of the test set: {len(indices_test):}')
+
     return train_dataset, val_dataset, test_dataset
 
 
@@ -184,9 +189,6 @@ def split_by_group_size(dataset, value_fn, val_split=0.1, test_split=0.1):
     logger.info(f'Groups in the test set: {int(num_sc_test):}')
 
     # Report number of scaffolds in each set
-    logger.info(f'Size of the training set: {len(indices_train):}')
-    logger.info(f'Size of the validation set: {len(indices_val):}')
-    logger.info(f'Size of the test set: {len(indices_test):}')
     split(dataset, indices_train, indices_val, indices_test)
 
 
