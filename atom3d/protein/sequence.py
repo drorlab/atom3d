@@ -5,11 +5,8 @@ import subprocess
 import Bio.PDB.Polypeptide as Poly
 import dotenv as de
 import numpy as np
-import tqdm
-from Bio import SeqIO
 from Bio.Blast.Applications import NcbiblastpCommandline
 
-import atom3d.util.file as fi
 import atom3d.util.log as log
 
 project_root = os.path.abspath(os.path.join(__file__, '../../..'))
@@ -22,8 +19,8 @@ def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
 
     if 'BLAST_BIN' not in os.environ:
         raise RuntimeError('Need to set BLAST_BIN in .env to use blastp')
-    if not (0 <= cutoff <= 100):
-        raise Exception('cutoff need to be between 0 and 100')
+    if not (0 <= cutoff <= 1):
+        raise Exception('cutoff need to be between 0 and 1')
 
     sim = set()
     for chain, s in chain_sequences:
@@ -36,9 +33,9 @@ def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
 
         for res in out.split():
             nident, match = res.split(',')
-            seq_id = float(nident)*100.0 / len(s)
+            seq_id = float(nident)*1.0 / len(s)
             if seq_id >= cutoff:
-                sim.add(match)
+                sim.add(_fasta_name_to_tuple(match))
     return list(sim)
 
 
@@ -52,16 +49,17 @@ def get_pdb_clusters(id_level, pdb_ids=None):
     Downloads pre-calculated clusters from PDB at given cutoff.
     Returns dictionaries mapping PDB IDs to cluster IDs and vice versa.
     """
-    id_level = int(id_level)
+    id_level = int(id_level * 100)
     if id_level not in [30, 40, 50, 70, 90, 95, 100]:
         raise Exception(
             'invalid invalid identity cutoff. '
             'possible values = 30,40,50,70,90,95,100')
     logger.info('getting clusters from PDB...')
-    subprocess.call(
-        'wget ftp://resources.rcsb.org/sequence/clusters/bc-{}.out'.format(
-            id_level),
-        shell=True)
+    if not os.path.exists(f'bc-{id_level}.out'):
+        subprocess.call(
+            'wget ftp://resources.rcsb.org/sequence/clusters/bc-{}.out'.format(
+                id_level),
+            shell=True)
     pdb2cluster = {}
     cluster2pdb = {}
     with open(f'bc-{id_level}.out') as f:
@@ -76,8 +74,6 @@ def get_pdb_clusters(id_level, pdb_ids=None):
                     pdb2cluster[pdb] = set()
                 pdb2cluster[pdb].add(i)
                 cluster2pdb[i].add(pdb)
-
-    os.system(f'rm bc-{id_level}.out')
 
     return pdb2cluster, cluster2pdb
 
@@ -99,87 +95,51 @@ def find_cluster_members(pdb, clusterings):
 # useful functions
 ####################################
 
-def write_to_blast_db(all_chain_sequences, blast_db):
-    """Write provided chain sequences to blast db, for use with BLAST.
 
-    Inputs:
-    - all_chain_sequences: list of (structure name, chain_sequences)
+def write_to_blast_db(chain_sequences, blast_db):
+    """Write provided dataset to blast db, for use with BLAST.
     """
-    logger.info(f'writing {len(all_chain_sequences):} chain sequences '
-                f'to BLAST db {blast_db:}')
+    logger.info(f'writing {len(chain_sequences):} entries to BLAST db {blast_db:}')
 
     if 'BLAST_BIN' not in os.environ:
         raise RuntimeError('Need to set BLAST_BIN in .env to use makeblastdb')
 
-    flat_map = {}
-    for (structure_name, cs) in all_chain_sequences:
-        for (chain_name, seq) in cs:
-            name = tuple_to_fasta_name(structure_name, chain_name)
-            flat_map[name] = seq
-
-    write_fasta(flat_map, blast_db)
-
+    if os.path.exists(blast_db):
+        logger.warning(f'Removing previous blast db at {blast_db:}...')
+        os.remove(blast_db)
+    _write_fasta(chain_sequences, blast_db)
     cmd = os.path.join(os.environ['BLAST_BIN'], 'makeblastdb')
     subprocess.check_output(f'{cmd:} -in {blast_db:} -dbtype prot', shell=True)
 
 
-def tuple_to_fasta_name(structure_name, chain_name):
+def _tuple_to_fasta_name(name_tuple):
     """Fasta names can only be strings. This code writes the tuples in."""
-    sname = '___'.join([str(x) for x in structure_name])
-    cname = '___'.join([str(x) for x in chain_name])
-    return sname + '____' + cname
+    return '___'.join([str(x) for x in name_tuple])
 
 
-def fasta_name_to_tuple(x):
+def _fasta_name_to_tuple(x):
     """Fasta names can only be strings. This code gets the tuples back out."""
-    stuple = tuple(x.split('____')[0].split('___'))
-    ctuple = tuple(x.split('____')[1].split('___'))
-    stuple = (stuple[0], int(stuple[1]), stuple[2])
-    return stuple, ctuple
+    return tuple(x.split('___'))
 
 
-def get_chain_sequences(pdb_file):
-    """
-    Return list of chain sequences from PDB file.
-
-    Takes the form of list of (chain name, sequence string).
-    """
-    #     fname = os.path.join(path, pdb, pdb + '_protein.pdb')
-    chain_seqs = []
-    for s in SeqIO.parse(pdb_file, 'pdb-atom'):
-        chain = s.annotations['chain']
-        chain_seqs.append(((chain,), str(s.seq)))
-    return chain_seqs
-
-
-def get_all_chain_sequences(pdb_dataset):
-    """Return list of tuples of (pdb_code, chain_sequences) for PDB dataset."""
-    return [((fi.get_pdb_code(p),), get_chain_sequences(p))
-            for p in tqdm.tqdm(pdb_dataset)]
-
-
-def get_all_chain_sequences_df(df):
-    """Return list of tuples of (struct_name, chain_sequences) for sharded."""
-    all_chain_sequences = []
+def get_chain_sequences(df):
+    """Return list of tuples of (id, sequence) for different chains of monomers in a given dataframe."""
     # Keep only CA of standard residues
     df = df[df['name'] == 'CA'].drop_duplicates()
     df = df[df['resname'].apply(lambda x: Poly.is_aa(x, standard=True))]
     df['resname'] = df['resname'].apply(Poly.three_to_one)
-    for s, structure in df.groupby(
-            ['ensemble', 'subunit', 'structure']):
-        chain_sequences = []
-        for c, chain in structure.groupby(['model', 'chain']):
-            seq = ''.join(chain['resname'])
-            chain_sequences.append((c, seq))
-        all_chain_sequences.append((s, chain_sequences))
-    return all_chain_sequences
+    chain_sequences = []
+    for c, chain in df.groupby(['ensemble', 'subunit', 'structure', 'model', 'chain']):
+        seq = ''.join(chain['resname'])
+        chain_sequences.append((tuple([str(x) for x in c]), seq))
+    return chain_sequences
 
 
-def write_fasta(chain_sequences, outfile):
+def _write_fasta(chain_sequences, outfile):
     """
     Write chain_sequences to fasta file.
     """
     with open(outfile, 'w') as f:
-        for chain, seq in chain_sequences.items():
-            f.write('>' + chain + '\n')
+        for chain, seq in chain_sequences:
+            f.write('>' + _tuple_to_fasta_name(chain) + '\n')
             f.write(seq + '\n')
