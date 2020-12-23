@@ -123,24 +123,23 @@ def time_split(dataset, val_years, test_years):
 ####################################
 
 
-def scaffold_split(scaffold_list, val_split=0.1, test_split=0.1):
+def scaffold_split(dataset, val_split=0.1, test_split=0.1):
     """Creates data indices for training and validation splits according to a scaffold split.
         Args:
-            scaffold_list (array ofstr): names of the scaffolds
-            train_split (float):
-                fraction of data used for training. Default: 0.1
+            dataset (atom3d dataset): dataset to perform time split on.
             val_split (float):
                 fraction of data used for validation. Default: 0.1
             test_split (float): fraction of data used for testing. Default: 0.1
-            random_seed (int):
-                specifies random seed for shuffling. Default: None
-            exclude (np.array of int):  indices to exclude.
         Returns:
             indices_train (int[]):  indices of the training set.
             indices_val (int[]):  indices of the validation set.
             indices_test (int[]): indices of the test set.
     """
-    
+    if 'scaffold' not in dataset[0]:
+        raise RuntimeError('Need to have scaffold field set to use scaffold split.')
+
+    scaffold_list = [x['scaffold'] for x in dataset]
+
     logger.info(f'Splitting dataset with {len(scaffold_list):} entries.')
 
     # Calculate the target sizes of the splits
@@ -189,6 +188,8 @@ def scaffold_split(scaffold_list, val_split=0.1, test_split=0.1):
     logger.info(f'Size of the training set: {len(indices_train):}')
     logger.info(f'Size of the validation set: {len(indices_val):}')
     logger.info(f'Size of the test set: {len(indices_test):}')
-    
-    return indices_train, indices_val, indices_test
 
+    train_dataset = torch.utils.data.Subset(dataset, indices_train)
+    val_dataset = torch.utils.data.Subset(dataset, indices_val)
+    test_dataset = torch.utils.data.Subset(dataset, indices_test)
+    return train_dataset, val_dataset, test_dataset
