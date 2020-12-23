@@ -42,7 +42,7 @@ def read_split_file(split_file):
 # split randomly
 ####################################
 
-def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuffle=True, random_seed=None):
+def split_randomly(dataset, train_split=None, val_split=0.1, test_split=0.1, random_seed=0):
     """Splits data into train, val, test at random.
 
         Args:
@@ -52,9 +52,8 @@ def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuff
             val_split (float):
                 fraction of data used for validation. Default: 0.1
             test_split (float): fraction of data used for testing. Default: 0.1
-            shuffle (bool):     indices are shuffled. Default: True
             random_seed (int):
-                specifies random seed for shuffling. Default: None
+                specifies random seed for shuffling. Default: 0
 
 
         Returns:
@@ -77,11 +76,9 @@ def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuff
     else:
         num_train = num_indices - num_val - num_test
 
-    # Shuffle the dataset if desired
-    if shuffle:
-        if random_seed is not None:
-            np.random.seed(random_seed)
-        np.random.shuffle(indices)
+    # Shuffle the dataset indices
+    np.random.seed(random_seed)
+    np.random.shuffle(indices)
 
     # Determine the indices of each split
     indices_train = indices[:num_train]
@@ -95,16 +92,17 @@ def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuff
 # split by group
 ####################################
 
-def split_by_group(dataset, value_fn, val, test):
+def split_by_group(dataset, value_fn, train_values, val_values, test_values):
     """
-    Splits data into train, val, test by a value function, ensuring values in val and test go into appropriate sets.
+    Splits data into train, val, test by a value function, ensuring values go into appropriate sets.
 
-    Assumes each entry has a  entry associated with it.
+    Assumes each entry has an entry associated with it.
 
     Args:
         dataset (atom3d dataset): dataset to perform split on.
-        val (str[]): values of field to include in validation set.
-        test (str[]): values of field to include in test set.
+        train_values (str[]): values of field to include in training set.
+        val_values (str[]): values of field to include in validation set.
+        test_values (str[]): values of field to include in test set.
 
     Returns:
         train_dataset (atom3d dataset): dataset for training.
@@ -114,9 +112,9 @@ def split_by_group(dataset, value_fn, val, test):
     values = [value_fn(x) for x in dataset]
 
     # Determine the indices of each split
-    indices_train = [x for x in values if (x not in val and x not in test)]
-    indices_val = [x for x in values if x in val]
-    indices_test = [x for x in values if x in test]
+    indices_train = [i for i,x in enumerate(values) if x in train_values]
+    indices_val = [i for i,x in enumerate(values) if x in val_values]
+    indices_test = [i for i,x in enumerate(values) if x in test_values]
     return split(dataset, indices_train, indices_val, indices_test)
 
 
@@ -189,8 +187,13 @@ def split_by_group_size(dataset, value_fn, val_split=0.1, test_split=0.1):
     logger.info(f'Groups in the test set: {int(num_sc_test):}')
 
     # Report number of scaffolds in each set
-    split(dataset, indices_train, indices_val, indices_test)
+    return split(dataset, indices_train, indices_val, indices_test)
 
+    
+####################################
+# frequently used specific splits
+####################################
 
 split_by_year = partial(split_by_group, value_fn=lambda x: x['year'])
+
 split_by_scaffold = partial(split_by_group_size, value_fn=lambda x: x['scaffold'])
