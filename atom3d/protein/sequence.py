@@ -14,9 +14,10 @@ de.load_dotenv(os.path.join(project_root, '.env'))
 logger = log.get_logger('sequence')
 
 
+# TODO: write proper docstring
 def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
     """Find all other pdbs that have sequence identity greater than cutoff."""
-
+    
     if 'BLAST_BIN' not in os.environ:
         raise RuntimeError('Need to set BLAST_BIN in .env to use blastp')
     if not (0 <= cutoff <= 1):
