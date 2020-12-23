@@ -131,9 +131,9 @@ def scaffold_split(dataset, val_split=0.1, test_split=0.1):
                 fraction of data used for validation. Default: 0.1
             test_split (float): fraction of data used for testing. Default: 0.1
         Returns:
-            indices_train (int[]):  indices of the training set.
-            indices_val (int[]):  indices of the validation set.
-            indices_test (int[]): indices of the test set.
+            train_dataset (atom3d dataset): dataset for training.
+            val_dataset (atom3d dataset): dataset for validation
+            test_dataset (atom3d dataset): dataset for testing.
     """
     if 'scaffold' not in dataset[0]:
         raise RuntimeError('Need to have scaffold field set to use scaffold split.')
