@@ -1,6 +1,7 @@
 """Functions for splitting data into test, validation, and training sets."""
 
 import numpy as np
+import torch
 
 import atom3d.util.log as log
 
@@ -28,51 +29,40 @@ def read_split_file(split_file):
 # split randomly
 ####################################
 
-def random_split(dataset_size, train_split=None, vali_split=0.1,
-                 test_split=0.1, shuffle=True, random_seed=None, exclude=None):
+def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuffle=True, random_seed=None):
     """Creates data indices for training and validation splits.
 
         Args:
-            dataset_size (int): number of elements in the dataset
+            dataset (atom3d dataset): dataset to perform random split on.
             train_split (float):
-                fraction of data used for training. Default: 0.1
-            vali_split (float):
+                fraction of data used for training. Default: 0.8
+            val_split (float):
                 fraction of data used for validation. Default: 0.1
             test_split (float): fraction of data used for testing. Default: 0.1
             shuffle (bool):     indices are shuffled. Default: True
             random_seed (int):
                 specifies random seed for shuffling. Default: None
-            exclude (np.array of int):  indices to exclude.
 
 
         Returns:
-            indices_test (int[]):  indices of the test set.
-            indices_vali (int[]):  indices of the validation set.
-            indices_train (int[]): indices of the training set.
+            train_dataset (atom3d dataset): dataset for training.
+            val_dataset (atom3d dataset): dataset for validation
+            test_dataset (atom3d dataset): dataset for testing.
 
     """
 
     # Initialize the indices
-    all_indices = np.arange(dataset_size, dtype=int)
-    logger.info(f'Splitting dataset with {len(all_indices):} entries.')
-
-    # Delete all indices that shall be excluded
-    if exclude is None:
-        indices = all_indices
-    else:
-        logger.info('Excluding', len(exclude), 'entries.')
-        to_keep = np.invert(np.isin(all_indices, exclude))
-        indices = all_indices[to_keep]
-        logger.info('Remaining', len(indices), 'entries.')
-    num_indices = len(indices)
+    num_indices = len(dataset)
+    indices = np.arange(num_indices, dtype=int)
+    logger.info(f'Splitting dataset with {num_indices:} entries.')
 
     # Calculate the numbers of elements per split
-    vsplit = int(np.floor(vali_split * num_indices))
-    tsplit = int(np.floor(test_split * num_indices))
+    num_val = int(np.floor(val_split * num_indices))
+    num_test = int(np.floor(test_split * num_indices))
     if train_split is not None:
-        train = int(np.floor(train_split * num_indices))
+        num_train = int(np.floor(train_split * num_indices))
     else:
-        train = num_indices - vsplit - tsplit
+        num_train = num_indices - num_val - num_test
 
     # Shuffle the dataset if desired
     if shuffle:
@@ -81,11 +71,14 @@ def random_split(dataset_size, train_split=None, vali_split=0.1,
         np.random.shuffle(indices)
 
     # Determine the indices of each split
-    indices_test = indices[:tsplit]
-    indices_vali = indices[tsplit:tsplit + vsplit]
-    indices_train = indices[tsplit + vsplit:tsplit + vsplit + train]
+    indices_train = indices[:num_train]
+    indices_val = indices[num_train:(num_train + num_val)]
+    indices_test = indices[(num_train + num_val):(num_train + num_val + num_test)]
 
-    return indices_test, indices_vali, indices_train
+    train_dataset = torch.utils.data.Subset(dataset, indices_train)
+    val_dataset = torch.utils.data.Subset(dataset, indices_val)
+    test_dataset = torch.utils.data.Subset(dataset, indices_test)
+    return train_dataset, val_dataset, test_dataset
 
 
 ####################################
@@ -123,13 +116,13 @@ def time_split(data, val_years, test_years):
 ####################################
 
 
-def scaffold_split(scaffold_list, vali_split=0.1, test_split=0.1):
+def scaffold_split(scaffold_list, val_split=0.1, test_split=0.1):
     """Creates data indices for training and validation splits according to a scaffold split.
         Args:
             scaffold_list (array ofstr): names of the scaffolds
             train_split (float):
                 fraction of data used for training. Default: 0.1
-            vali_split (float):
+            val_split (float):
                 fraction of data used for validation. Default: 0.1
             test_split (float): fraction of data used for testing. Default: 0.1
             random_seed (int):
@@ -137,7 +130,7 @@ def scaffold_split(scaffold_list, vali_split=0.1, test_split=0.1):
             exclude (np.array of int):  indices to exclude.
         Returns:
             indices_train (int[]):  indices of the training set.
-            indices_vali (int[]):  indices of the validation set.
+            indices_val (int[]):  indices of the validation set.
             indices_test (int[]): indices of the test set.
     """
     
@@ -147,8 +140,8 @@ def scaffold_split(scaffold_list, vali_split=0.1, test_split=0.1):
     dataset_size = len(scaffold_list)
     all_indices = np.arange(dataset_size)
     testset_size = test_split * dataset_size
-    valiset_size = vali_split * dataset_size
-    trainingset_size = dataset_size - valiset_size - testset_size
+    valset_size = vali_split * dataset_size
+    trainingset_size = dataset_size - valset_size - testset_size
     
     # Order the scaffolds from common to uncommon 
     scaffolds, counts = np.unique(scaffold_list, return_counts=True)
@@ -157,11 +150,11 @@ def scaffold_split(scaffold_list, vali_split=0.1, test_split=0.1):
     
     # Initialize index lists
     indices_train = [] 
-    indices_vali = [] 
+    indices_val = []
     indices_test = []
     # Initialize counters for scaffolds in each set
     num_sc_train = 0
-    num_sc_vali = 0
+    num_sc_val = 0
     num_sc_test = 0
 
     # Go through the scaffolds from common to uncommon 
@@ -173,9 +166,9 @@ def scaffold_split(scaffold_list, vali_split=0.1, test_split=0.1):
         if len(indices_train) < trainingset_size:
             indices_train += scaffold_set
             num_sc_train += 1
-        elif len(indices_vali) < valiset_size:
-            indices_vali += scaffold_set
-            num_sc_vali += 1
+        elif len(indices_val) < valiset_size:
+            indices_val += scaffold_set
+            num_sc_val += 1
         else:
             indices_test += scaffold_set
             num_sc_test += 1
@@ -190,5 +183,5 @@ def scaffold_split(scaffold_list, vali_split=0.1, test_split=0.1):
     logger.info(f'Size of the validation set: {len(indices_vali):}')
     logger.info(f'Size of the test set: {len(indices_test):}')
     
-    return indices_train, indices_vali, indices_test
+    return indices_train, indices_val, indices_test
 
