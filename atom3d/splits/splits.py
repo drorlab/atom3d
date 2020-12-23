@@ -147,7 +147,7 @@ def scaffold_split(scaffold_list, val_split=0.1, test_split=0.1):
     dataset_size = len(scaffold_list)
     all_indices = np.arange(dataset_size)
     testset_size = test_split * dataset_size
-    valset_size = vali_split * dataset_size
+    valset_size = val_split * dataset_size
     trainingset_size = dataset_size - valset_size - testset_size
     
     # Order the scaffolds from common to uncommon 
@@ -173,7 +173,7 @@ def scaffold_split(scaffold_list, val_split=0.1, test_split=0.1):
         if len(indices_train) < trainingset_size:
             indices_train += scaffold_set
             num_sc_train += 1
-        elif len(indices_val) < valiset_size:
+        elif len(indices_val) < valset_size:
             indices_val += scaffold_set
             num_sc_val += 1
         else:
@@ -182,12 +182,12 @@ def scaffold_split(scaffold_list, val_split=0.1, test_split=0.1):
             
     # Report number of scaffolds in each set
     logger.info(f'Scaffolds in the training set: {int(num_sc_train):}')
-    logger.info(f'Scaffolds in the validation set: {int(num_sc_vali):}')
+    logger.info(f'Scaffolds in the validation set: {int(num_sc_val):}')
     logger.info(f'Scaffolds in the test set: {int(num_sc_test):}')
     
     # Report number of scaffolds in each set
     logger.info(f'Size of the training set: {len(indices_train):}')
-    logger.info(f'Size of the validation set: {len(indices_vali):}')
+    logger.info(f'Size of the validation set: {len(indices_val):}')
     logger.info(f'Size of the test set: {len(indices_test):}')
     
     return indices_train, indices_val, indices_test
