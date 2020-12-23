@@ -3,11 +3,22 @@ Using ATOM3D datasets
 
 All datasets in ATOM3D are provided in standardized LMDB format. LMDB allows for compressed, fast, random access to your structures, all within a single database. 
 
-
-Loading LMDB datasets
+Downloading LMDB datasets
 *********************
 
-After `downloading <download ref>`_ or `creating <creating ref>`_ an LMDB dataset, it is easy to load it into Python.
+All datasets can be downloaded in LMDB format from `atom3d.ai <atom3d.ai>`_, or using the Python API:
+     
+     .. code:: pycon
+   
+        >>> import atom3d.datasets as ds
+        >>> ds.download_dataset('lba', '/path/to/target')
+
+See the ATOM3D website or the `FAQ <datasets target>`_ for more information about the datasets available.
+
+Loading LMDB datasets in Python.
+********************************
+
+After downloading or :doc:`creating </creating_datasets>` an LMDB dataset, it is easy to load it into Python.
 
 .. code:: python
 
@@ -43,7 +54,7 @@ The first column is the ``ensemble``, which represents the highest level of stru
 The second column, the ``subunit``, is the subset of the ensemble representing the specific units of structure for the task/dataset. For example, for the protein structure ranking (PSR) task, each candidate structure for a given target protein would be assigned a unique subunit (here, the ensemble is the target protein).
 
 The remainder of the columns contain the structural information. 
-These follow the convention of the PDB file format: ``model`` - ``chain`` - ``hetero`` - ``insertion_code`` - ``residue`` - ``segid`` - ``resname`` - ``resname`` - ``altloc`` - ``occupancy`` - ``bfactor`` - ``x`` - ``y`` - ``z`` - ``element`` - ``name`` - ``fullname`` - ``serial_number``.
+These follow the convention of the PDB file format: ``model`` - ``chain`` - ``hetero`` - ``insertion_code`` - ``residue`` - ``segid`` - ``resname`` - ``altloc`` - ``occupancy`` - ``bfactor`` - ``x`` - ``y`` - ``z`` - ``element`` - ``name`` - ``fullname`` - ``serial_number``.
 
 For small molecules and nucleic acids, many of these columns are unused.
 
@@ -53,8 +64,8 @@ The ``bonds`` dataframe
 The ``bonds`` dataframe contains the covalent bonding information for a molecular structure, especially for small molecules.
 Each row of the dataframe represents a bond and contains three columns:
 
-* ``atom1``: index of the first atom in the bond
-* ``atom2``: index of the second atom in the bond
+* ``atom1``: index of the first atom in the bond (corresponding to the ``serial_number`` field in the ``atoms`` dataframe)
+* ``atom2``: index of the second atom in the bond (corresponding to ``serial_number`` field in the ``atoms`` dataframe)
 * ``type``: bond type, encoded as Double (single bond = 1.0, double bond = 2.0, triple bond = 3.0, aromatic bond =1.5).
 
 Filtering and splitting
