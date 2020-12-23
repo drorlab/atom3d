@@ -1,4 +1,5 @@
 """Functions for splitting data into test, validation, and training sets."""
+from functools import partial
 
 import numpy as np
 import torch
@@ -6,6 +7,13 @@ import torch
 import atom3d.util.log as log
 
 logger = log.get_logger('splits')
+
+
+def split(dataset, indices_train, indices_val, indices_test):
+    train_dataset = torch.utils.data.Subset(dataset, indices_train)
+    val_dataset = torch.utils.data.Subset(dataset, indices_val)
+    test_dataset = torch.utils.data.Subset(dataset, indices_test)
+    return train_dataset, val_dataset, test_dataset
 
 
 def read_split_file(split_file):
@@ -30,7 +38,7 @@ def read_split_file(split_file):
 ####################################
 
 def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuffle=True, random_seed=None):
-    """Creates data indices for training and validation splits.
+    """Splits data into train, val, test at random.
 
         Args:
             dataset (atom3d dataset): dataset to perform random split on.
@@ -82,51 +90,48 @@ def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuff
 
 
 ####################################
-# split by time
+# split by set
 ####################################
 
-
-def time_split(dataset, val_years, test_years):
+def set_split(dataset, value_fn, val, test):
     """
-    Splits data into train, val, test by year.
+    Splits data into train, val, test by a value function, ensuring values in val and test go into appropriate sets.
 
-    Assumes each entry has a 'year' entry associated with it.
+    Assumes each entry has a  entry associated with it.
 
     Args:
-        dataset (atom3d dataset): dataset to perform time split on.
-        val_years (str[]): years to include in validation set
-        test_years (str[]): years to include in test set
+        dataset (atom3d dataset): dataset to perform split on.
+        val (str[]): values of field to include in validation set.
+        test (str[]): values of field to include in test set.
 
     Returns:
         train_dataset (atom3d dataset): dataset for training.
         val_dataset (atom3d dataset): dataset for validation
         test_dataset (atom3d dataset): dataset for testing.
     """
-    if 'year' not in dataset[0]:
-        raise RuntimeError('Need to have year field set to use time split.')
-
-    years = [x['year'] for x in dataset]
+    values = [value_fn(x) for x in dataset]
 
     # Determine the indices of each split
-    indices_train = [x for x in years if (x not in val_years and x not in test_years)]
-    indices_val = [x for x in years if x in val_years]
-    indices_test = [x for x in years if x in test_years]
-
-    train_dataset = torch.utils.data.Subset(dataset, indices_train)
-    val_dataset = torch.utils.data.Subset(dataset, indices_val)
-    test_dataset = torch.utils.data.Subset(dataset, indices_test)
-    return train_dataset, val_dataset, test_dataset
+    indices_train = [x for x in values if (x not in val and x not in test)]
+    indices_val = [x for x in values if x in val]
+    indices_test = [x for x in values if x in test]
+    return split(dataset, indices_train, indices_val, indices_test)
 
 
 ####################################
-# split by scaffold
+# ordered split
 ####################################
 
 
-def scaffold_split(dataset, val_split=0.1, test_split=0.1):
-    """Creates data indices for training and validation splits according to a scaffold split.
+def ordered_split(dataset, value_fn, val_split=0.1, test_split=0.1):
+    """Splits data into train, val, test by a value function, ensuring most common values go in train.
+
+    We group entries in the dataset by the value returned by value_fn.  We then sort these groups by size,
+    including the largest ones first in train, then in val, filling them to a prespecified size.
+
+
         Args:
-            dataset (atom3d dataset): dataset to perform time split on.
+            dataset (atom3d dataset): dataset to perform split on.
             val_split (float):
                 fraction of data used for validation. Default: 0.1
             test_split (float): fraction of data used for testing. Default: 0.1
@@ -135,27 +140,24 @@ def scaffold_split(dataset, val_split=0.1, test_split=0.1):
             val_dataset (atom3d dataset): dataset for validation
             test_dataset (atom3d dataset): dataset for testing.
     """
-    if 'scaffold' not in dataset[0]:
-        raise RuntimeError('Need to have scaffold field set to use scaffold split.')
+    values = [value_fn(x) for x in dataset]
 
-    scaffold_list = [x['scaffold'] for x in dataset]
-
-    logger.info(f'Splitting dataset with {len(scaffold_list):} entries.')
+    logger.info(f'Splitting dataset with {len(values):} entries.')
 
     # Calculate the target sizes of the splits
-    dataset_size = len(scaffold_list)
+    dataset_size = len(values)
     all_indices = np.arange(dataset_size)
-    testset_size = test_split * dataset_size
-    valset_size = val_split * dataset_size
-    trainingset_size = dataset_size - valset_size - testset_size
-    
+    test_size = test_split * dataset_size
+    val_size = val_split * dataset_size
+    train_size = dataset_size - val_size - test_size
+
     # Order the scaffolds from common to uncommon 
-    scaffolds, counts = np.unique(scaffold_list, return_counts=True)
+    unique_values, counts = np.unique(values, return_counts=True)
     order = np.argsort(counts)[::-1]
-    scaffolds_ordered = scaffolds[order]
-    
+    values_ordered = unique_values[order]
+
     # Initialize index lists
-    indices_train = [] 
+    indices_train = []
     indices_val = []
     indices_test = []
     # Initialize counters for scaffolds in each set
@@ -165,31 +167,27 @@ def scaffold_split(dataset, val_split=0.1, test_split=0.1):
 
     # Go through the scaffolds from common to uncommon 
     # and fill the training, validation, and test sets
-    for sc in scaffolds_ordered:
+    for sc in values_ordered:
         # Get all indices of the current scaffold
-        scaffold_set = all_indices[np.array(scaffold_list)==sc].tolist()
+        curr_group = all_indices[np.array(values) == sc].tolist()
         # ... and add them to their dataset
-        if len(indices_train) < trainingset_size:
-            indices_train += scaffold_set
+        if len(indices_train) < train_size:
+            indices_train += curr_group
             num_sc_train += 1
-        elif len(indices_val) < valset_size:
-            indices_val += scaffold_set
+        elif len(indices_val) < val_size:
+            indices_val += curr_group
             num_sc_val += 1
         else:
-            indices_test += scaffold_set
+            indices_test += curr_group
             num_sc_test += 1
-            
+
     # Report number of scaffolds in each set
-    logger.info(f'Scaffolds in the training set: {int(num_sc_train):}')
-    logger.info(f'Scaffolds in the validation set: {int(num_sc_val):}')
-    logger.info(f'Scaffolds in the test set: {int(num_sc_test):}')
-    
+    logger.info(f'Groups in the training set: {int(num_sc_train):}')
+    logger.info(f'Groups in the validation set: {int(num_sc_val):}')
+    logger.info(f'Groups in the test set: {int(num_sc_test):}')
+
     # Report number of scaffolds in each set
     logger.info(f'Size of the training set: {len(indices_train):}')
     logger.info(f'Size of the validation set: {len(indices_val):}')
     logger.info(f'Size of the test set: {len(indices_test):}')
-
-    train_dataset = torch.utils.data.Subset(dataset, indices_train)
-    val_dataset = torch.utils.data.Subset(dataset, indices_val)
-    test_dataset = torch.utils.data.Subset(dataset, indices_test)
-    return train_dataset, val_dataset, test_dataset
+    split(dataset, indices_train, indices_val, indices_test)
