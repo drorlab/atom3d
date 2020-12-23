@@ -8,6 +8,8 @@ import msgpack
 from pathlib import Path
 import pickle as pkl
 import tqdm
+import urllib.request
+import subprocess
 
 import Bio.PDB
 import lmdb
@@ -430,7 +432,7 @@ def make_lmdb_dataset(dataset, output_lmdb,
     :type filter_fn: lambda x -> True/False
     :param serialization_format: How to serialize an entry.
     :type serialization_format: 'json', 'msgpack', 'pkl'
-    :param include_bonds: Include bond information (only available for SDF yet)
+    :param include_bonds: Include bond information (only available for SDF yet).
     :type include_bonds: bool
     """
 
@@ -462,3 +464,63 @@ def make_lmdb_dataset(dataset, output_lmdb,
         txn.put(b'num_examples', str(i).encode())
         txn.put(b'serialization_format', serialization_format.encode())
         txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
+
+def download_dataset(name, out_path):
+    """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR. Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
+
+    :param name: Three-letter code for dataset (not case-sensitive).
+    :type name: str
+    :param out_path: Path to directory in which to save downloaded dataset.
+    :type out_path: str
+    """
+
+    def _hook(t):
+        """from https://github.com/tqdm/tqdm/blob/master/examples/tqdm_wget.py
+        """
+        last_b = [0]
+
+        def update_to(b=1, bsize=1, tsize=None):
+            """
+            b  : int, optional
+                Number of blocks transferred so far [default: 1].
+            bsize  : int, optional
+                Size of each block (in tqdm units) [default: 1].
+            tsize  : int, optional
+                Total size (in tqdm units). If [default: None] or -1,
+                remains unchanged.
+            """
+            if tsize not in (None, -1):
+                t.total = tsize
+            displayed = t.update((b - last_b[0]) * bsize)
+            last_b[0] = b
+            return displayed
+
+        return update_to
+
+    name = name.lower()
+    if name == 'smp':
+        link = '13MT_f86so0fm6TOtzhW2Qy9ubVQo6UiU'
+    elif name == 'pip':
+        link = '1D4gMdJEz-6hzSc7_QQ2CF1K-anR4mO8T'
+    elif name == 'res':
+        link = '1XgZ19YYwloHxEtZUk78PLVzHipFkqIm5'
+    elif name == 'msp':
+        link = '15rojYF-UjNnqoD8BnNpFtoxVZu64Y7FL'
+    elif name == 'lba':
+        link = '1CGCRj3IwbT0HNSHIqQ46-o2n1CmGOnwK'
+    elif name == 'lep':
+        link = '15A85q2h6C1WFKjVttv6sInFNnB5z7Ha7'
+    elif name == 'psr':
+        link = '1rvxf9JKTq0OvU3QLkxNYomfyXg5sd2CO'
+    elif name == 'rsr':
+        link = '1rlQ8BmyamMud2TZkcFGy_raz9iI1-KMm'
+    else:
+        print('Invalid dataset name specified. Possible values are {SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR}')
+
+    # f_out = os.path.join(out_path, name + '.lmdb')
+    # with tqdm.tqdm(unit='B', unit_scale=True, unit_divisor=1024, miniters=1, desc=f_out) as t:  # all optional kwargs
+    #     urllib.request.urlretrieve(link, filename=f_out,
+    #                     reporthook=_hook(t), data=None)
+    
+    cmd = f"wget --load-cookies /tmp/cookies.txt \"https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id={link}' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\\1\\n/p'  | tr -d \"n\")&id={link}\" -O {name}.tar.gz"
+    subprocess.call(cmd, shell=True)

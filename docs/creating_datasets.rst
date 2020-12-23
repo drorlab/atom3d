@@ -3,7 +3,6 @@ Creating new datasets
 
 In addition to the eight pre-curated datasets, you can also create your own datasets in the same standardized LMDB format. Currently, we support creating LMDB datasets from PDB files, SDF files, silent files, and xyz files.
 
-.. _creating ref:
 Creating dataset from input files
 ***************************
 
