@@ -83,17 +83,14 @@ def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuff
     indices_val = indices[num_train:(num_train + num_val)]
     indices_test = indices[(num_train + num_val):(num_train + num_val + num_test)]
 
-    train_dataset = torch.utils.data.Subset(dataset, indices_train)
-    val_dataset = torch.utils.data.Subset(dataset, indices_val)
-    test_dataset = torch.utils.data.Subset(dataset, indices_test)
-    return train_dataset, val_dataset, test_dataset
+    return split(dataset, indices_train, indices_val, indices_test)
 
 
 ####################################
-# split by set
+# split by group
 ####################################
 
-def set_split(dataset, value_fn, val, test):
+def split_by_group(dataset, value_fn, val, test):
     """
     Splits data into train, val, test by a value function, ensuring values in val and test go into appropriate sets.
 
@@ -119,11 +116,11 @@ def set_split(dataset, value_fn, val, test):
 
 
 ####################################
-# ordered split
+# split by group size
 ####################################
 
 
-def ordered_split(dataset, value_fn, val_split=0.1, test_split=0.1):
+def split_by_group_size(dataset, value_fn, val_split=0.1, test_split=0.1):
     """Splits data into train, val, test by a value function, ensuring most common values go in train.
 
     We group entries in the dataset by the value returned by value_fn.  We then sort these groups by size,
@@ -191,3 +188,7 @@ def ordered_split(dataset, value_fn, val_split=0.1, test_split=0.1):
     logger.info(f'Size of the validation set: {len(indices_val):}')
     logger.info(f'Size of the test set: {len(indices_test):}')
     split(dataset, indices_train, indices_val, indices_test)
+
+
+split_by_year = partial(split_by_group, value_fn=lambda x: x['year'])
+split_by_scaffold = partial(split_by_group_size, value_fn=lambda x: x['scaffold'])
