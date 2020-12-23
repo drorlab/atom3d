@@ -4,23 +4,46 @@ import importlib
 
 import atom3d.datasets as da
 
+
 # -- Dataset Loaders
+
 
 def test_load_dataset_lmdb():
     dataset = da.load_dataset('tests/test_data/lmdb', 'lmdb')
     assert len(dataset) == 4
+    for df in dataset:
+        print(df)
+        assert df['atoms'].x.dtype == 'float'
+        assert df['atoms'].y.dtype == 'float'
+        assert df['atoms'].z.dtype == 'float'
+
 
 #def test_load_dataset_sharded():
 #    dataset = da.load_dataset('tests/test_data/sharded', 'sharded')
 #    assert len(dataset) == 4
 
+
 def test_load_dataset_pdb():
     dataset = da.load_dataset('tests/test_data/pdb', 'pdb')
     assert len(dataset) == 4
+    for df in dataset:
+        print(df)
+        assert df['atoms'].x.dtype == 'float'
+        assert df['atoms'].y.dtype == 'float'
+        assert df['atoms'].z.dtype == 'float'
 
+
+@pytest.mark.skipif(not importlib.util.find_spec("rdkit") is not None,
+                    reason="Reading SDF files requires RDKit!")
 def test_load_dataset_sdf():
     dataset = da.load_dataset('tests/test_data/sdf', 'sdf')
     assert len(dataset) == 4
+    for df in dataset:
+        print(df)
+        assert df['atoms'].x.dtype == 'float'
+        assert df['atoms'].y.dtype == 'float'
+        assert df['atoms'].z.dtype == 'float'
+
 
 @pytest.mark.skipif(not importlib.util.find_spec("rosetta") is not None,
                     reason="Reading silent files requires pyrosetta!")
@@ -30,9 +53,16 @@ def test_load_dataset_silent():
         print(x)
     assert len(dataset) == 8
 
+
 def test_load_dataset_xyz():
-    dataset = da.load_dataset('tests/test_data/xyz-gdb', 'xyz')
+    dataset = da.load_dataset('tests/test_data/xyz', 'xyz')
     assert len(dataset) == 3
+    for df in dataset:
+        print(df)
+        assert df['atoms'].x.dtype == 'float'
+        assert df['atoms'].y.dtype == 'float'
+        assert df['atoms'].z.dtype == 'float'
+
 
 def test_load_dataset_xyzgdb():
     file_list = ['tests/test_data/xyz-gdb/dsgdb9nsd_000005.xyz',  
@@ -40,9 +70,15 @@ def test_load_dataset_xyzgdb():
                  'tests/test_data/xyz-gdb/dsgdb9nsd_001458.xyz']
     dataset = da.load_dataset(file_list, 'xyz-gdb')
     assert len(dataset) == 3
+    for df in dataset:
+        print(df)
+        assert df['atoms'].x.dtype == 'float'
+        assert df['atoms'].y.dtype == 'float'
+        assert df['atoms'].z.dtype == 'float'
 
 
 # -- Creator for LMDB dataset
+
 
 def test_make_lmdb_dataset():
     # Load PDB dataset
