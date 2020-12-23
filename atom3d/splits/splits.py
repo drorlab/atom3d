@@ -86,29 +86,36 @@ def random_split(dataset, train_split=None, val_split=0.1, test_split=0.1, shuff
 ####################################
 
 
-def time_split(data, val_years, test_years):
+def time_split(dataset, val_years, test_years):
     """
     Splits data into train, val, test by year.
 
+    Assumes each entry has a 'year' entry associated with it.
+
     Args:
-        data (DataFrame): year data, with columns named 'pdb' and 'year'
+        dataset (atom3d dataset): dataset to perform time split on.
         val_years (str[]): years to include in validation set
         test_years (str[]): years to include in test set
 
     Returns:
-        train_set (str[]):  pdbs in the train set
-        val_set (str[]):  pdbs in the validation set
-        test_set (str[]): pdbs in the test set
+        train_dataset (atom3d dataset): dataset for training.
+        val_dataset (atom3d dataset): dataset for validation
+        test_dataset (atom3d dataset): dataset for testing.
     """
-    val = data[data.year.isin(val_years)]
-    test = data[data.year.isin(test_years)]
-    train = data[~data.pdb.isin(val.pdb.tolist() + test.pdb.tolist())]
+    if 'year' not in dataset[0]:
+        raise RuntimeError('Need to have year field set to use time split.')
 
-    train_set = train['pdb'].tolist()
-    val_set = val['pdb'].tolist()
-    test_set = test['pdb'].tolist()
+    years = [x['year'] for x in dataset]
 
-    return train_set, val_set, test_set
+    # Determine the indices of each split
+    indices_train = [x for x in years if (x not in val_years and x not in test_years)]
+    indices_val = [x for x in years if x in val_years]
+    indices_test = [x for x in years if x in test_years]
+
+    train_dataset = torch.utils.data.Subset(dataset, indices_train)
+    val_dataset = torch.utils.data.Subset(dataset, indices_val)
+    test_dataset = torch.utils.data.Subset(dataset, indices_test)
+    return train_dataset, val_dataset, test_dataset
 
 
 ####################################
