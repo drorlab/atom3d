@@ -1,10 +1,13 @@
 """Functions related to SCOP classes of structures."""
+import os
+
 import pandas as pd
 
+project_root = os.path.abspath(os.path.join(__file__, '../../..'))
 
-SCOP_CLA_LATEST_FILE = '../../metadata/scop-cla-latest.txt'
-PDB_CHAIN_SCOP2_UNIPROT_FILE = '../../metadata/pdb_chain_scop2_uniprot.csv'
-PDB_CHAIN_SCOP2B_SF_UNIPROT_FILE = '../../metadata/pdb_chain_scop2b_sf_uniprot.csv'
+SCOP_CLA_LATEST_FILE = os.path.join(project_root, 'metadata/scop-cla-latest.txt')
+PDB_CHAIN_SCOP2_UNIPROT_FILE = os.path.join(project_root, 'metadata/pdb_chain_scop2_uniprot.csv')
+PDB_CHAIN_SCOP2B_SF_UNIPROT_FILE = os.path.join(project_root, 'metadata/pdb_chain_scop2b_sf_uniprot.csv')
 
 
 def get_scop_index():

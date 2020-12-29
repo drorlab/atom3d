@@ -48,9 +48,9 @@ def form_scop_filter(level, allowed=None, excluded=None):
     return filter_fn
 
 
-def form_scop_filter_against(sharded, level, conservative):
+def form_scop_filter_against(dataset, level, conservative):
     """
-    Remove structures with matching scop class to a chain in sharded.
+    Remove structures with matching scop class to a chain in dataset.
 
     We consider each chain in each structure separately, and remove the
     structure if any of them matches any chain in sharded.
@@ -66,8 +66,8 @@ def form_scop_filter_against(sharded, level, conservative):
 
     def form_scop_against():
         result = []
-        for shard in sharded.iter_shards():
-            for (e, su, st), structure in shard.groupby(
+        for x in dataset:
+            for (e, su, st), structure in x['atoms'].groupby(
                     ['ensemble', 'subunit', 'structure']):
                 pc = fi.get_pdb_code(st).lower()
                 for (m, c), _ in structure.groupby(['model', 'chain']):
