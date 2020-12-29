@@ -31,9 +31,9 @@ To install with RDKit (needed for processing small molecule files, e.g. SDF/MOL2
 Frequently Asked Questions
 **************************
 
-.. _datasets target:
+.. _sec:datasets-faq:
 
-1. | **What pre-curated datasets are available through ATOM3D?**
+1. **What pre-curated datasets are available through ATOM3D?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
    | ATOM3D currently contains eight datasets, spanning molecular structure, function, interaction, and design tasks:
@@ -77,9 +77,9 @@ Frequently Asked Questions
      
        Similar to proteins, RNA plays major functional roles (e.g., gene regulation) and can adopt well-defined 3D shapes. However the problem is data-poor, with only a few hundred known structures. PSR contains candidate structures for the first 21 released RNA Puzzle challenges, a blind structure prediction competition for RNA.
      
-.. _download target:
+.. _sec:download-faq:
 
-2. | **How do I download the ATOM3D datasets?**
+2. **How do I download the ATOM3D datasets?**
 """""""""""""""""""""""""""""""""""""""""""""""
    
    | All datasets can be downloaded in LMDB format from `atom3d.ai <atom3d.ai>`_, or using the Python API:
@@ -89,7 +89,7 @@ Frequently Asked Questions
         >>> import atom3d.datasets as ds
         >>> ds.download_dataset('lba', '/path/to/target')
 
-3. | **Do I have to use the provided train/val/test splits for ATOM3D datasets?**
+3. **Do I have to use the provided train/val/test splits for ATOM3D datasets?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
    | No, you may create your own splitting functions and apply them to any dataset. Please see :doc:`/using_datasets` for more details.

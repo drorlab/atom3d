@@ -11,6 +11,7 @@ Welcome to ATOM3D documentation!
    :caption: Getting Started With ATOM3D
 
    getting_started
+   data_formats
    using_datasets
    creating_datasets
    training_models
