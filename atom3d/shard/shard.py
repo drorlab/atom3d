@@ -54,7 +54,7 @@ class Sharded(object):
         # Check if already partly written.  If so, resume from there.
         metadata_path = sharded._get_metadata()
         if os.path.exists(metadata_path):
-            metadata = pd.read_hdf(metadata_path, f'metadata')
+            metadata = pd.read_hdf(metadata_path, f'atom3d/data/metadata')
             num_written = len(metadata['shard_num'].unique())
         else:
             num_written = 0

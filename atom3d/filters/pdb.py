@@ -5,8 +5,8 @@ These all are applied to individual atom dataframes, and remove entries from tha
 """
 import pandas as pd
 
-PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
-RESOLUTION_FILE = 'metadata/resolu.idx'
+PDB_ENTRY_TYPE_FILE = 'atom3d/data/metadata/pdb_entry_type.txt'
+RESOLUTION_FILE = 'atom3d/data/metadata/resolu.idx'
 
 
 def form_size_filter(max_size=None, min_size=None):
