@@ -524,3 +524,5 @@ def download_dataset(name, out_path):
     
     cmd = f"wget --load-cookies /tmp/cookies.txt \"https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id={link}' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\\1\\n/p'  | tr -d \"n\")&id={link}\" -O {name}.tar.gz"
     subprocess.call(cmd, shell=True)
+    cmd2 = f"tar xzvf {name}.tar.gz"
+    subprocess.call(cmd2, shell=True)

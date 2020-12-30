@@ -10,6 +10,19 @@ logger = log.get_logger('splits')
 
 
 def split(dataset, indices_train, indices_val, indices_test):
+    """Split a dataset into train, validation, and test datasets according to specified indices.
+
+    :param dataset: Dataset to split.
+    :type dataset: ATOM3D dataset
+    :param indices_train: List of indices comprising training set.
+    :type indices_train: List[int]
+    :param indices_val: List of indices comprising validation set.
+    :type indices_val: List[int]
+    :param indices_test: List of indices comprising test set.
+    :type indices_test: List[int]
+    :return: Tuple of train, validation, and test datasets
+    :rtype: Tuple[Dataset]
+    """    
     train_dataset = torch.utils.data.Subset(dataset, indices_train)
     val_dataset = torch.utils.data.Subset(dataset, indices_val)
     test_dataset = torch.utils.data.Subset(dataset, indices_test)
@@ -43,25 +56,21 @@ def read_split_file(split_file):
 ####################################
 
 def split_randomly(dataset, train_split=None, val_split=0.1, test_split=0.1, random_seed=0):
-    """Splits data into train, val, test at random.
+    """Split a dataset into train, validation and test datasets at random.
 
-        Args:
-            dataset (atom3d dataset): dataset to perform random split on.
-            train_split (float):
-                fraction of data used for training. Default: 0.8
-            val_split (float):
-                fraction of data used for validation. Default: 0.1
-            test_split (float): fraction of data used for testing. Default: 0.1
-            random_seed (int):
-                specifies random seed for shuffling. Default: 0
-
-
-        Returns:
-            train_dataset (atom3d dataset): dataset for training.
-            val_dataset (atom3d dataset): dataset for validation
-            test_dataset (atom3d dataset): dataset for testing.
-
-    """
+    :param dataset: Dataset to split.
+    :type dataset: ATOM3D dataset
+    :param train_split: Proportion of data used for training. If None, use all data not in validation or test, defaults to None.
+    :type train_split: float, optional
+    :param val_split: Proportion of data used for validation, defaults to 0.1
+    :type val_split: float, optional
+    :param test_split: Proportion of data used for testing, defaults to 0.1
+    :type test_split: float, optional
+    :param random_seed: Random seed for splitting, defaults to 0
+    :type random_seed: int, optional
+    :return: Tuple of train, validation, and test datasets
+    :rtype: Tuple[Dataset]
+    """    
 
     # Initialize the indices
     num_indices = len(dataset)
@@ -93,6 +102,21 @@ def split_randomly(dataset, train_split=None, val_split=0.1, test_split=0.1, ran
 ####################################
 
 def split_by_group(dataset, value_fn, train_values, val_values, test_values):
+    """Splits data into train, validation, and test dataset using a value function that maps each data element to a value before
+
+    :param dataset: [description]
+    :type dataset: [type]
+    :param value_fn: [description]
+    :type value_fn: [type]
+    :param train_values: [description]
+    :type train_values: [type]
+    :param val_values: [description]
+    :type val_values: [type]
+    :param test_values: [description]
+    :type test_values: [type]
+    :return: [description]
+    :rtype: [type]
+    """    
     """
     Splits data into train, val, test by a value function, ensuring values go into appropriate sets.
 
