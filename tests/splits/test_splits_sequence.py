@@ -1,5 +1,6 @@
 import pytest
 import os
+import importlib
 import torch
 import numpy as np
 import atom3d.datasets as da
@@ -18,18 +19,22 @@ def test_cluster_split():
                              val_split=0.25, test_split=0.25, 
                              min_fam_in_split=1, random_seed=0)
     train_dataset, val_dataset, test_dataset = s
-    # TODO: Compare split to what it should be
+    # Compare split to what it should be (one sequence is thrown out)
+    for ds in s: assert len(ds) == 1
+    
 
-
-# TODO: code below throws RuntimeError: Need to set BLAST_BIN in .env to use makeblastdb
-@pytest.mark.network
+@pytest.mark.skipif('BLAST_BIN' not in os.environ,
+                    reason="Identity split requires BLAST!")
 def test_identity_split():
     # Perform the split
-#    s = seqspl.identity_split(seq_dataset, cutoff, 
-#                              val_split=0.25, test_split=0.25,
-#                              min_fam_in_split=1, blast_db=None, 
-#                              random_seed=0)
-#    train_dataset, val_dataset, test_dataset = s
-    # TODO: Compare split to what it should be
-    pass
+    s = seqspl.identity_split(seq_dataset, cutoff, 
+                              val_split=0.25, test_split=0.25,
+                              min_fam_in_split=1, blast_db=None, 
+                              random_seed=0)
+    train_dataset, val_dataset, test_dataset = s
+    # Compare split to what it should be
+    ref_len = [2,1,1]
+    for i,ds in enumerate(s): 
+        assert len(ds) == ref_len[i]
+    
 
