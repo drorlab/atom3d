@@ -10,6 +10,7 @@ setup(
         'atom3d.datasets',
         'atom3d.splits',
         'atom3d.filters',
+        'atom3d.data',
     ]),
     version='0.1.0',
     description='ATOM3D: Tasks On Molecules in 3 Dimensions',
