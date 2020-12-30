@@ -89,3 +89,4 @@ target/
 .mypy_cache/
 
 data
+atom3d/data/__pycache__/
