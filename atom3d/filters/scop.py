@@ -1,3 +1,8 @@
+"""
+Filtering functions for protein structural classification by SCOP.
+
+These all are applied to individual atom dataframes, and remove entries from that dataframe as necessary.
+"""
 import numpy as np
 import pandas as pd
 
@@ -64,7 +69,7 @@ def form_scop_filter_against(dataset, level, conservative):
     """
     Create filter that removes structures with matching scop class to a chain in supplied dataset.
 
-    We consider each chain in each structure separately, and remove the structure if any of them matches any chain in sharded. This is done at the specified scop level.  Valid levels are: type, class, fold, superfamily, family.
+    We consider each chain in each structure separately, and remove the structure if any of them matches any chain in dataset. This is done at the specified scop level.  Valid levels are: type, class, fold, superfamily, family.
 
     :param dataset: dataset that if we are checking for matches against.
     :type dataset: atom3d dataset.
