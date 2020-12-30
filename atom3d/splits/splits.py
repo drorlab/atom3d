@@ -13,7 +13,7 @@ def split(dataset, indices_train, indices_val, indices_test):
     """Split a dataset into train, validation, and test datasets according to specified indices.
 
     :param dataset: Dataset to split.
-    :type dataset: ATOM3D dataset
+    :type dataset: Dataset
     :param indices_train: List of indices comprising training set.
     :type indices_train: List[int]
     :param indices_val: List of indices comprising validation set.
@@ -59,7 +59,7 @@ def split_randomly(dataset, train_split=None, val_split=0.1, test_split=0.1, ran
     """Split a dataset into train, validation and test datasets at random.
 
     :param dataset: Dataset to split.
-    :type dataset: ATOM3D dataset
+    :type dataset: Dataset
     :param train_split: Proportion of data used for training. If None, use all data not in validation or test, defaults to None.
     :type train_split: float, optional
     :param val_split: Proportion of data used for validation, defaults to 0.1
@@ -105,7 +105,7 @@ def split_by_group(dataset, value_fn, train_values, val_values, test_values):
     """Splits data into train, validation, and test dataset using a value function that maps each data element to a value (or group identifier). These are then used to assign elements to the appropriate splits based on pre-defined lists of values to include in each split.
 
     :param dataset: Dataset to split.
-    :type dataset: ATOM3D dataset
+    :type dataset: Dataset
     :param value_fn: Arbitrary function mapping each data element to a value or group identifier.
     :type value_fn: function
     :param train_values: List of values to include in training set.
@@ -138,7 +138,7 @@ def split_by_group_size(dataset, value_fn, val_split=0.1, test_split=0.1):
     Each split is filled iteratively up to the sizes specified by ``val_split`` and ``test_split``.
 
     :param dataset: Dataset to split.
-    :type dataset: ATOM3D dataset
+    :type dataset: Dataset
     :param value_fn: Arbitrary function mapping each data element to a value or group identifier.
     :type value_fn: function
     :param val_split: Proportion of data used for validation, defaults to 0.1
