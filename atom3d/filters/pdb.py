@@ -1,3 +1,8 @@
+"""
+Filtering functions for protein data bank files.
+
+These all are applied to individual atom dataframes, and remove entries from that dataframe as necessary.
+"""
 import pandas as pd
 
 PDB_ENTRY_TYPE_FILE = 'metadata/pdb_entry_type.txt'
@@ -5,7 +10,17 @@ RESOLUTION_FILE = 'metadata/resolu.idx'
 
 
 def form_size_filter(max_size=None, min_size=None):
-    """Filter by number of residues."""
+    """
+    Create filter for a certain number of residues, keeping only structures that fall within the specified bounds.
+
+    :param max_size: maximum allowable number of residues in a structure.  None means there is no maximum.
+    :type max_size: int.
+    :param min_size: minimum allowable number of residues in a structure.  None means there is no minimum.
+    :type min_size: int.
+
+    :return: function that implements the specified filter.
+    :rtype: filter function.
+    """
 
     def filter_fn(df):
         to_keep = pd.Series([True] * len(df), index=df['structure'])
@@ -26,10 +41,20 @@ def form_size_filter(max_size=None, min_size=None):
 
 def form_source_filter(allowed=None, excluded=None):
     """
-    Filter by experimental source.
+    Create filter for experimental source.
 
-    Valid entries are diffraction, NMR, EM, other.
+    Valid entries are: diffraction, NMR, EM, other.  Only one of allowed and excluded can be set.
+
+    :param allowed: allowed experimental sources.
+    :type allowed: list[str].
+    :param excluded: excluded experimental sources.
+    :type excluded: list[str].
+
+    :return: function that implements the specified filter.
+    :rtype: filter function.
     """
+    if excluded is not None and allowed is not None:
+        raise RuntimeError('Can only specify one of allowed and excluded.')
     if excluded is None:
         excluded = []
     if allowed is None:
@@ -56,9 +81,17 @@ def form_source_filter(allowed=None, excluded=None):
 
 def form_molecule_type_filter(allowed=None, excluded=None):
     """
-    Filter by biomolecule type.
+    Create filter for molecule type.
 
-    Valid entries are prot, prot-nuc, nuc, carb, other.
+    Valid entries are: prot, prot-nuc, nuc, carb, other.  Only one of allowed and excluded can be set.
+
+    :param allowed: allowed molecule types.
+    :type allowed: list[str].
+    :param excluded: excluded molecule types.
+    :type excluded: list[str].
+
+    :return: function that implements the specified filter.
+    :rtype: filter function.
     """
     if allowed is None:
         allowed = []
@@ -85,13 +118,21 @@ def form_molecule_type_filter(allowed=None, excluded=None):
 
 
 def form_resolution_filter(threshold):
-    """Filter by resolution of method used to determine."""
+    """
+    Create filter for experimental resolution.
+
+    :param threshold: maximum allowable experimental resolution.
+    :type threshold: float.
+
+    :return: function that implements the specified filter.
+    :rtype: filter function.
+    """
     resolution = pd.read_csv(RESOLUTION_FILE, skiprows=6, delimiter='\t',
                              usecols=[0, 2], names=['pdb_code', 'resolution'])
     resolution['pdb_code'] = resolution['pdb_code'].apply(lambda x: x.lower())
     resolution = resolution.set_index('pdb_code')['resolution']
 
-    # Remove duplicates byoned the first.
+    # Remove duplicates beyond the first.
     resolution = resolution[~resolution.index.duplicated()]
 
     def filter_fn(df):

@@ -1,10 +1,22 @@
-"""Common filtering functions."""
+"""
+Common filtering functions.
+
+These all are applied to individual atom dataframes, and remove entries from that dataframe as necessary.
+"""
 import Bio.PDB.Polypeptide as Poly
 import pandas as pd
 
 
 def standard_residue_filter(df):
-    """Filter out non-standard residues."""
+    """
+    Filter out non-standard residues.
+
+    :param df: dataframe to filter against.
+    :type df: atoms dataframe.
+
+    :return: same dataframe, but with only with atoms corresponding to standard residues left.
+    :rtype: atoms dataframe.
+    """
     residues = df[['structure', 'model', 'chain', 'residue', 'resname']] \
         .drop_duplicates()
     sel = residues['resname'].apply(
@@ -19,8 +31,15 @@ def standard_residue_filter(df):
 
 
 def first_model_filter(df):
-    """Remove anything beyond first model in structure."""
+    """
+    Remove anything beyond first model in structure.
 
+    :param df: dataframe to filter against.
+    :type df: atoms dataframe.
+
+    :return: same dataframe, but with only with atoms corresponding to first model left.
+    :rtype: atoms dataframe.
+    """
     models = df[['structure', 'model']].drop_duplicates()
     models = models.sort_values(['structure', 'model'])
 
@@ -32,7 +51,15 @@ def first_model_filter(df):
 
 
 def single_chain_filter(df):
-    """Remove anything that has more than one model/chain."""
+    """
+    Remove anything beyond first model/chain in structure.
+
+    :param df: dataframe to filter against.
+    :type df: atoms dataframe.
+
+    :return: same dataframe, but with only with atoms corresponding to the first chain of the first model left.
+    :rtype: atoms dataframe.
+    """
 
     chains = df[['structure', 'model', 'chain']].drop_duplicates()
     chains = chains.sort_values(['structure', 'model', 'chain'])
@@ -46,10 +73,30 @@ def single_chain_filter(df):
 
 
 def identity_filter(df):
+    """
+    Leave atoms dataframe unchanged.
+
+    :param df: dataframe to filter against.
+    :type df: atoms dataframe.
+
+    :return: same dataframe.
+    :rtype: atoms dataframe.
+    """
     return df
 
 
 def compose(f, g):
+    """
+    Compose two filter f and g.
+
+    :param f: Outer filter function.
+    :type f: filter function.
+    :param g: Inner filter function.
+    :type g: filter function.
+
+    :return: lambda x: f(g(x))
+    :rtype: filter function.
+    """
 
     def filter_fn(df):
         df = g(df)
@@ -61,7 +108,17 @@ def compose(f, g):
 
 
 def form_filter_against_list(against, column):
-    """Filter against list for column of dataframe."""
+    """
+    Create filter against a list, keeping only items with values in that list.
+
+    :param against: values that we will keep when they are found.
+    :type against: list.
+    :param column: dataframe column that we will extract values from.
+    :type column: str.
+
+    :return: function that implements the specified filter.
+    :rtype: filter function.
+    """
 
     def filter_fn(df):
         to_keep = {}
