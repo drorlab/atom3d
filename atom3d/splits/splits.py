@@ -102,37 +102,22 @@ def split_randomly(dataset, train_split=None, val_split=0.1, test_split=0.1, ran
 ####################################
 
 def split_by_group(dataset, value_fn, train_values, val_values, test_values):
-    """Splits data into train, validation, and test dataset using a value function that maps each data element to a value before
+    """Splits data into train, validation, and test dataset using a value function that maps each data element to a value (or group identifier). These are then used to assign elements to the appropriate splits based on pre-defined lists of values to include in each split.
 
-    :param dataset: [description]
-    :type dataset: [type]
-    :param value_fn: [description]
-    :type value_fn: [type]
-    :param train_values: [description]
-    :type train_values: [type]
-    :param val_values: [description]
-    :type val_values: [type]
-    :param test_values: [description]
-    :type test_values: [type]
-    :return: [description]
-    :rtype: [type]
+    :param dataset: Dataset to split.
+    :type dataset: ATOM3D dataset
+    :param value_fn: Arbitrary function mapping each data element to a value or group identifier.
+    :type value_fn: function
+    :param train_values: List of values to include in training set.
+    :type train_values: List
+    :param val_values: List of values to include in validation set.
+    :type val_values: List
+    :param test_values: List of values to include in test set.
+    :type test_values: List
+    :return: Tuple of train, validation, and test datasets
+    :rtype: Tuple[Dataset]
     """    
-    """
-    Splits data into train, val, test by a value function, ensuring values go into appropriate sets.
 
-    Assumes each entry has an entry associated with it.
-
-    Args:
-        dataset (atom3d dataset): dataset to perform split on.
-        train_values (str[]): values of field to include in training set.
-        val_values (str[]): values of field to include in validation set.
-        test_values (str[]): values of field to include in test set.
-
-    Returns:
-        train_dataset (atom3d dataset): dataset for training.
-        val_dataset (atom3d dataset): dataset for validation.
-        test_dataset (atom3d dataset): dataset for testing.
-    """
     values = [value_fn(x) for x in dataset]
 
     # Determine the indices of each split
@@ -148,22 +133,22 @@ def split_by_group(dataset, value_fn, train_values, val_values, test_values):
 
 
 def split_by_group_size(dataset, value_fn, val_split=0.1, test_split=0.1):
-    """Splits data into train, val, test by a value function, ensuring most common values go in train.
+    """Splits data into train, validation, and test dataset using a value function that maps each data element to a value (or group identifier). Elements are grouped by the value returned by this value function, and groups are sorted by size. 
+    The groups are then added first to train, then to validation, then to test splits in order of group size, so that the largest groups (i.e. most common examples)  are in train and the smallest groups (i.e. less common examples) are in test. 
+    Each split is filled iteratively up to the sizes specified by ``val_split`` and ``test_split``.
 
-    We group entries in the dataset by the value returned by value_fn.  We then sort these groups by size,
-    including the largest ones first in train, then in val, filling them to a prespecified size.
+    :param dataset: Dataset to split.
+    :type dataset: ATOM3D dataset
+    :param value_fn: Arbitrary function mapping each data element to a value or group identifier.
+    :type value_fn: function
+    :param val_split: Proportion of data used for validation, defaults to 0.1
+    :type val_split: float, optional
+    :param test_split: Proportion of data used for testing, defaults to 0.1
+    :type test_split: float, optional
+    :return: Tuple of train, validation, and test datasets.
+    :rtype: Tuple[Dataset]
+    """    
 
-
-        Args:
-            dataset (atom3d dataset): dataset to perform split on.
-            val_split (float):
-                fraction of data used for validation. Default: 0.1
-            test_split (float): fraction of data used for testing. Default: 0.1
-        Returns:
-            train_dataset (atom3d dataset): dataset for training.
-            val_dataset (atom3d dataset): dataset for validation
-            test_dataset (atom3d dataset): dataset for testing.
-    """
     values = [value_fn(x) for x in dataset]
 
     logger.info(f'Splitting dataset with {len(values):} entries.')
