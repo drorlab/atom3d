@@ -14,8 +14,21 @@ de.load_dotenv(os.path.join(project_root, '.env'))
 logger = log.get_logger('sequence')
 
 
-# TODO: write proper docstring
 def find_similar(chain_sequences, blast_db, cutoff, num_alignments):
+    """Find all other proteins that have sequence identity greater than ``cutoff`` to query protein given by ``chain_sequences``. Assumes sequences have already been processed into a BLAST-formatted database by :func:`write_to_blast_db`.
+
+    :param chain_sequences: Query protein represented as a list of tuples of (id, sequence) for each chain, as output by :func:`get_chain_sequences`.
+    :type chain_sequences: Tuple[Tuple[str, str, str, str], str]
+    :param blast_db: Location of BLAST database
+    :type blast_db: str
+    :param cutoff: Sequence identity cutoff; must be between 0 and 1
+    :type cutoff: float
+    :param num_alignments: Number of proteins for which to calculate identity.
+    :type num_alignments: int
+    
+    :return: List of chain identifiers (as tuples) for proteins found within specified sequence identity.
+    :rtype: List[Tuple[str, str, str, str]]
+    """    
     """Find all other pdbs that have sequence identity greater than cutoff."""
     
     if 'BLAST_BIN' not in os.environ:
@@ -98,7 +111,7 @@ def find_cluster_members(pdb, clusterings):
 
 
 def write_to_blast_db(chain_sequences, blast_db):
-    """Write provided dataset to blast db, for use with BLAST.
+    """Write provided sequences to blast db, for use with BLAST. Sequences should be provided as (id, sequence) tuples as returned by :func:`get_chain_sequences`.
     """
     logger.info(f'writing {len(chain_sequences):} entries to BLAST db {blast_db:}')
 
@@ -138,7 +151,7 @@ def get_chain_sequences(df):
 
 def _write_fasta(chain_sequences, outfile):
     """
-    Write chain_sequences to fasta file.
+    Write chain_sequences to fasta file. 
     """
     with open(outfile, 'w') as f:
         for chain, seq in chain_sequences:

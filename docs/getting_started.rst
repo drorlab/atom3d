@@ -3,6 +3,7 @@ Getting started
 
 Introduction
 ************
+
 ATOM3D aims to facilitate the development of novel machine learning methods on three-dimensional molecular structure by providing several curated benchmark datasets across a variety of tasks in molecular and strucural biology. This package provides a set of standardized functions and methodologies for interacting with provided datasets as well as preparing new 3D molecular datasets.
 
 Installation/Usage

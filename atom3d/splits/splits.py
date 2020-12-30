@@ -106,7 +106,7 @@ def split_by_group(dataset, value_fn, train_values, val_values, test_values):
 
     Returns:
         train_dataset (atom3d dataset): dataset for training.
-        val_dataset (atom3d dataset): dataset for validation
+        val_dataset (atom3d dataset): dataset for validation.
         test_dataset (atom3d dataset): dataset for testing.
     """
     values = [value_fn(x) for x in dataset]
