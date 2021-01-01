@@ -6,6 +6,7 @@ These all are applied to individual atom dataframes, and remove entries from tha
 import Bio.PDB.Polypeptide as Poly
 import pandas as pd
 import scipy.spatial as ss
+import numpy as np
 
 
 def standard_residue_filter(df):
