@@ -1,18 +1,14 @@
-name: codecov
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
+name: Example workflow for Codecov
+on: [push]
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.7']
-
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      OS: ${{ matrix.os }}
+      PYTHON: '3.7'
     steps:
     - uses: actions/checkout@master
     - name: Setup Python
@@ -23,11 +19,16 @@ jobs:
       run: |
         pip install pytest
         pip install pytest-cov
-        pip install tox
-        tox -e py
         pytest --cov=./ --cov-report=xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
+        file: ./coverage.xml
+        files: ./coverage1.xml,./coverage2.xml
         directory: ./coverage/reports/
+        flags: unittests
+        env_vars: OS,PYTHON
+        name: codecov-umbrella
+        fail_ci_if_error: true
+        path_to_write_report: ./coverage/codecov_report.txt
         verbose: true
