@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import atom3d.datasets as da
 import atom3d.filters.filters as filters
@@ -48,6 +49,17 @@ def test_single_chain_filter():
             assert len(df_fil) == 0
         else:
             assert len(df_fil) == len(df_inp)
+
+
+def test_distance_filter():
+    """Remove all atoms within a certain distance around a certain position"""
+    for pos in [np.array([0,0,0]),np.array([[0,0,0],[0,0,0]])]:
+        dist = 10.
+        for i, d in enumerate(dataset):
+            df_inp = d['atoms']
+            df_fil = filters.distance_filter(d['atoms'], pos, dist)
+            abscrd = np.array(df_inp['x'])**2 + np.array(df_inp['y'])**2 + np.array(df_inp['z'])**2
+            assert len(df_fil) == np.sum(abscrd<dist**2)
 
 
 def test_identity_filter():
