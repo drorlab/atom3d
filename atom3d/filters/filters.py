@@ -5,6 +5,7 @@ These all are applied to individual atom dataframes, and remove entries from tha
 """
 import Bio.PDB.Polypeptide as Poly
 import pandas as pd
+import scipy.spatial as ss
 
 
 def standard_residue_filter(df):
@@ -64,7 +65,7 @@ def single_chain_filter(df):
     chains = df[['structure', 'model', 'chain']].drop_duplicates()
     chains = chains.sort_values(['structure', 'model', 'chain'])
 
-    chains['to_keep'] = ~chains['structure'].duplicated(False)
+    chains['to_keep'] = ~chains['structure'].duplicated()  
     chains_to_keep = chains.set_index(['structure', 'model', 'chain'])
 
     to_keep = \
@@ -84,6 +85,23 @@ def identity_filter(df):
     """
     return df
 
+def distance_filter(df, pos, dist):
+    """Returns dataframe containing all atoms within ``dist`` of query positions in ``pos``.
+
+    :param df: Input structure dataframe
+    :type df: pandas.DataFrame
+    :param pos: x-y-z positions of query points. For N query points, should be array of shape N x 3
+    :type pos: array-like
+    :param dist: Distance in Angstrom to search for neighbors.
+    :type dist: float
+    :return: New dataframe containing only atoms within ``dist`` of query position
+    :rtype: pandas.DataFrame
+    """    
+    kd_tree = ss.KDTree(df[['x','y','z']].to_numpy())
+    nn_pt_idx = kd_tree.query_ball_point(pos, r=dist, p=2.0)
+    nn_pt_idx = set([k for l in nn_pt_idx for k in l])
+    nn_df = df.iloc[nn_pt_idx].reset_index(drop=True)
+    return nn_df
 
 def compose(f, g):
     """
@@ -128,3 +146,16 @@ def form_filter_against_list(against, column):
         return df[to_keep.values]
 
     return filter_fn
+
+def filter_to_transform(filter_fn, df_name='atoms'):
+    """Create transform function (which operates on dataset items) from filter function (which operates on dataframes). By default, applies filter_fn to ``atoms`` dataframe, but a different dataframe can be specified optionally.
+
+    :param filter_fn: Arbitrary filter function that takes in a dataframe and returns filtered dataframe
+    :type filter_fn: filter function
+    :param df_name: Name of dataframe to apply filter_fn to, defaults to 'atoms'
+    :type df_name: str, optional
+    """    
+    def transform_fn(item):
+        item[df_name] = filter_fn(item['atoms'])
+        return item
+    return transform_fn

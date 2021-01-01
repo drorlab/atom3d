@@ -1,7 +1,6 @@
 """
 Filtering functions for protein sequences.
 
-These all are applied to individual atom dataframes, and remove entries from that dataframe as necessary.
 """
 import pandas as pd
 

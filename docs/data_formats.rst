@@ -5,7 +5,7 @@ The Dataset object
 ************************
 
 ATOM3D uses a standardized data format for 3D molecular structures, designed to maximize flexibility and efficiency without losing important structural information. 
-The main way to interact with these datasets is through the Dataset objects in :mod:`atom3d.datasets`. These are essentially PyTorch datasets in which each item consists of several key-data pairs.
+The main way to interact with these datasets is through the Dataset objects in :mod:`atom3d.datasets.datasets`. These are essentially PyTorch datasets in which each item consists of several key-data pairs.
 
 Each item (molecular structure) in an ATOM3D dataset contains at minimum the following keys:
 

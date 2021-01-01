@@ -12,11 +12,11 @@ Assuming a directory containing all of the files you wish to process, you can cr
 
     python -m atom3d.datasets PATH_TO_INPUT_DIR PATH_TO_LMDB_OUTPUT --filetype {pdb,silent,xyz,xyz-gdb} 
 
-You can also load the dataset first in Python before writing it to LMDB format:
+You can also load the dataset first in Python before writing it to LMDB format using the :mod:`atom3d.datasets.datasets` module:
 
   .. code:: python
 
-    import atom3d.datasets as da
+    import atom3d.datasets.datasets as da
 
     # Load dataset from directory of PDB files
     dataset = da.load_dataset(PATH_TO_INPUT_DIR, 'pdb')

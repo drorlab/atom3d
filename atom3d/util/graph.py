@@ -155,12 +155,12 @@ def edges_between_graphs(pos1, pos2, dist=4.5):
     return edges, edge_weights
 
 
-def find_neighbors(df, pos, dist):
-    """Returns dataframe containing all atoms within ``dist`` of query position ``pos``.
+def distance_filter(df, pos, dist):
+    """Returns dataframe containing all atoms within ``dist`` of query positions in ``pos``.
 
     :param df: Input structure dataframe
     :type df: pandas.DataFrame
-    :param pos: x-y-z position of query point. Should be list or 1D array of length 3
+    :param pos: x-y-z positions of query points. For N query points, should be array of shape N x 3
     :type pos: array-like
     :param dist: Distance in Angstrom to search for neighbors.
     :type dist: float
@@ -169,6 +169,7 @@ def find_neighbors(df, pos, dist):
     """    
     kd_tree = ss.KDTree(df[['x','y','z']].to_numpy())
     nn_pt_idx = kd_tree.query_ball_point(pos, r=dist, p=2.0)
+    nn_pt_idx = set([k for l in nn_pt_idx for k in l])
     nn_df = df.iloc[nn_pt_idx].reset_index(drop=True)
     return nn_df
 

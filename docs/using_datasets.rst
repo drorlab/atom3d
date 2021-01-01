@@ -7,11 +7,11 @@ Downloading LMDB datasets
 *********************
 
 All datasets can be downloaded in LMDB format from `atom3d.ai <atom3d.ai>`_, or using the Python API:
-     
-  .. code:: pycon
+    
+.. code:: pycon
 
-    >>> import atom3d.datasets as ds
-    >>> ds.download_dataset('lba', TARGET_PATH)
+  >>> import atom3d.datasets.datasets as da
+  >>> da.download_dataset('lba', TARGET_PATH)
 
 See the ATOM3D website or the :ref:`FAQ <sec:datasets-faq>` for more information about the datasets available.
 
@@ -25,7 +25,7 @@ See :doc:`/data_formats` for details on the format of each data entry.
 
 .. code:: python
 
-    import atom3d.datasets as da
+    import atom3d.datasets.datasets as da
 
     dataset = da.load_dataset(PATH_TO_INPUT_DIR, {'lmdb', 'pdb','silent','sdf','xyz','xyz-gdb'})
     print(len(dataset))  # Print length 
@@ -34,6 +34,67 @@ See :doc:`/data_formats` for details on the format of each data entry.
 
 Filtering datasets
 ***********************
+
+By default, datasets contain all atoms in each molecular structure. However, many applications may require filtering the structure to remove undesirable atoms or focus on a specific region of the structure. 
+This is easy to do by defining filter functions which operate on the ``atoms`` dataframe of a dataset item, returning a filtered version of the same dataframe. Several such filter functions are predefined in :mod:`atom3d.filters`.
+
+For example, to remove non-standard residues from all proteins in a dataset:
+
+.. code:: python
+
+  from atom3d.filters import filters
+  from atom3d.data.example import load_example_dataset
+
+  dataset = load_example_dataset()
+  for struct in dataset:
+    struct['atoms'] = filters.standard_residue_filter(struct['atoms'])
+
+
+It is also possible to combine multiple filters with :func:`atom3d.filters.filters.compose`. For example, to use only the first chain of a protein *and* remove non-standard residues:
+
+.. code:: pycon
+
+    >>> from atom3d.data.example import load_example_dataset
+    >>> from atom3d.filters import filters
+    >>> dataset = load_example_dataset()
+    >>> struct = dataset[0]
+    >>> filter1 = filters.single_chain_filter
+    >>> filter2 = filters.standard_residue_filter
+    >>> filter_fn = filters.compose(filter1, filter2)
+    >>> struct['atoms'].shape
+    (5220, 20)
+    >>> struct['atoms'] = filter_fn(struct['atoms'])
+    >>> struct['atoms'].shape
+    (2568, 20)
+
+
+These functions can also be readily extended by defining wrappers that return a filter function for a particular application. 
+For example, the function :func:`atom3d.filters.sequence.form_seq_filter_against` creates a filter function that removes structures with greater than some sequence identity to any structure in a specified dataset (e.g. to filter train examples that are too similar to the test set).
+  
+.. code:: python
+
+    from atom3d.filters.sequence import form_seq_filter_against
+    from atom3d.datasets.datasets import LMDBDataset
+    
+    train_dataset = LMDBDataset(TRAIN_PATH)
+    test_dataset = LMDBDataset(TEST_PATH)
+
+    filter_fn = form_seq_filter_against(test_dataset, 0.3)
+
+    for struct in train_dataset:
+      struct['atoms'] = filter_fn(struct['atoms']) # returns empty dataframe if a match is found in test set
+
+
+To automatically apply a filter to a dataset on the fly as each example is loaded, you can convert it to a transform function and pass it to any Dataset using the ``transform`` argument.
+
+.. code:: python
+
+    from atom3d.filters import filters
+    from atom3d.datasets.datasets import LMDBDataset
+
+    filter_fn = filters.standard_residue_filter
+    transform_fn = filters.filter_to_transform(filter_fn) # convert filter function to transform function
+    dataset = LMDBDataset(PATH, transform=transform_fn) # load dataset and apply transform
 
 
 Splitting datasets
@@ -57,34 +118,67 @@ Using standard splitting criteria
 
 ATOM3D provides splitting functions for many commonly used splitting methodologies in the :mod:`atom3d.splits.splits` module.
 
-  * Split randomly
+  * **Split randomly**
 
-  * Split by sequence identity (proteins)
+    The simplest splitting method is to split the dataset at random. 
 
-  * Split by scaffold (small molecules)
+  * **Split by sequence identity (proteins)**
 
-  * Split by year
+  * **Split by scaffold (small molecules)**
+
+  * **Split by year**
 
 
 Defining your own splitting criteria
 ------------------------------------
 
-  * Split by cluster/group membership
+  * **Split by cluster/group membership**
 
-  * Split by cluster/group size
+  * **Split by cluster/group size**
 
+.. _sec:examples:
 
 Examples
 ********
 
-#. **Get coordinates of all atoms in a structure.**
-
-  .. code:: pycon
+The following examples illustrate some useful functionalities of ATOM3D using a small mock dataset.
 
   >>> from atom3d.data.example import load_example_dataset
-  >>> dataset = load_example_dataset()
-  >>> struct = dataset[0] # get first structure in dataset
-  >>> atoms_df = struct['atoms'] # load atom data for structure
-  >>> coords = fo.get_coordinates_from_df(atoms_df)
-  >>> coords.shape
-  (100, 3)
+  >>> pdb_dataset = load_example_dataset()
+
+1. **Get coordinates of all atoms in a structure.**
+
+.. code:: pycon
+
+>>> import atom3d.util.formats as fo
+>>> struct = dataset[0] # get first structure in dataset
+>>> atoms_df = struct['atoms'] # load atom data for structure
+>>> coords = fo.get_coordinates_from_df(atoms_df)
+>>> coords.shape
+(2568, 3)
+
+2. **Get protein sequences from a structure.**
+
+.. code:: pycon
+
+>>> import atom3d.protein.sequence as seq
+>>> struct = dataset[0] # get first structure in dataset
+>>> atoms_df = struct['atoms'] # load atom data for structure
+>>> chain_sequences = seq.get_chain_sequences(atoms_df) 
+>>> chain_sequences # Contains sequences for all chains/monomers, identified by tuple of (ensemble, subunit, structure, model, chain)
+[(('11as.pdb', '0', '11as.pdb', '1', 'A'), 'AYIAKQRQISFVKS...PAAVRESVPSLLN')]
+
+3. **Get SMILES strings from small molecule structure.**
+
+TODO
+
+4. **Extract all atoms within 5 Angstroms of a ligand**
+
+.. code:: pycon
+
+>>> from atom3d.filters.filters import distance_filter
+>>> import atom3d.util.formats as fo
+>>> struct = dataset[0] # get first structure in dataset
+>>> atoms_df = struct['atoms'] # load atom data for structure
+>>> lig_coords = fo.get_coordinates_from_df(atoms_df[atoms_df['subunit']=='LIG']) # get coords of ligand
+>>> df_filtered = distance_filter(atoms_df, lig_coords, dist=5.0)

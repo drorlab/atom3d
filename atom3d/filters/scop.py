@@ -17,14 +17,14 @@ def form_scop_filter(level, allowed=None, excluded=None):
     Valid levels are: type, class, fold, superfamily, family.
 
     :param level: values that we will keep when they are found.
-    :type level: str.
+    :type level: str
     :param allowed: allowed SCOP values.
-    :type allowed: list[str].
+    :type allowed: list[str], optional
     :param excluded: excluded SCOP values.
-    :type excluded: list[str].
+    :type excluded: list[str], optional
 
     :return: function that implements the specified filter.
-    :rtype: filter function.
+    :rtype: filter function
     """
     if excluded is not None and allowed is not None:
         raise RuntimeError('Can only specify one of allowed and excluded.')
@@ -67,16 +67,16 @@ def form_scop_filter(level, allowed=None, excluded=None):
 
 def form_scop_filter_against(dataset, level, conservative):
     """
-    Create filter that removes structures with matching scop class to a chain in supplied dataset.
+    Create filter that removes structures with matching SCOP class to a chain in supplied dataset.
 
-    We consider each chain in each structure separately, and remove the structure if any of them matches any chain in dataset. This is done at the specified scop level.  Valid levels are: type, class, fold, superfamily, family.
+    We consider each chain in each structure separately, and remove the structure if any of them matches any chain in dataset. This is done at the specified SCOP level.  Valid levels are: type, class, fold, superfamily, family.
 
     :param dataset: dataset that if we are checking for matches against.
-    :type dataset: atom3d dataset.
+    :type dataset: atom3d dataset
     :param level: SCOP level at which we are comparing datasets.
-    :type level: str.
-    :param conservative: indicates what we should do about pdbs that do not have any scop class associated with them.  True means we throw out, False means we keep.
-    :type conservative: bool.
+    :type level: str
+    :param conservative: indicates what we should do about pdbs that do not have any SCOP class associated with them.  True means we throw out, False means we keep.
+    :type conservative: bool
 
     :return: function that implements the specified filter.
     :rtype: filter function.

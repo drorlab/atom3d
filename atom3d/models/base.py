@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, global_add_pool
+from torch_geometric.nn import GCNConv, global_mean_pool
 from torch.nn import Linear
 
 
@@ -25,8 +25,6 @@ class GCN(nn.Module):
         self.bn4 = nn.BatchNorm1d(hidden_dim*4)
         self.conv5 = GCNConv(hidden_dim*4, hidden_dim*2)
         self.bn5 = nn.BatchNorm1d(hidden_dim*2)
-        self.fc1 = Linear(hidden_dim*2, hidden_dim*2)
-        self.fc2 = Linear(hidden_dim*2, 20)
 
 
     def forward(self, x, edge_index, edge_weight, batch, select_idx=None):
@@ -49,12 +47,9 @@ class GCN(nn.Module):
         if select_idx:
             x = torch.index_select(x, 0, select_idx)
         else:
-            x = global_add_pool(x, batch)
+            x = global_mean_pool(x, batch)
 
-        x = F.relu(x)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, p=0.25, training=self.training)
-        return self.fc2(x)
+        return x
 
 
 class CNN3D(nn.Module):

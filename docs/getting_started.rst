@@ -87,13 +87,30 @@ Frequently Asked Questions
      
      .. code:: pycon
    
-        >>> import atom3d.datasets as ds
-        >>> ds.download_dataset('lba', '/path/to/target')
+        >>> import atom3d.datasets.dastasets as da
+        >>> da.download_dataset('lba', '/path/to/target')
 
 3. **Do I have to use the provided train/val/test splits for ATOM3D datasets?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
    | No, you may create your own splitting functions and apply them to any dataset. Please see :doc:`/using_datasets` for more details.
+
+
+4. **What kind of utility functions exist in ATOM3D?**
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+   | There are functions available for performing many common tasks on macromolecular structure. See the examples in :ref:`examples` for some common use cases, and explore the API documentation to find specific functions. 
+   | If we are missing a function you think would be useful, please `contact us <atom3d@googlegroups.com>`_ or `contribute <:ref:_sec:contributing>`_.
+
+
+.. _sec:contributing:
+
+Contributing to ATOM3D
+**********************
+
+ATOM3D is open-source and available on `Github <https://github.com/drorlab/atom3d>`_. Please submit issues or requests using the `issue tracker <https://github.com/drorlab/atom3d/issues>`_.
+
+If you want to submit a new dataset or model, please use the portal on our website (coming soon).
 
 Reference
 *************

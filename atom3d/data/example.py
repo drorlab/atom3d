@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import atom3d.datasets as da
+from pathlib import Path
 
 class MockDataset(torch.utils.data.Dataset):
     def __init__(self):
@@ -19,5 +20,5 @@ class MockDataset(torch.utils.data.Dataset):
         return item
 
 def load_example_dataset():
-    dataset = da.load_dataset('tests/test_data/lmdb', 'lmdb')
+    dataset = da.load_dataset(str(Path(__file__).parent.absolute()) + '/test_lmdb', 'lmdb')
     return dataset
