@@ -120,9 +120,9 @@ def distance_filter(df, pos, dist):
     """    
     if pos.ndim == 1:
         pos = pos[np.newaxis, :]
-    kd_tree = ss.KDTree(df[['x','y','z']].to_numpy())
+    kd_tree = ss.KDTree(df[['x','y','z']].values)
     nn_pt_idx = kd_tree.query_ball_point(pos, r=dist, p=2.0)
-    nn_pt_idx = set([k for l in nn_pt_idx for k in l])
+    nn_pt_idx = list(set([k for l in nn_pt_idx for k in l]))
     nn_df = df.iloc[nn_pt_idx].reset_index(drop=True)
     return nn_df
 
