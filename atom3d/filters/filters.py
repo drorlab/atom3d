@@ -51,7 +51,7 @@ def first_model_filter(df):
     return df[to_keep.values]
 
 
-def single_chain_filter(df):
+def first_chain_filter(df):
     """
     Remove anything beyond first model/chain in structure.
 
@@ -65,13 +65,33 @@ def single_chain_filter(df):
     chains = df[['structure', 'model', 'chain']].drop_duplicates()
     chains = chains.sort_values(['structure', 'model', 'chain'])
 
-    chains['to_keep'] = ~chains['structure'].duplicated()  
+    chains['to_keep'] = ~chains['structure'].duplicated()
     chains_to_keep = chains.set_index(['structure', 'model', 'chain'])
 
     to_keep = \
         chains_to_keep.loc[df.set_index(['structure', 'model', 'chain']).index]
     return df[to_keep.values]
 
+def single_chain_filter(df):
+    """
+    Remove anything beyond first model/chain in structure.
+
+    :param df: dataframe to filter against.
+    :type df: atoms dataframe.
+
+    :return: same dataframe if structure has only one chain, otherwise empty dataframe.
+    :rtype: atoms dataframe.
+    """
+
+    chains = df[['structure', 'model', 'chain']].drop_duplicates()
+    chains = chains.sort_values(['structure', 'model', 'chain'])
+
+    chains['to_keep'] = ~chains['structure'].duplicated(keep=False)
+    chains_to_keep = chains.set_index(['structure', 'model', 'chain'])
+
+    to_keep = \
+        chains_to_keep.loc[df.set_index(['structure', 'model', 'chain']).index]
+    return df[to_keep.values]
 
 def identity_filter(df):
     """
