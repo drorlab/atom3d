@@ -23,7 +23,7 @@ We provide an overview on ATOM3D and details on the preparation of all datasets 
 Please cite this work if some of the ATOM3D code or datasets are helpful in your scientific endeavours. For specific datasets, please also cite the respective original source(s), given in the preprint.
 
 
-## Installation
+## Installation/Usage
 
 Install with:
 
@@ -38,8 +38,6 @@ conda create -n atom3d python=3.6 pip rdkit
 conda activate atom3d
 make requirements
 ```
-
-## Usage
 
 ### LMDB datasets
 
@@ -67,26 +65,8 @@ print(dataset[0])  # Print 1st entry
 From C++:
 
  We provide example C++ code to load the LMDB datasets [here](https://github.com/drorlab/atom3d/tree/master/atom3d/cpp/lmdb-reader).
-
-### Sharded datasets
-
-An HDF5 based data format that allows for keyed indexing of structures.
-
-#### Loading a sharded dataset
-
-From python:
-```
-import atom3d.shard.shard as sh
-
-# Load dataset split into fragments (or shards).
-sharded = sh.Sharded.load('sharded/candidates/structures@21')
-
-# Iterate through shards.
-for shard_num in range(sharded.get_num_shards()):
-  structures = sharded.read_shard(shard_num)
-  # You can also load associated metadata.
-  labels = sharded.read_shard(shard_num, 'labels')
-```
+ 
+For more usage, please see documentation at [atom3d.readthedocs.io](atom3d.readthedocs.io).
 
 ## Contribute
 
