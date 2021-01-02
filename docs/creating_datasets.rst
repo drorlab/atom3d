@@ -97,4 +97,4 @@ In the following example, we assume that we want to split the dataset generated 
                              serialization_format = 'json',
                              include_bonds = False)
 
-There are many ways to split a datasets and we provide functions for many of them in the the :mod:`atom3d.splits` module.
+There are many ways to split datasets and we provide functions for many of them in the the :mod:`atom3d.splits` module.
