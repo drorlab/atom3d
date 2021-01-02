@@ -3,6 +3,7 @@
 [![Documentation
 Status](https://readthedocs.org/projects/atom3d/badge/?version=latest)](http://atom3d.readthedocs.io/?badge=latest)
 ![Package](https://github.com/drorlab/atom3d/workflows/package/badge.svg)
+[![codecov](https://codecov.io/gh/drorlab/atom3d/branch/master/graph/badge.svg?token=DHH78W45AB)](https://codecov.io/gh/drorlab/atom3d)
 
 [ATOM3D](https://www.atom3d.ai/) enables machine learning on three-dimensional molecular structure.
 
