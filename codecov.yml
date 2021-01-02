@@ -7,3 +7,4 @@ ignore:
   - "atom3d/datasets/res"
   - "atom3d/datasets/rsr"
   - "atom3d/datasets/smp"
+  - "atom3d/shard"
