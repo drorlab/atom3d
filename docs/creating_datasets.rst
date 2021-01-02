@@ -3,7 +3,7 @@ Creating new datasets
 
 In addition to the eight pre-curated datasets, you can also create your own datasets in the same standardized LMDB format. Currently, we support creating LMDB datasets from a set of PDB files, SDF files, silent files, or xyz files.
 
-Creating a dataset from input files
+Create a dataset from input files
 ***********************************
 
 Assuming a directory containing all of the files you wish to process, you can create a new LMDB dataset from the command line:
@@ -26,7 +26,7 @@ You can also load the dataset first in Python before writing it to LMDB format u
                          include_bonds=False)
                          
                          
-Modifying a dataset (adding labels etc.)
+Modify a dataset (add labels etc.)
 ***********************************
 
 To modify a dataset you can load it in Python and define the modification via the `transform` option. 
@@ -65,7 +65,7 @@ You can flexibly use the `transform` option to modify any aspect of a dataset. F
         return item
       
       
-Splitting a dataset
+Split a dataset
 ***********************************
 
 Once you have processed your dataset, you probably want to split it in training, validation and test set. 
