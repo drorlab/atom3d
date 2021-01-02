@@ -10,8 +10,10 @@ Status](https://readthedocs.org/projects/atom3d/badge/?version=latest)](http://a
 ## Features
 
 * Access to several datasets involving 3D molecular structure. 
-* Sharded data format for storing lots of molecules (and associated metadata).
+* LMDB data format for storing lots of molecules (and associated metadata).
 * Utilities for splitting/filtering data based on many criteria.
+
+For more detailed information, [read the documentation](https://atom3d.readthedocs.io/en/latest/).
 
 
 ## Reference
