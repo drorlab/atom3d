@@ -68,7 +68,7 @@ From C++:
 
  We provide example C++ code to load the LMDB datasets [here](https://github.com/drorlab/atom3d/tree/master/atom3d/cpp/lmdb-reader).
  
-For more usage, please see documentation at [atom3d.readthedocs.io](atom3d.readthedocs.io).
+For more usage, please see the [documentation](https://atom3d.readthedocs.io/en/latest/).
 
 ## Contribute
 
