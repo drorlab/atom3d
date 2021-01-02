@@ -99,7 +99,7 @@ Frequently Asked Questions
 4. **What kind of utility functions exist in ATOM3D?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-   | There are functions available for performing many common tasks on macromolecular structure. See the examples in :ref:`examples` for some common use cases, and explore the API documentation to find specific functions. 
+   | There are functions available for performing many common tasks on macromolecular structure. See the `usage examples <:ref:_sec:examples>`_ for some common use cases, and explore the API documentation to find specific functions. 
    | If we are missing a function you think would be useful, please `contact us <atom3d@googlegroups.com>`_ or `contribute <:ref:_sec:contributing>`_.
 
 

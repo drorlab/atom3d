@@ -33,3 +33,21 @@ The base models provided are the following:
 Task-specific models and dataloaders
 *************************************
 
+Many datasets and tasks require specific model architectures (e.g. paired or multi-headed networks), and thus require custom-built dataloaders to process the data in the correct manner. 
+We provide custom dataloaders and models for each pre-curated dataset in the :mod:`atom3d.datasets` module. A brief description of each is provided below; for more details and motivation please see the ATOM3D `paper <https://arxiv.org/abs/2012.04035>`_.
+
+  * **SMP** (:mod:`atom3d.datasets.smp.models`)
+
+  * **PIP** (:mod:`atom3d.datasets.pip.models`)
+
+  * **RES** (:mod:`atom3d.datasets.res.models`)
+
+  * **MSP** (:mod:`atom3d.datasets.msp.models`)
+
+  * **LBA** (:mod:`atom3d.datasets.lba.models`)
+
+  * **LEP** (:mod:`atom3d.datasets.lep.models`)
+
+  * **PSR** (:mod:`atom3d.datasets.psr.models`)
+
+  * **RSR** (:mod:`atom3d.datasets.rsr.models`)
