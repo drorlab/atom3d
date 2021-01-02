@@ -29,7 +29,7 @@ You can also load the dataset first in Python before writing it to LMDB format u
 Modifying a dataset (adding labels etc.)
 ***********************************
 
-To modify a dataset you can load it in Python and define the modification via the :mod:`transform` option. 
+To modify a dataset you can load it in Python and define the modification via the `transform` option. 
 The most common modification is adding labels, which are usually provided separate from PDB or SDF files.
 In the following example, we assume that they are saved in CSV files with the same names as the corresponding PDB files.
 
@@ -53,7 +53,7 @@ In the following example, we assume that they are saved in CSV files with the sa
                          filter_fn=None, serialization_format='json',
                          include_bonds=False)
 
-You can flexibly use the :mod:`transform` option to modify any aspect of a dataset. For example, if you want to shift all structures in x direction, use the following function:
+You can flexibly use the `transform` option to modify any aspect of a dataset. For example, if you want to shift all structures in x direction, use the following function:
 
   .. code:: python
   
