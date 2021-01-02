@@ -21,9 +21,7 @@ You can also load the dataset first in Python before writing it to LMDB format u
     # Load dataset from directory of PDB files
     dataset = da.load_dataset(PATH_TO_INPUT_DIR, 'pdb')
     # Create LMDB dataset from PDB dataset
-    da.make_lmdb_dataset(dataset, PATH_TO_LMDB_OUTPUT,
-                         filter_fn=None, serialization_format='json',
-                         include_bonds=False)
+    da.make_lmdb_dataset(dataset, PATH_TO_LMDB_OUTPUT)
                          
                          
 Modify a dataset (add labels etc.)
@@ -52,9 +50,7 @@ In the following example, we assume that they are saved in CSV files with the sa
     dataset = da.load_dataset(PATH_TO_INPUT_DIR, 'pdb', transform=add_label)
     
     # Create LMDB dataset from PDB dataset
-    da.make_lmdb_dataset(dataset, PATH_TO_LMDB_OUTPUT,
-                         filter_fn=None, serialization_format='json',
-                         include_bonds=False)
+    da.make_lmdb_dataset(dataset, PATH_TO_LMDB_OUTPUT)
 
 You can flexibly use the `transform` option to modify any aspect of a dataset. For example, if you want to shift all structures in x direction, use the following function:
 
@@ -93,9 +89,6 @@ In the following example, we assume that we want to split the dataset generated 
         split_dir = os.path.join(PATH_TO_LMDB_OUTPUT, split_name)
         os.makedirs(split_dir, exist_ok=True)
         # Create LMDB dataset for the current split
-        da.make_lmdb_dataset(split_ds[s], split_dir,
-                             filter_fn = None,
-                             serialization_format = 'json',
-                             include_bonds = False)
+        da.make_lmdb_dataset(split_ds[s], split_dir)
 
 There are many ways to split datasets and we provide functions for many of them in the the :mod:`atom3d.splits` module.
