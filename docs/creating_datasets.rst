@@ -91,4 +91,4 @@ In the following example, we assume that we want to split the dataset generated 
         # Create LMDB dataset for the current split
         da.make_lmdb_dataset(split_ds[s], split_dir)
 
-There are many ways to split datasets and we provide functions for many of them in the the :mod:`atom3d.splits` module. They are described in more detail [here](https://atom3d.readthedocs.io/en/latest/using_datasets.html#splitting-datasets).
+There are many ways to split datasets and we provide functions for many of them in the the :mod:`atom3d.splits` module. They are described in more detail `here <https://atom3d.readthedocs.io/en/latest/using_datasets.html#splitting-datasets>`_.
