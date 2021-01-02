@@ -35,6 +35,8 @@ In the following example, we assume that they are saved in CSV files with the sa
 
   .. code:: python
 
+    import os
+    import pandas as pd
     import atom3d.datasets.datasets as da
 
     def add_label(item):
@@ -67,11 +69,10 @@ Splitting a dataset
 ***********************************
 
 Once you have processed your dataset, you probably want to split it in training, validation and test set. 
-In the following example, we assume that we want to split the dataset generated above according to a predefined split and that the IDs that belong in each dataset are defined in the files train.txt, valid.txt and test.txt.
+In the following example, we assume that we want to split the dataset generated above according to a predefined split and that the IDs for the structures that belong in each dataset are defined in the files *train.txt*, *valid.txt* and *test.txt*.
 
   .. code:: python
         
-    import os
     import atom3d.splits.splits as spl
     
     # Load split values
