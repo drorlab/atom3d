@@ -1,0 +1,9 @@
+ignore:
+  - "atom3d/dataset/lba"  # ignore dataset-specific code for now
+  - "atom3d/dataset/lep"
+  - "atom3d/dataset/msp"
+  - "atom3d/dataset/ppi"
+  - "atom3d/dataset/psr"
+  - "atom3d/dataset/res"
+  - "atom3d/dataset/rsr"
+  - "atom3d/dataset/smp"
