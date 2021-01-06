@@ -32,7 +32,7 @@ def prot_df_to_graph(df, feat_col, allowable_feats, edge_dist_cutoff=4.5):
 
     :return: tuple containing
 
-        - node_feats (torch.LongTensor): Features for each node, one-hot encoded by values in ``allowable_feats``.
+        - node_feats (torch.FloatTensor): Features for each node, one-hot encoded by values in ``allowable_feats``.
 
         - edges (torch.LongTensor): Edges in COO format
 
@@ -68,7 +68,7 @@ def mol_df_to_graph(mol, allowable_atoms=mol_atoms):
     :type allowable_atoms: list[str], optional
 
     :return: Tuple containing \n
-        - node_feats (torch.LongTensor): Features for each node, one-hot encoded by atom type in ``allowable_atoms``.
+        - node_feats (torch.FloatTensor): Features for each node, one-hot encoded by atom type in ``allowable_atoms``.
         - edges (torch.LongTensor): Edges from chemical bond graph in COO format.
         - edge_feats (torch.FloatTensor): Edge features given by bond type. Single = 1.0, Double = 2.0, Triple = 3.0, Aromatic = 1.5.
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node.
@@ -96,9 +96,9 @@ def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
     :param edges_between_dist: Distance cutoff in Angstroms for adding edges between graphs, defaults to 4.5.
     :type edges_between_dist: float, optional
     :return: Tuple containing \n
-        - node_feats (torch.LongTensor): Features for each node in the combined graph, concatenated along the feature dimension.\n
+        - node_feats (torch.FloatTensor): Features for each node in the combined graph, concatenated along the feature dimension.\n
         - edges (torch.LongTensor): Edges of combined graph in COO format, including edges from two input graphs and edges between them, if specified.\n
-        - edge_weights (torch.LongTensor): Concatenated edge features from two input graphs and edges between them, if specified.\n
+        - edge_weights (torch.FloatTensor): Concatenated edge features from two input graphs and edges between them, if specified.\n
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node in combined graph.
     :rtype: Tuple
     """    
@@ -152,26 +152,24 @@ def edges_between_graphs(pos1, pos2, dist=4.5):
 
     edges = torch.LongTensor(edges).t().contiguous()
     edge_weights = torch.FloatTensor(edge_weights).view(-1, 1)
-    return edges, edge_weights
+    return edges, edge_weights    
 
 
-def distance_filter(df, pos, dist):
-    """Returns dataframe containing all atoms within ``dist`` of query positions in ``pos``.
+def adjust_graph_indices(graph):
+    """Adjusts indices into graphs for concatenated multi-graph batches. Specifically, if each graph in the batch has a different selection index defined relative to that graph, the index is adjusted to be defined relative to the batch indexing.
 
-    :param df: Input structure dataframe
-    :type df: pandas.DataFrame
-    :param pos: x-y-z positions of query points. For N query points, should be array of shape N x 3
-    :type pos: array-like
-    :param dist: Distance in Angstrom to search for neighbors.
-    :type dist: float
-    :return: New dataframe containing only atoms within ``dist`` of query position
-    :rtype: pandas.DataFrame
+    :param graph: Pytorch-geometric graph object representing a batch of graphs. Assumed to have a ``select_idx`` attribute set, specifying a node index for each graph
+    :type graph: torch_geometric.data.Data
+    :return: Same graph with selection indices adjusted
+    :rtype: torch_geometric.data.Data
     """    
-    kd_tree = ss.KDTree(df[['x','y','z']].to_numpy())
-    nn_pt_idx = kd_tree.query_ball_point(pos, r=dist, p=2.0)
-    nn_pt_idx = set([k for l in nn_pt_idx for k in l])
-    nn_df = df.iloc[nn_pt_idx].reset_index(drop=True)
-    return nn_df
+    batch_size = len(graph.n_nodes)
+    total_n = 0
+    for i in range(batch_size-1):
+        n_nodes = graph.n_nodes[i].item()
+        total_n += n_nodes
+        graph.select_idx[i+1] += total_n
+    return graph
 
 
 # below functions are adapted from DeepChem repository:

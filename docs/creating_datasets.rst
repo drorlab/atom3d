@@ -27,7 +27,7 @@ You can also load the dataset first in Python before writing it to LMDB format u
 Modify a dataset (add labels etc.)
 ***********************************
 
-To modify a dataset you can load it in Python and define the modification via the `transform` option. 
+To modify a dataset you can load it in Python and define the modification via the ``transform`` option. 
 The most common modification is adding labels, which are usually provided separate from PDB or SDF files.
 In the following example, we assume that they are saved in CSV files with the same names as the corresponding PDB files.
 
@@ -64,7 +64,7 @@ You can flexibly use the `transform` option to modify any aspect of a dataset. F
 Split a dataset
 ***********************************
 
-Once you have processed your dataset, you probably want to split it in training, validation and test set. 
+Once you have processed your dataset, you probably want to split it in training, validation, and test sets. 
 In the following example, we assume that we want to split the dataset generated above according to a predefined split and that the IDs for the structures that belong in each dataset are defined in the files *train.txt*, *valid.txt* and *test.txt*.
 
   .. code:: python

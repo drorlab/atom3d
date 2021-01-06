@@ -18,8 +18,8 @@ atom3d.datasets.datasets
    :undoc-members:
    :show-inheritance:
 
-Subpackages
------------
+Dataset-specific modules
+-------------------------------
 
 .. toctree::
    :maxdepth: 1
