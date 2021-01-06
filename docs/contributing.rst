@@ -38,13 +38,14 @@ New splitting functions
 -----------------------------------
 To add a new way to split a dataset, you can build on the generic split functions in the file ``atom3d/datasets/datasets.py``: 
 
- - The function ``split_by_group()`` assigns elements to the appropriate splits based on pre-defined lists of values to include in each split, according to a value function that has to be provided as an argument.
- - Similarly, ``split_by_group_size()`` assigns elements so that the largest groups (i.e. most common examples)  are in train and the smallest groups (i.e. less common examples) are in test.
+ - The function ``split_by_group()`` assigns elements to splits based on pre-defined lists of values. A "value function", defining the value in the data entry to which the values in the list correspond, has to be provided as an argument.
+ - Similarly, ``split_by_group_size()`` assigns elements so that the largest groups (i.e. most common examples) are in the training set and the smallest groups (i.e. less common examples) are in the test set.
 
 You can create more specific split functions from them by defining the value function, as we do in the following examples (which are already part of ATOM3D):
 
      .. code:: python
    
+        from functools import partial
         split_by_year = partial(split_by_group, value_fn=lambda x: x['year'])
         split_by_scaffold = partial(split_by_group_size, value_fn=lambda x: x['scaffold'])
 
