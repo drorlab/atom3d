@@ -48,9 +48,8 @@ class Scores(object):
 @click.option('--val_txt', '-v', type=click.Path(exists=True), default=None)
 @click.option('--test_txt', '-t', type=click.Path(exists=True), default=None)
 @click.option('--score_path', type=click.Path(exists=True), default=None)
-@click.option('--structures_per_protein', type=int, default=50)
 def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt,
-            score_path, structures_per_protein):
+            score_path):
     logging.basicConfig(stream=sys.stdout,
                         format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
