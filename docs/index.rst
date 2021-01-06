@@ -11,6 +11,7 @@ Welcome to ATOM3D documentation!
    using_datasets
    creating_datasets
    training_models
+   contributing
 
 
 .. toctree::

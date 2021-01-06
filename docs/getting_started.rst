@@ -9,6 +9,16 @@ ATOM3D aims to facilitate the development of novel machine learning methods on t
 Installation
 ******************
 
+Install using pip
+"""""""""""""""""""
+
+  .. code:: bash
+    
+    pip install atom3d
+
+Install from source
+"""""""""""""""""""""
+
 To install, first clone the ATOM3D repository:
 
   .. code:: bash
@@ -99,18 +109,19 @@ Frequently Asked Questions
 4. **What kind of utility functions exist in ATOM3D?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-   | There are functions available for performing many common tasks on macromolecular structure. See the `usage examples <:ref:_sec:examples>`_ for some common use cases, and explore the API documentation to find specific functions. 
-   | If we are missing a function you think would be useful, please `contact us <atom3d@googlegroups.com>`_ or `contribute <:ref:_sec:contributing>`_.
+   | There are functions available for performing many common tasks on macromolecular structure. See the :ref:`usage examples <examples>` for some common use cases, and explore the API documentation to find specific functions. 
+
+   | If we are missing a function you think would be useful, please consider :ref:`contributing <contributing>`!
 
 
-.. _sec:contributing:
+.. _contributing:
 
 Contributing to ATOM3D
 **********************
 
 ATOM3D is open-source and available on `Github <https://github.com/drorlab/atom3d>`_. Please submit issues or requests using the `issue tracker <https://github.com/drorlab/atom3d/issues>`_.
 
-If you want to submit a new dataset or model, please use the portal on our website (coming soon).
+If you want to submit a new dataset or model, please use the portal on our website (coming soon!).
 
 Reference
 *************

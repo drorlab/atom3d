@@ -42,7 +42,3 @@ Each row of the dataframe represents a bond and contains three columns:
 * ``atom2``: index of the second atom in the bond (corresponding to the ``serial_number`` field in the ``atoms`` dataframe)
 * ``type``: bond type, encoded as Double (single bond = 1.0, double bond = 2.0, triple bond = 3.0, aromatic bond = 1.5).
 
-Modifying data items using transforms
-**************************************
-
-TODO

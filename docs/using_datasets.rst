@@ -96,6 +96,7 @@ To automatically apply a filter to a dataset on the fly as each example is loade
     transform_fn = filters.filter_to_transform(filter_fn) # convert filter function to transform function
     dataset = LMDBDataset(PATH, transform=transform_fn) # load dataset and apply transform
 
+.. _splitting:
 
 Splitting datasets
 ***********************
@@ -136,7 +137,7 @@ Defining your own splitting criteria
 
   * **Split by cluster/group size**
 
-.. _sec:examples:
+.. _examples:
 
 Examples
 ********
