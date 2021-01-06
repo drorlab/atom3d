@@ -62,11 +62,17 @@ class LMDBDataset(Dataset):
         return self._num_examples
 
     def get(self, id: str):
+        idx = self.id_to_idx(id)
+        return self[idx]
+
+    def id_to_idx(self, id: str):
         if id not in self._id_to_idx:
             raise IndexError(id)
-
         idx = self._id_to_idx[id]
-        return self[idx]
+        return idx
+
+    def ids_to_indices(self, ids):
+        return [self.id_to_idx(id) for id in ids]
 
     def ids(self):
         return list(self._id_to_idx.keys())
@@ -109,7 +115,7 @@ class PDBDataset(Dataset):
 
     def __init__(self, file_list, transform=None):
         """constructor
-        
+
         """
         self._file_list = [Path(x).absolute() for x in file_list]
         self._num_examples = len(self._file_list)
@@ -146,7 +152,7 @@ class SilentDataset(IterableDataset):
 
     def __init__(self, file_list, transform=None):
         """constructor
-        
+
         """
 
         if not importlib.util.find_spec("rosetta") is not None:
@@ -216,7 +222,7 @@ class XYZDataset(Dataset):
 
     def __init__(self, file_list, transform=None, gdb=False):
         """constructor
-        
+
         """
         self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
@@ -286,7 +292,7 @@ class XYZDataset(Dataset):
 
 class SDFDataset(Dataset):
     """
-    Creates a dataset from directory of SDF files. 
+    Creates a dataset from directory of SDF files.
 
     :param file_list: list containing paths to silent files. Assumes one structure per file.
     :type file_list: list[Union[str, Path]]
@@ -298,7 +304,7 @@ class SDFDataset(Dataset):
 
     def __init__(self, file_list, transform=None, read_bonds=False):
         """constructor
-        
+
         """
         self._file_list = [Path(x) for x in file_list]
         self._num_examples = len(self._file_list)
@@ -521,7 +527,7 @@ def download_dataset(name, out_path):
     # with tqdm.tqdm(unit='B', unit_scale=True, unit_divisor=1024, miniters=1, desc=f_out) as t:  # all optional kwargs
     #     urllib.request.urlretrieve(link, filename=f_out,
     #                     reporthook=_hook(t), data=None)
-    
+
     cmd = f"wget --load-cookies /tmp/cookies.txt \"https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id={link}' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\\1\\n/p'  | tr -d \"n\")&id={link}\" -O {name}.tar.gz"
     subprocess.call(cmd, shell=True)
     cmd2 = f"tar xzvf {name}.tar.gz"

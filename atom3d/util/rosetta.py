@@ -44,14 +44,16 @@ class Scores(object):
         file_path = Path(file_path)
         key = (file_path.stem, file_path.name)
         if key in self._scores.index:
-            return self._scores.loc[key]
+            return key, self._scores.loc[key]
         key = (file_path.parent.stem, file_path.stem)
         if key in self._scores.index:
-            return self._scores.loc[key]
-        return None
+            return key, self._scores.loc[key]
+        return None, None
 
     def __call__(self, x, error_if_missing=False):
-        x['scores'] = self._lookup(x['file_path'])
+        key, x['scores'] = self._lookup(x['file_path'])
+        if key is not None:
+            x['id'] = str(key)
         if x['scores'] is None and error_if_missing:
             raise RuntimeError(f'Unable to find scores for {x["file_path"]}')
         return x
