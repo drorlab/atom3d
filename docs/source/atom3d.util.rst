@@ -25,6 +25,14 @@ atom3d.util.graph
    :undoc-members:
    :show-inheritance:
 
+atom3d.util.transforms
+------------------------
+
+.. automodule:: atom3d.util.transforms
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 atom3d.util.log
 ----------------------
 

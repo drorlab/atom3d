@@ -145,7 +145,7 @@ Examples
 The following examples illustrate some useful functionalities of ATOM3D using a small mock dataset.
 
   >>> from atom3d.data.example import load_example_dataset
-  >>> pdb_dataset = load_example_dataset()
+  >>> dataset = load_example_dataset()
 
 1. **Get coordinates of all atoms in a structure.**
 

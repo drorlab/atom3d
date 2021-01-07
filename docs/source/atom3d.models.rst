@@ -18,9 +18,17 @@ Graph Networks (GNNs)
    :show-inheritance:
 
 Equivariant Networks (ENNs)
-------------------------
+-----------------------------
 
 .. automodule:: atom3d.models.enn
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Feed-Forward Networks
+-----------------------
+
+.. automodule:: atom3d.models.ff
    :members:
    :undoc-members:
    :show-inheritance:

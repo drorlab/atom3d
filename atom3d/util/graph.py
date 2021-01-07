@@ -17,16 +17,17 @@ residues = ['ALA', 'CYS', 'ASP', 'GLU', 'PHE', 'GLY', 'HIS', 'ILE', 'LYS', 'LEU'
                 'SER', 'THR', 'VAL', 'TRP', 'TYR']
 
 
-def prot_df_to_graph(df, feat_col, allowable_feats, edge_dist_cutoff=4.5):
+def prot_df_to_graph(df, feat_col='element', allowable_feats=prot_atoms, edge_dist_cutoff=4.5):
     r"""
     Converts protein in dataframe representation to a graph compatible with Pytorch-Geometric, where each node is an atom.
 
     :param df: Protein structure in dataframe format.
     :type df: pandas.DataFrame
     :param node_col: Column of dataframe to find node feature values. For example, for atoms use ``feat_col="element"`` and for residues use ``feat_col="resname"``
-    :type node_col: str
+    :type node_col: str, optional
     :param allowable_feats: List containing all possible values of node type, to be converted into 1-hot node features. 
         Any elements in ``feat_col`` that are not found in ``allowable_feats`` will be added to an appended "unknown" bin (see :func:`atom3d.util.graph.one_of_k_encoding_unk`).
+    :type allowable_feats: list, optional
     :param edge_dist_cutoff: Maximum distance cutoff (in Angstroms) to define an edge between two atoms, defaults to 4.5.
     :type edge_dist_cutoff: float, optional
 
@@ -52,8 +53,8 @@ def prot_df_to_graph(df, feat_col, allowable_feats, edge_dist_cutoff=4.5):
     edge_weights = torch.FloatTensor(
         [1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edge_tuples]).view(-1, 1)
     # feats = F.one_hot(elems, num_classes=len(atom_int_dict))
-
-    return node_feats, edges, edge_weights, node_pos
+    
+    return node_feats, edges, edge_weights.view(-1), node_pos
 
 
 def mol_df_to_graph(mol, allowable_atoms=mol_atoms):
@@ -127,7 +128,7 @@ def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
 
 
 def edges_between_graphs(pos1, pos2, dist=4.5):
-    """[summary]
+    """calculates edges between nodes in two separate graphs using a specified cutoff distance.
 
     :param pos1: x-y-z node coordinates from Graph 1
     :type pos1: torch.FloatTensor or numpy.ndarray
