@@ -73,8 +73,9 @@ For more usage, please see the [documentation](https://atom3d.readthedocs.io/en/
 
 ## Contribute
 
-* Issue Tracker: https://github.com/drorlab/atom3d/issues
-* Source Code: https://github.com/drorlab/atom3d
+As a living repository, we welcome contributions of additional datasets, methods, and functionality!  See the [Contributing](https://atom3d.readthedocs.io/en/latest/contributing.html) section of the documentation for details.
+
+For support, please file an issue at https://github.com/drorlab/atom3d/issues
 
 ## Support
 
