@@ -31,7 +31,7 @@ Please cite this work if some of the ATOM3D code or datasets are helpful in your
 Install with:
 
 ```
-make requirements
+pip install atom3d
 ```
     
 To use rdkit functionality, please install within conda:
@@ -39,7 +39,7 @@ To use rdkit functionality, please install within conda:
 ```
 conda create -n atom3d python=3.6 pip rdkit
 conda activate atom3d
-make requirements
+pip install atom3d
 ```
 
 ### LMDB datasets
