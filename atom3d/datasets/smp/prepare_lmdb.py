@@ -70,14 +70,14 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
     if not split:
         return
 
-    logger.info(f'Splitting indices...')
+    logger.info(f'Splitting indices...\n')
     lmdb_ds = da.load_dataset(lmdb_path, 'lmdb')
 
     def _write_split_indices(split_txt, lmdb_ds, output_txt):
         with open(split_txt, 'r') as f:
             split_set = set([x.strip() for x in f.readlines()])
         # Check if the target in id is in the desired target split set
-        split_ids = list(filter(lambda id: eval(id)[0] in split_set, lmdb_ds.ids()))
+        split_ids = list(filter(lambda idi: idi in split_set, lmdb_ds.ids()))
         # Convert ids into lmdb numerical indices and write into txt file
         split_indices = lmdb_ds.ids_to_indices(split_ids)
         with open(output_txt, 'w') as f:
