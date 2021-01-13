@@ -75,12 +75,9 @@ For more usage, please see the [documentation](https://atom3d.readthedocs.io/en/
 
 As a living repository, we welcome contributions of additional datasets, methods, and functionality!  See the [Contributing](https://atom3d.readthedocs.io/en/latest/contributing.html) section of the documentation for details.
 
-For support, please file an issue at https://github.com/drorlab/atom3d/issues
-
 ## Support
 
-If you are having issues, please let us know.
-We have a mailing list located at: atom3d@googlegroups.com
+For support, please file an issue at https://github.com/drorlab/atom3d/issues.
 
 ## License
 
