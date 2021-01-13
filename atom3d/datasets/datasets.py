@@ -254,41 +254,6 @@ class XYZDataset(Dataset):
             item = self._transform(item)
         return item
 
-    def data_with_subtracted_thchem_energy(self, data, df):
-        """
-        Adds energies with subtracted thermochemical energies to the data list.
-        We only need this for the QM9 dataset (SMP).
-        """
-
-        # per-atom thermochem. energies for U0 [Ha], U [Ha], H [Ha], G [Ha], Cv [cal/(mol*K)]
-        # https://figshare.com/articles/dataset/Atomref%3A_Reference_thermochemical_energies_of_H%2C_C%2C_N%2C_O%2C_F_atoms./1057643
-        thchem_en = {
-            'H': [-0.500273, -0.498857, -0.497912, -0.510927, 2.981],
-            'C': [-37.846772, -37.845355, -37.844411, -37.861317, 2.981],
-            'N': [-54.583861, -54.582445, -54.581501, -54.598897, 2.981],
-            'O': [-75.064579, -75.063163, -75.062219, -75.079532, 2.981],
-            'F': [-99.718730, -99.717314, -99.716370, -99.733544, 2.981]}
-
-        # Count occurence of each element in the molecule
-        counts = df['element'].value_counts()
-
-        # Calculate and subtract thermochemical energies
-        u0_atom = data[10] - np.sum([c * thchem_en[el][0]
-                                     for el, c in counts.items()])  # U0
-        u_atom = data[11] - np.sum([c * thchem_en[el][1]
-                                    for el, c in counts.items()])  # U
-        h_atom = data[12] - np.sum([c * thchem_en[el][2]
-                                    for el, c in counts.items()])  # H
-        g_atom = data[13] - np.sum([c * thchem_en[el][3]
-                                    for el, c in counts.items()])  # G
-        cv_atom = data[14] - np.sum([c * thchem_en[el][4]
-                                     for el, c in counts.items()])  # Cv
-
-        # Append new data
-        data += [u0_atom, u_atom, h_atom, g_atom, cv_atom]
-
-        return data
-
 
 class SDFDataset(Dataset):
     """
@@ -471,6 +436,7 @@ def make_lmdb_dataset(dataset, output_lmdb,
         txn.put(b'serialization_format', serialization_format.encode())
         txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
+
 def download_dataset(name, out_path):
     """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR. Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
 
@@ -532,3 +498,4 @@ def download_dataset(name, out_path):
     subprocess.call(cmd, shell=True)
     cmd2 = f"tar xzvf {name}.tar.gz"
     subprocess.call(cmd2, shell=True)
+

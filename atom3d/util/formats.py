@@ -175,6 +175,7 @@ patterns = {
     'mmcif': r'(mm)?cif$',
     'sdf': r'sdf[0-9]*$',
     'xyz': r'xyz[0-9]*$',
+    'xyz-gdb': r'xyz[0-9]*$',
     'silent': r'out$',
     'sharded': r'@[0-9]+',
 }
