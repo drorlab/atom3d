@@ -118,9 +118,9 @@ def _gen_subunits(df, subsample):
         res_bb = res_df[res_df['name'].isin(bb_atoms)]
         subunit_df = pd.concat([subunit_df, res_bb]).reset_index(drop=True)
 
-        # environment = all atoms within 10*sqrt(2) angstroms (to enable a 20A cube)
+        # environment = all atoms within 10*sqrt(3) angstroms (to enable a 20A cube)
         kd_tree = scipy.spatial.KDTree(subunit_df[['x','y','z']].to_numpy())
-        subunit_pt_idx = kd_tree.query_ball_point(CB_pos, r=10.0*np.sqrt(2), p=2.0)
+        subunit_pt_idx = kd_tree.query_ball_point(CB_pos, r=10.0*np.sqrt(3), p=2.0)
 
         sub_df = subunit_df.loc[subunit_pt_idx]
         tmp = sub_df.copy()

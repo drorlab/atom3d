@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class LMDBDataset(Dataset):
     """
-    Creates a dataset from an lmdb file. Adapted from the TAPE repository at https://github.com/songlab-cal/tape/blob/master/tape/datasets.py
+    Creates a dataset from an lmdb file. Adapted from `TAPE <https://github.com/songlab-cal/tape/blob/master/tape/datasets.py>`_.
 
     :param data_file: path to LMDB file containing dataset
     :type data_file: Union[str, Path]
