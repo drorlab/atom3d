@@ -5,6 +5,7 @@ import re
 import sys
 
 import click
+import numpy as np
 
 import atom3d.datasets.datasets as da
 import atom3d.datasets.psr.util as util
