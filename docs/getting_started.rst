@@ -97,7 +97,7 @@ Frequently Asked Questions
      
      .. code:: pycon
    
-        >>> import atom3d.datasets.dastasets as da
+        >>> import atom3d.datasets.datasets as da
         >>> da.download_dataset('lba', '/path/to/target')
 
 3. **Do I have to use the provided train/val/test splits for ATOM3D datasets?**
