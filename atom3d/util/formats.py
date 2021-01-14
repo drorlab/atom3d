@@ -41,7 +41,7 @@ def merge_dfs(dfs):
 
 def bp_to_df(bp):
     """Convert biopython representation to ATOM3D dataframe representation.
-    
+
     :param bp: Molecular structure in Biopython representation.
     :type bp: Bio.PDB.Structure
 
@@ -79,7 +79,7 @@ def bp_to_df(bp):
 
 def df_to_bp(df_in):
     """Convert ATOM3D dataframe representation to biopython representation. Assumes dataframe contains only one structure.
-    
+
     :param df_in: Molecular structure in ATOM3D dataframe format.
     :type df_in: pandas.DataFrame
 
@@ -94,7 +94,7 @@ def df_to_bp(df_in):
 
 def df_to_bps(df_in):
     """Convert ATOM3D dataframe representation containing multiple structures to list of Biopython structures. Assumes different structures are specified by `ensemble` and `structure` columns of dataframe.
-    
+
     :param df_in: Molecular structures in ATOM3D dataframe format.
     :type df_in: pandas.DataFrame
 
@@ -365,7 +365,7 @@ def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, resi
         df['x'].append(position.x)
         df['y'].append(position.y)
         df['z'].append(position.z)
-        df['element'].append(a.GetSymbol())
+        df['element'].append(a.GetSymbol().upper())
         df['serial_number'].append(i)
     df = pd.DataFrame(df)
     # Make up atom names
@@ -435,7 +435,7 @@ def read_xyz(xyz_file, name=None, gdb=False):
         return bp, data, freq, smiles, inchi
     else:
         return bp
-    
+
 
 def read_xyz_to_df(inputfile, gdb_data=False):
     """Read an XYZ file into Pandas DataFrame representation (optionally with GDB9-specific data)
@@ -484,7 +484,7 @@ def read_xyz_to_df(inputfile, gdb_data=False):
         return molecule
 
 
-# -- WRITING FILES -- 
+# -- WRITING FILES --
 
 
 def write_pdb(out_file, structure, **kwargs):
@@ -521,7 +521,7 @@ def write_mmcif(out_file, structure, **kwargs):
 
 def get_coordinates_from_df(df):
     """Extract XYZ coordinates from molecule in dataframe format.
-    
+
     :param df: Dataframe containing molecular structure. Must have columns named `x`, `y`, and `z`.
     :type df: pandas.DataFrame
 
