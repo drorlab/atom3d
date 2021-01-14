@@ -33,7 +33,14 @@ Install with:
 ```
 pip install atom3d
 ```
-    
+
+In case rdkit is not yet installed, install with:
+
+```
+conda config --append channels conda-forge
+conda install -c rdkit rdkit
+```
+
 To use rdkit functionality, please install within conda:
 
 ```
