@@ -1,7 +1,6 @@
 import collections as col
 import logging
 import os
-import re
 import sys
 
 import click
@@ -82,10 +81,16 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt,
         split_indices = lmdb_ds.ids_to_indices(split_ids)
         with open(output_txt, 'w') as f:
             f.write(str('\n'.join([str(i) for i in split_indices])))
+        return split_indices
 
-    _write_split_indices(train_txt, lmdb_ds, os.path.join(output_root, 'train_indices.txt'))
-    _write_split_indices(val_txt, lmdb_ds, os.path.join(output_root, 'val_indices.txt'))
-    _write_split_indices(test_txt, lmdb_ds, os.path.join(output_root, 'test_indices.txt'))
+    indices_train = _write_split_indices(train_txt, lmdb_ds, os.path.join(output_root, 'train_indices.txt'))
+    indices_val = _write_split_indices(val_txt, lmdb_ds, os.path.join(output_root, 'val_indices.txt'))
+    indices_test = _write_split_indices(test_txt, lmdb_ds, os.path.join(output_root, 'test_indices.txt'))
+
+    train_dataset, val_dataset, test_dataset = spl.split(lmdb_ds, indices_train, indices_val, indices_test)
+    da.make_lmdb_dataset(train_dataset, os.path.join(output_root, 'train'))
+    da.make_lmdb_dataset(val_dataset, os.path.join(output_root, 'val'))
+    da.make_lmdb_dataset(test_dataset, os.path.join(output_root, 'test'))
 
 
 if __name__ == "__main__":
