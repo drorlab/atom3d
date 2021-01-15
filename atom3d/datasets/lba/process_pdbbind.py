@@ -8,7 +8,7 @@ import scipy.spatial
 
 import atom3d.util.file as fi
 import atom3d.util.formats as ft
-import get_labels as lab
+import atom3d.datasets.lba.get_labels as lab
 
 from rdkit import Chem
 import Bio.PDB
@@ -90,10 +90,10 @@ class PocketSelect(Select):
 def process_files(input_dir):
     """
     Process all protein (pdb) and ligand (sdf) files in input directory.
-    
+
     :param input dir: directory containing PDBBind data
     :type input_dir: str
-    
+
     :return structure_dict: dictionary containing each structure, keyed by PDB code. Each PDB is a dict containing protein as Biopython object and ligand as RDKit Mol object
     :rtype structure_dict: dict
     """

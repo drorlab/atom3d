@@ -288,13 +288,13 @@ def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False)
 
     dflist = []
     molecules = read_sdf_to_mol(sdf_file, sanitize=sanitize,
-                                add_h=add_hs, remove_h=remove_hs)
+                                add_hs=add_hs, remove_hs=remove_hs)
     for im,m in enumerate(molecules):
         if m is not None:
             df = mol_to_df(m, residue=im,
-                           ensemble = m.GetProp("_Name"),
-                           structure = m.GetProp("_Name"),
-                           model = m.GetProp("_Name"))
+                           ensemble=m.GetProp("_Name"),
+                           structure=m.GetProp("_Name"),
+                           model=m.GetProp("_Name"))
             dflist.append(df)
     assert len(dflist) >= 1
     if len(dflist) > 1:
@@ -305,13 +305,13 @@ def read_sdf(sdf_file, name=None, sanitize=False, add_hs=False, remove_hs=False)
     return bp
 
 
-def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
+def read_sdf_to_mol(sdf_file, sanitize=False, add_hs=False, remove_hs=False):
     """Reads a list of molecules from an SDF file.
 
-    :param add_h: Specifies whether to add hydrogens. Defaults to False
-    :type add_h: bool
-    :param remove_h: Specifies whether to remove hydrogens. Defaults to False
-    :type remove_h: bool
+    :param add_hs: Specifies whether to add hydrogens. Defaults to False
+    :type add_hs: bool
+    :param remove_hs: Specifies whether to remove hydrogens. Defaults to False
+    :type remove_hs: bool
     :param sanitize: Specifies whether to sanitize the molecule. Defaults to False
     :type sanitize: bool
 
@@ -320,11 +320,11 @@ def read_sdf_to_mol(sdf_file, sanitize=False, add_h=False, remove_h=False):
     """
     from rdkit import Chem
 
-    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_h)
+    suppl = Chem.SDMolSupplier(sdf_file, sanitize=sanitize, removeHs=remove_hs)
 
     molecules = [mol for mol in suppl]
 
-    if add_h:
+    if add_hs:
         for mol in molecules:
             if mol is not None:
                 mol = Chem.AddHs(mol, addCoords=True)

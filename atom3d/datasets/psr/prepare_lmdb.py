@@ -32,6 +32,7 @@ class Scores(object):
 
     def __call__(self, x, error_if_missing=False):
         key, x['scores'] = self._lookup(x['file_path'])
+        del x['file_path']
         if key is not None:
             x['id'] = str(key)
         if x['scores'] is None and error_if_missing:
