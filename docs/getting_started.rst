@@ -113,15 +113,10 @@ Frequently Asked Questions
 
    | If we are missing a function you think would be useful, please consider :ref:`contributing <contributing>`!
 
+5. **Can I contribute datasets and models back to ATOM3D?**
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-.. _contributing:
-
-Contributing to ATOM3D
-**********************
-
-ATOM3D is open-source and available on `Github <https://github.com/drorlab/atom3d>`_. Please submit issues or requests using the `issue tracker <https://github.com/drorlab/atom3d/issues>`_.
-
-If you want to submit a new dataset or model, please use the portal on our website (coming soon!).
+   | Yes!  We are happy to accept new datasets and models!  See :ref:`contributing <contributing>` for details.
 
 Reference
 *************
