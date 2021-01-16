@@ -39,7 +39,9 @@ def _add_data_with_subtracted_thermochem_energy(x):
     g_atom  = data[13] - np.sum([c * thchem_en[el][3] for el, c in counts.items()])  # G
     cv_atom = data[14] - np.sum([c * thchem_en[el][4] for el, c in counts.items()])  # Cv
     # Append new data
-    data += [u0_atom, u_atom, h_atom, g_atom, cv_atom]
+    x['labels'] += [u0_atom, u_atom, h_atom, g_atom, cv_atom]
+    # Delete the file path
+    del x['file_path']
     return x
 
 
