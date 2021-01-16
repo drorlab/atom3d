@@ -53,7 +53,7 @@ Frequently Asked Questions
 
        Predicting physico-chemical properties of small molecules is a common task in medicinal chemistry and materials design. SMP is based on the QM9 dataset, which contains structures and energetic, electronic, and thermodynamic properties for 134,000 stable small organic molecules, obtained from quantum-chemical calculations.
 
-     
+
      * *Protein Interface Prediction (PIP)*
      
        Proteins interact with each other in many scenarios—for example, our antibody proteins recognize diseases by binding to antigens. A critical problem in understanding these interactions is to identify which amino acids of two given proteins will interact upon binding. The PIP dataset contains structures from the Database of Interacting Protein Structures (DIPS), a comprehensive dataset of protein complexes mined from the PDB, and the Docking Benchmark 5 (DB5), a smaller gold standard dataset.
@@ -111,12 +111,12 @@ Frequently Asked Questions
 
    | There are functions available for performing many common tasks on macromolecular structure. See the :ref:`usage examples <examples>` for some common use cases, and explore the API documentation to find specific functions. 
 
-   | If we are missing a function you think would be useful, please consider :ref:`contributing <contributing>`!
+   | If we are missing a function you think would be useful, please consider :doc:`contributing </contributing>`!
 
 5. **Can I contribute datasets and models back to ATOM3D?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-   | Yes!  We are happy to accept new datasets and models!  See :ref:`contributing <contributing>` for details.
+   | Yes!  We are happy to accept new datasets and models!  See :doc:`contributing </contributing>` for details.
 
 Reference
 *************
