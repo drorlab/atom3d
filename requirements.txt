@@ -3,6 +3,4 @@
 
 # external requirements
 pytest
-sphinx==3.1.2
 tox
-sphinx_rtd_theme
