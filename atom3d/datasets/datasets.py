@@ -436,6 +436,48 @@ def make_lmdb_dataset(dataset, output_lmdb,
         txn.put(b'serialization_format', serialization_format.encode())
         txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
+        
+def extract_coordinates_as_numpy_arrays(dataset, indices=None):
+    """Convert the molecules from a dataset to a dictionary of numpy arrays.
+       Labels are not processed; they are handled differently for every dataset.
+       
+    :param dataset: LMDB dataset from which to extract coordinates.
+    :type dataset: torch.utils.data.Dataset
+    :param indices: Indices of the items for which to extract coordinates.
+    :type indices: numpy.array
+
+    :return: Dictionary of numpy arrays with number of atoms, charges, and positions
+    :rtype: dict       
+    """
+    # Size of the dataset
+    if indices is None:
+        indices = np.arange(len(dataset))
+    else:
+        assert len(dataset) > max(indices)
+    num_items = len(indices)
+
+    # Calculate number of atoms for each molecule
+    num_atoms = np.array([len(dataset[idx]['atoms']) for idx in indices],dtype=int)
+
+    # All charges and position arrays have the same size
+    arr_size  = np.max(num_atoms)
+    charges   = np.zeros([num_items,arr_size])
+    positions = np.zeros([num_items,arr_size,3])
+    # For each molecule and each atom...
+    for j,idx in enumerate(indices):
+        item = dataset[idx]
+        for ia in range(num_atoms[j]):
+            charges[j,ia] = fo.atomic_number[item['atoms']['element'][ia]]
+            positions[j,ia,0] = item['atoms']['x'][ia] 
+            positions[j,ia,1] = item['atoms']['y'][ia]
+            positions[j,ia,2] = item['atoms']['z'][ia]
+            
+    # Create a dictionary with all the arrays
+    numpy_dict = {'index':indices, 'num_atoms':num_atoms,
+                  'charges':charges, 'positions':positions}
+    
+    return numpy_dict
+
 
 def download_dataset(name, out_path):
     """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR. Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
