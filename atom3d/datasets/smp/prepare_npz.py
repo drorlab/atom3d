@@ -35,24 +35,25 @@ def _write_npz(dataset, filename):
 @click.argument('input_root', type=click.Path())
 @click.argument('output_file_path', type=click.Path())
 @click.option('--split', '-s', is_flag=True)
-def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
+def prepare(input_root, output_file_path, split):
     # Logger
     logging.basicConfig(stream=sys.stdout,
                         format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
                         level=logging.INFO)
     if split:
-        logger.info(f'Processing training dataset from {lmdb_path:}...')
+        logger.info(f'Processing datasets from {input_root:}.')
+        logger.info(f'Processing training dataset...')
         dataset = da.LMDBDataset(os.path.join(input_root, 'train'))
         _write_npz(dataset, os.path.join(output_file_path,'train.npz'))
-        logger.info(f'Processing validation dataset from {lmdb_path:}...')
+        logger.info(f'Processing validation dataset...')
         dataset = da.LMDBDataset(os.path.join(input_root, 'val'))
         _write_npz(dataset, os.path.join(output_file_path,'valid.npz'))
-        logger.info(f'Processing test dataset from {lmdb_path:}...')
+        logger.info(f'Processing test dataset from...')
         dataset = da.LMDBDataset(os.path.join(input_root, 'test'))
         _write_npz(dataset, os.path.join(output_file_path,'test.npz'))
     else:
-        logger.info(f'Processing full dataset from {lmdb_path:}...')
+        logger.info(f'Processing full dataset from {input_root:}...')
         dataset = da.LMDBDataset(os.path.join(input_root, 'all'))
         _write_npz(dataset, os.path.join(output_file_path,'all.npz'))
 
