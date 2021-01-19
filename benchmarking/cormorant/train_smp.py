@@ -15,8 +15,8 @@ from cormorant.models.autotest import cormorant_tests
 from torch.utils.data import DataLoader
 # Functions that have been adapted from cormorant functions
 from utils import init_cormorant_argparse, init_cormorant_file_paths
-# SMP model from ATOM3D
-from atom3d.datasets.smp.models import CormorantSMP
+# SMP-specific model from ATOM3D
+from atom3d.datasets.smp.models import ENN_SMP
 
 # This makes printing tensors more readable.
 torch.set_printoptions(linewidth=1000, threshold=100000)
@@ -50,12 +50,12 @@ def main():
                          for split, dataset in datasets.items()}
 
     # Initialize model
-    model = CormorantSMP(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
-                         args.cutoff_type, args.hard_cut_rad, args.soft_cut_rad, args.soft_cut_width,
-                         args.weight_init, args.level_gain, args.charge_power, args.basis_set,
-                         charge_scale, args.gaussian_mask,
-                         args.top, args.input, args.num_mpnn_levels,
-                         device=device, dtype=dtype)
+    model = ENN_SMP(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
+                    args.cutoff_type, args.hard_cut_rad, args.soft_cut_rad, args.soft_cut_width,
+                    args.weight_init, args.level_gain, args.charge_power, args.basis_set,
+                    charge_scale, args.gaussian_mask,
+                    args.top, args.input, args.num_mpnn_levels,
+                    device=device, dtype=dtype)
 
     # Initialize the scheduler and optimizer
     optimizer = init_optimizer(args, model)
@@ -81,3 +81,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

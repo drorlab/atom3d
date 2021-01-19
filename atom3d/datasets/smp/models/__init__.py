@@ -1,1 +1,1 @@
-from .enn_cormorant_smp import CormorantSMP 
+from .enn_smp import ENN_SMP 

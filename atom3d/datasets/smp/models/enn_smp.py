@@ -5,15 +5,15 @@ import logging
 
 from cormorant.cg_lib import CGModule, SphericalHarmonicsRel
 
-from cormorant.models.cormorant_cg import CormorantCG
-
 from cormorant.nn import RadialFilters
 from cormorant.nn import InputMPNN
 from cormorant.nn import OutputPMLP, GetScalarsAtom
 from cormorant.nn import NoLayer
 
+from atom3d.models.enn import ENN
 
-class CormorantSMP(CGModule):
+
+class ENN_SMP(CGModule):
     """
     Basic Cormorant Network used to train SMP.
 
@@ -95,7 +95,7 @@ class CormorantSMP(CGModule):
         tau_in_atom = self.input_func_atom.tau
         tau_in_edge = self.input_func_edge.tau
 
-        self.cormorant_cg = CormorantCG(maxl, max_sh, tau_in_atom, tau_in_edge,
+        self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge,
                      tau_pos, num_cg_levels, num_channels, level_gain, weight_init,
                      cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
                      cat=True, gaussian_mask=False,
