@@ -26,15 +26,12 @@ class ENN(CGModule):
 
         self.max_sh = max_sh
 
-        tau_atom_in = atom_in.tau if type(tau_in_atom) is CGModule else tau_in_atom
-        tau_edge_in = edge_in.tau if type(tau_in_edge) is CGModule else tau_in_edge
-
-        logging.info('{} {}'.format(tau_atom_in, tau_edge_in))
+        logging.info('{} {}'.format(tau_in_atom, tau_in_edge))
 
         atom_levels = nn.ModuleList()
         edge_levels = nn.ModuleList()
 
-        tau_atom, tau_edge = tau_atom_in, tau_edge_in
+        tau_atom, tau_edge = tau_in_atom, tau_in_edge
 
         for level in range(num_cg_levels):
             # Add the edge level. Its output type determines the next level.
