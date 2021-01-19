@@ -259,7 +259,7 @@ class SDFDataset(Dataset):
     """
     Creates a dataset from directory of SDF files.
 
-    :param file_list: list containing paths to silent files. Assumes one structure per file.
+    :param file_list: list containing paths to SDF files. Assumes one structure per file.
     :type file_list: list[Union[str, Path]]
     :param transform: transformation function for data augmentation, defaults to None
     :type transform: function, optional
