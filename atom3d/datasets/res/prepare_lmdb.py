@@ -28,8 +28,7 @@ def pdb_id_transform(x):
 @click.option('--train_txt', '-tr', type=click.Path(exists=True), default=None)
 @click.option('--val_txt', '-v', type=click.Path(exists=True), default=None)
 @click.option('--test_txt', '-t', type=click.Path(exists=True), default=None)
-def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt,
-            score_path):
+def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
     logging.basicConfig(stream=sys.stdout,
                         format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',

@@ -175,6 +175,9 @@ TODO
 
 4. **Extract all atoms within 5 Angstroms of a ligand**
 
+In this example, the ligand is assumed to be stored as a subunit in the atoms dataframe, under the label "LIG". 
+In practice, the ligand could be stored in different way (e.g. in a separate dataframe or under a different label), depending on how the dataset was constructed.
+
 .. code:: pycon
 
 >>> from atom3d.filters.filters import distance_filter
