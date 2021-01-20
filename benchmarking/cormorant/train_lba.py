@@ -32,7 +32,7 @@ def main():
     # Initialize device and data type
     device, dtype = init_cuda(args)
     # Initialize dataloader
-    args, datasets, num_species, charge_scale = initialize_datasets(args, args.datadir, 'lba') 
+    args, datasets, num_species, charge_scale = initialize_datasets(args, args.datadir, 'lba', args.ddir_suffix) 
     # Construct PyTorch dataloaders from datasets
     dataloaders = {split: DataLoader(dataset, batch_size=args.batch_size,
                                      shuffle=args.shuffle if (split == 'train') else False,

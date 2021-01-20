@@ -42,7 +42,7 @@ def _write_npz(dataset, filename, indices, drop):
     save_dict = da.extract_coordinates_as_numpy_arrays(dataset, indices, 
         atom_frames=['atoms_pocket','atoms_ligand'], drop_elements=['H'])
     # Add the label data 
-    save_dict['neglog_aff'] = np.array([item['scores']['data'] for item in dataset])
+    save_dict['neglog_aff'] = np.array([item['scores']['data'][0] for item in dataset])
     # Save the data
     np.savez_compressed(filename,**save_dict)
     
