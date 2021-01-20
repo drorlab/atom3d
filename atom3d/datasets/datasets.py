@@ -437,7 +437,7 @@ def make_lmdb_dataset(dataset, output_lmdb,
         txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
         
-def extract_coordinates_as_numpy_arrays(dataset, indices=None):
+def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['atoms'], drop_elements=[]):
     """Convert the molecules from a dataset to a dictionary of numpy arrays.
        Labels are not processed; they are handled differently for every dataset.
        
@@ -445,6 +445,8 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None):
     :type dataset: torch.utils.data.Dataset
     :param indices: Indices of the items for which to extract coordinates.
     :type indices: numpy.array
+    :param atom_frames: keys for the frames that contain the atoms to be written.
+    :type atom_frames: [str]
 
     :return: Dictionary of numpy arrays with number of atoms, charges, and positions
     :rtype: dict       
@@ -457,7 +459,12 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None):
     num_items = len(indices)
 
     # Calculate number of atoms for each molecule
-    num_atoms = np.array([len(dataset[idx]['atoms']) for idx in indices],dtype=int)
+    num_atoms = []
+    for idx in indices:
+        item = dataset[idx]
+        atoms = pd.concat([item[frame] for frame in atom_frames])
+        keep = np.array([el not in drop_elements for el in atoms['element']])
+        num_atoms.append(sum(keep))
 
     # All charges and position arrays have the same size
     arr_size  = np.max(num_atoms)
@@ -466,11 +473,19 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None):
     # For each molecule and each atom...
     for j,idx in enumerate(indices):
         item = dataset[idx]
+        # concatenate atoms from all desired frames
+        all_atoms = [item[frame] for frame in atom_frames] 
+        atoms = pd.concat(all_atoms, ignore_index=True)
+        # only keep atoms that are not one of the elements to drop
+        keep = np.array([el not in drop_elements for el in atoms['element']])
+        atoms_to_keep = atoms[keep].reset_index(drop=True)
+        # write per-atom data to arrays
         for ia in range(num_atoms[j]):
-            charges[j,ia] = fo.atomic_number[item['atoms']['element'][ia]]
-            positions[j,ia,0] = item['atoms']['x'][ia] 
-            positions[j,ia,1] = item['atoms']['y'][ia]
-            positions[j,ia,2] = item['atoms']['z'][ia]
+            element = atoms_to_keep['element'][ia].title()
+            charges[j,ia] = fo.atomic_number[element]
+            positions[j,ia,0] = atoms_to_keep['x'][ia] 
+            positions[j,ia,1] = atoms_to_keep['y'][ia]
+            positions[j,ia,2] = atoms_to_keep['z'][ia]
             
     # Create a dictionary with all the arrays
     numpy_dict = {'index':indices, 'num_atoms':num_atoms,
