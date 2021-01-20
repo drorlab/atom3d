@@ -1,9 +1,4 @@
-#
-# Cormorant PDBBind training script
-#
-
 import logging
-
 import torch
 from cormorant.data.collate import collate_fn
 from cormorant.data.utils import initialize_datasets

@@ -1,10 +1,4 @@
-#
-# Cormorant QM9 training script
-# from https://github.com/risilab/cormorant/blob/master/examples/train_qm9.py
-#
-
 import logging
-
 import torch
 from cormorant.data.collate import collate_fn
 from cormorant.data.utils import initialize_datasets
@@ -35,12 +29,10 @@ def main():
     # Initialize dataloader
     args, datasets, num_species, charge_scale = initialize_datasets(args, args.datadir, 'smp') 
     # Construct PyTorch dataloaders from datasets
-    dataloaders = {split: DataLoader(dataset,
-                                     batch_size=args.batch_size,
+    dataloaders = {split: DataLoader(dataset, batch_size=args.batch_size,
                                      shuffle=args.shuffle if (split == 'train') else False,
-                                     num_workers=args.num_workers,
-                                     collate_fn=collate_fn)
-                         for split, dataset in datasets.items()}
+                                     num_workers=args.num_workers, collate_fn=collate_fn)
+                   for split, dataset in datasets.items()}
     # Initialize model
     model = ENN_SMP(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
                     args.cutoff_type, args.hard_cut_rad, args.soft_cut_rad, args.soft_cut_width,

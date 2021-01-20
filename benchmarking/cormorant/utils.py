@@ -78,10 +78,10 @@ def init_cormorant_file_paths(args):
     # Set standard targets
     if args.dataset.lower().startswith('smp'):
         if not args.target:
-            args.target = 'U0'
+            args.target = 'gap'
     elif args.dataset.lower().startswith('lba'):
        if not args.target:
-            args.target = 'label'
+            args.target = 'neglog_aff'
     elif args.dataset.lower().startswith('res'):
        if not args.target:
             args.target = 'residue'
