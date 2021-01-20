@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --time=24:00:00
+#SBATCH --time=8:00:00
 #SBATCH --mem=20G
 #SBATCH --partition=rondror
 #SBATCH --gres gpu:1
