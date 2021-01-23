@@ -1,15 +1,17 @@
 import logging
+# PyTorch modules
 import torch
+from torch.utils.data import DataLoader
+# Cormorant modules and functions
 from cormorant.data.collate import collate_fn
 from cormorant.data.utils import initialize_datasets
 from cormorant.engine import Engine
 from cormorant.engine import init_logger, init_cuda
 from cormorant.engine import init_optimizer, init_scheduler
 from cormorant.models.autotest import cormorant_tests
-from torch.utils.data import DataLoader
 # Functions that have been adapted from cormorant functions
 from utils import init_cormorant_argparse, init_cormorant_file_paths
-# SMP-specific model from ATOM3D
+# SMP-specific model in ATOM3D
 from atom3d.datasets.lba.models import ENN_LBA
 
 # This makes printing tensors more readable.

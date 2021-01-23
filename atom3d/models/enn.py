@@ -14,31 +14,46 @@ class ENN(CGModule):
     """Base equivariant neural network architecture for molecular data.
        Adapted from the class CormorantCG in the Cormorant suite (Anderson et al., 2020). 
 
-    :param maxl: Maximum weight in the output of CG products. (Expanded to list of
-        length :obj:`num_cg_levels`)
+    :param maxl: Maximum weight in the output of CG products. (Expanded to list of length :obj:`num_cg_levels`)
     :type maxl: :obj:`int` of :obj:`list` of :obj:`int`
-    :param max_sh: Maximum weight in the output of the spherical harmonics  (Expanded to list of
-        length :obj:`num_cg_levels`)
+    :param max_sh: Maximum weight in the output of the spherical harmonics. (Expanded to list of length :obj:`num_cg_levels`)
     :type max_sh: :obj:`int` of :obj:`list` of :obj:`int`
     :param num_cg_levels: Number of cg levels to use.
     :type num_cg_levels: :obj:`int`
-    :param num_channels: Number of channels that the output of each CG are mixed to (Expanded to list of
-        length :obj:`num_cg_levels`)
+    :param num_channels: Number of channels that the output of each CG are mixed to. (Expanded to list of length :obj:`num_cg_levels`)
     :type num_channels: :obj:`int` of :obj:`list` of :obj:`int`
-
-    :param device: Device to initialize the level to
+    :param level_gain: Gain at each level
+    :type level_gain: float 
+    :param weight_init: Weight initialization function to use.
+    :type weight_init: str
+    :param cutoff_type: Types of cutoffs to include.
+    :type cutoff_type: str
+    :param hard_cut_rad: Radius of HARD cutoff in Angstroms.
+    :type hard_cut_rad: float
+    :param soft_cut_rad: Radius of SOFT cutoff in Angstroms.
+    :type soft_cut_rad: float
+    :param soft_cut_width: Width of SOFT cutoff in Angstroms.
+    :type soft_cut_width: float
+    :param gaussian_mask: Mask using gaussians instead of sigmoids.
+    :type gaussian_mask: bool
+    :param cgprod_bounded: Put a boundary on the Clebsch-Gordan product 
+    :type cgprod_bounded: bool
+    :param cg_agg_normalization: normalization for the CG product in the aggregation 
+    :type cg_agg_normalization: str
+    :param cg_pow_normalization: normalization for the CG product in the
+    :type cg_pow_normalization: str
+    :param device: Device to initialize the level to.
     :type device: :obj:`torch.device`
-    :param dtype: Data type to initialize the level to level to
+    :param dtype: Data type to initialize the level to.
     :type dtype: :obj:`torch.dtype`
-    :param cg_dict: Clebsch-Gordan dictionary
+    :param cg_dict: Clebsch-Gordan dictionary.
     :type cg_dict: :obj:`nn.cg_lib.CGDict`
 
     """
-    # TODO: ^ Complete docstrings and test them.
     def __init__(self, maxl, max_sh, tau_in_atom, tau_in_edge, tau_pos,
                  num_cg_levels, num_channels, level_gain, weight_init,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
-                 cat=True, gaussian_mask=False, cgprod_bounded=False,
+                 gaussian_mask=False, cgprod_bounded=False,
                  cg_agg_normalization='none', cg_pow_normalization='none',
                  device=None, dtype=None, cg_dict=None):
         # Initialize CG module 

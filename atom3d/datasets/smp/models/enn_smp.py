@@ -84,39 +84,39 @@ class ENN_SMP(CGModule):
                                        device=self.device, dtype=self.dtype)
         tau_pos = self.rad_funcs.tau
 
+        # Set up input layers
         num_scalars_in = self.num_species * (self.charge_power + 1)
         num_scalars_out = num_channels[0]
-
         self.input_func_atom = InputMPNN(num_scalars_in, num_scalars_out, num_mpnn_layers,
                                          soft_cut_rad[0], soft_cut_width[0], hard_cut_rad[0],
                                          activation=activation, device=self.device, dtype=self.dtype)
         self.input_func_edge = NoLayer()
 
+        # Set up the central Clebsch-Gordan network
         tau_in_atom = self.input_func_atom.tau
         tau_in_edge = self.input_func_edge.tau
+        self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge, tau_pos, 
+                                num_cg_levels, num_channels, level_gain, weight_init,
+                                cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
+                                device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
 
-        self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge,
-                     tau_pos, num_cg_levels, num_channels, level_gain, weight_init,
-                     cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
-                     cat=True, gaussian_mask=False,
-                     device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
-
+        # Get atom and edge scalars
         tau_cg_levels_atom = self.cormorant_cg.tau_levels_atom
         tau_cg_levels_edge = self.cormorant_cg.tau_levels_edge
-
-        self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom,
+        self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom, 
                                                device=self.device, dtype=self.dtype)
         self.get_scalars_edge = NoLayer()
 
+        # Set up the output networks
         num_scalars_atom = self.get_scalars_atom.num_scalars
         num_scalars_edge = self.get_scalars_edge.num_scalars
-
-        self.output_layer_atom = OutputPMLP(num_scalars_atom, activation=activation,
+        self.output_layer_atom = OutputPMLP(num_scalars_atom, activation=activation, 
                                             device=self.device, dtype=self.dtype)
         self.output_layer_edge = NoLayer()
 
         logging.info('Model initialized. Number of parameters: {}'.format(
             sum([p.nelement() for p in self.parameters()])))
+
 
     def forward(self, data, covariance_test=False):
         """
@@ -163,6 +163,7 @@ class ENN_SMP(CGModule):
         else:
             return prediction
 
+
     def prepare_input(self, data):
         """
         Extracts input from data class
@@ -200,6 +201,7 @@ class ENN_SMP(CGModule):
 
         return atom_scalars, atom_mask, edge_scalars, edge_mask, atom_positions
 
+
 def expand_var_list(var, num_cg_levels):
     if type(var) is list:
         var_list = var + (num_cg_levels-len(var))*[var[-1]]
@@ -208,4 +210,5 @@ def expand_var_list(var, num_cg_levels):
     else:
         raise ValueError('Incorrect type {}'.format(type(var)))
     return var_list
+
 

@@ -82,38 +82,39 @@ class ENN_LBA(CGModule):
                                        device=self.device, dtype=self.dtype)
         tau_pos = self.rad_funcs.tau
 
+        # Set up input layers
         num_scalars_in = self.num_species * (self.charge_power + 1)
         num_scalars_out = num_channels[0]
-
         self.input_func_atom = InputLinear(num_scalars_in, num_scalars_out,
                                            device=self.device, dtype=self.dtype)
         self.input_func_edge = NoLayer()
 
+        # Set up the central Clebsch-Gordan network
         tau_in_atom = self.input_func_atom.tau
         tau_in_edge = self.input_func_edge.tau
-
         self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge,
                      tau_pos, num_cg_levels, num_channels, level_gain, weight_init,
                      cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
-                     cat=True, gaussian_mask=False, cgprod_bounded=cgprod_bounded,
+                     cgprod_bounded=cgprod_bounded,
                      device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
 
+        # Get atom and edge scalars
         tau_cg_levels_atom = self.cormorant_cg.tau_levels_atom
         tau_cg_levels_edge = self.cormorant_cg.tau_levels_edge
-
         self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom,
                                                device=self.device, dtype=self.dtype)
         self.get_scalars_edge = NoLayer()
 
+        # Set up the output networks
         num_scalars_atom = self.get_scalars_atom.num_scalars
         num_scalars_edge = self.get_scalars_edge.num_scalars
-
         self.output_layer_atom = OutputLinear(num_scalars_atom, bias=True,
                                               device=self.device, dtype=self.dtype)
         self.output_layer_edge = NoLayer()
 
         logging.info('Model initialized. Number of parameters: {}'.format(
             sum([p.nelement() for p in self.parameters()])))
+
 
     def forward(self, data, covariance_test=False):
         """
