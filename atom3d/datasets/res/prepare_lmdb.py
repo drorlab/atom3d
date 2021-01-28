@@ -99,7 +99,7 @@ class ResTransform(object):
 @click.option('--val_txt', '-v', type=click.Path(exists=True), default=None)
 @click.option('--test_txt', '-t', type=click.Path(exists=True), default=None)
 @click.option('--num_threads', '-n', type=int, default=8)
-def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt, num_threads):
+def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, test_txt, num_threads):
     logging.basicConfig(stream=sys.stdout,
                         format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
