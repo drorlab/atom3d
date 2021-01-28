@@ -16,6 +16,7 @@ import atom3d.splits.splits as spl
 import atom3d.util.file as fi
 import atom3d.util.formats as fo
 
+import atom3d.shard.shard as sh
 
 logger = logging.getLogger(__name__)
 
@@ -33,68 +34,61 @@ gly_CB_sigma = np.array([[1.63731114e-03, 2.40018381e-04, 6.38361679e-04],
        [6.38361679e-04, 1.43898267e-04, 3.25022011e-04]], dtype=np.float32)
 
 
-class ResTransform(object):
+class MSPTransform(object):
     """
-    Track and lookup PSR score files.
+    Transform for MSP data.
     """
-    def __init__(self, balance=False):
-        self.balance = balance
+    def __init__(self, base_file_dir):
+        self.mut_file_dir = os.path.join(base_file_dir, 'mutated')
+        self.orig_file_dir = os.path.join(base_file_dir, 'original')
+        self.labels = self._get_labels_from_file(os.path.join(base_file_dir, 'mutated', 'data_keep.csv'))
+        self.mut_orig_mapping = self._match_files(os.listdir(self.mut_file_dir) + os.listdir(self.orig_file_dir))
 
-    def __call__(self, x):
-        x['id'] = fi.get_pdb_code(x['id'])
-        df = x['atoms']
-
-        subunits = []
-        # df = df.set_index(['chain', 'residue', 'resname'], drop=False)
-        df = df.dropna(subset=['x','y','z'])
-        #remove Hets and non-allowable atoms
-        df = df[df['element'].isin(allowed_atoms)]
-        df = df[df['hetero'].str.strip()=='']
-
-        for chain_res, res_df in df.groupby(['chain', 'residue', 'resname']):
-            # chain_res = res_df.index.values[0]
-            # names.append('_'.join([str(x) for x in name]))
-            chain, res, res_name = chain_res
-            # only train on canonical residues
-            if res_name not in res_label_dict:
-                continue
-            # sample each residue based on its frequency in train data
-            if self.balance:
-                if not np.random.random() < res_wt_dict[res_name]:
-                    continue
-
-            if not np.all([b in res_df['name'].to_list() for b in bb_atoms]):
-                # print('residue missing atoms...   skipping')
-                continue
-            CA_pos = res_df[res_df['name']=='CA'][['x', 'y', 'z']].astype(np.float32).to_numpy()[0]
-
-            CB_pos = CA_pos + (np.ones_like(CA_pos) * gly_CB_mu)
-
-            # remove current residue from structure
-            subunit_df = df[(df.chain != chain) | (df.residue != res)]
-            # add backbone atoms back in
-            res_bb = res_df[res_df['name'].isin(bb_atoms)]
-            subunit_df = pd.concat([subunit_df, res_bb]).reset_index(drop=True)
-
-            # environment = all atoms within 10*sqrt(3) angstroms (to enable a 20A cube)
-            kd_tree = scipy.spatial.KDTree(subunit_df[['x','y','z']].to_numpy())
-            subunit_pt_idx = kd_tree.query_ball_point(CB_pos, r=10.0*np.sqrt(3), p=2.0)
-
-            sub_df = subunit_df.loc[subunit_pt_idx]
-            tmp = sub_df.copy()
-            tmp['subunit'] = '_'.join([str(x) for x in chain_res])
-
-            subunits.append(tmp)
-        subunits = pd.concat(subunits).reset_index(drop=True)
-        x['atoms'] = subunits
+    def __call__(self, x, error_if_missing=False):
+        name = os.path.splitext(x['id'])[0]
+        x['id'] = name
+        orig_file = self.mut_orig_mapping[name]['original']
+        x['original_atoms'] = fo.bp_to_df(fo.read_any(os.path.join(self.orig_file_dir, orig_file)))
+        x['mutated_atoms'] = x.pop('atoms')
+        x['label'] = str(self.labels.loc[name])
         return x
+    
+    def _match_files(self, pdb_files):
+        """We find matching original pdb for each mutated pdb."""
+        # dirs = list(set([os.path.dirname(f) for f in pdb_files]))
+
+        original, mutated = {}, {}
+        for f in pdb_files:
+            name = os.path.splitext(os.path.basename(f))[0]
+            if len(name.split('_')) > 3:
+                assert name not in mutated
+                mutated[name] = f
+            else:
+                assert name not in original
+                original[name] = f
+
+        ensembles = {}
+        for mname, mfile in mutated.items():
+            oname = '_'.join(mname.split('_')[:-1])
+            ofile = original[oname]
+            ensembles[mname] = {
+                'original': ofile,
+                'mutated': mfile
+            }
+        return ensembles
+
+    def _get_labels_from_file(self, labels_csv):
+        data = pd.read_csv(labels_csv, names=['oname', 'mutation', 'label'])
+        data['ensemble'] = data.apply(
+            lambda x: x['oname'] + '_' + x['mutation'], axis=1)
+        data = data.set_index('ensemble', drop=False)
+        return data['label']
 
 
 @click.command(help='Prepare RES dataset')
 @click.argument('input_file_path', type=click.Path())
 @click.argument('output_root', type=click.Path())
 @click.option('--split', '-s', is_flag=True)
-@click.option('--balance', '-b', is_flag=True)
 @click.option('--train_txt', '-tr', type=click.Path(exists=True), default=None)
 @click.option('--val_txt', '-v', type=click.Path(exists=True), default=None)
 @click.option('--test_txt', '-t', type=click.Path(exists=True), default=None)
@@ -103,38 +97,22 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
                         format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
                         level=logging.INFO)
-    
-    def _process_chunk(file_list, filetype, lmdb_path, balance):
-        logger.info(f'Creating lmdb dataset into {lmdb_path:}...')
-        if not os.path.exists(lmdb_path):
-            os.makedirs(lmdb_path)
-        dataset = da.load_dataset(file_list, filetype, transform=ResTransform(balance=balance))
-        da.make_lmdb_dataset(dataset, lmdb_path)
 
     # Assume PDB filetype.
     filetype = 'pdb'
 
-    file_list = fi.find_files(input_file_path, fo.patterns[filetype])
+    file_list = fi.find_files(os.path.join(input_file_path, 'mutated'), fo.patterns[filetype])
+    transform = MSPTransform(base_file_dir=input_file_path)
     
-    chunk_size = (len(file_list) // num_threads) + 1
-    chunks = [file_list[i:i + chunk_size] for i in range(0, len(file_list), chunk_size)]
-    assert len(chunks) == num_threads
-
     lmdb_path = os.path.join(output_root, 'all')
     if not os.path.exists(lmdb_path):
         os.makedirs(lmdb_path)
         
-    inputs = [(chunks[i], filetype, f'{lmdb_path}_tmp_{i}', balance) for i in range(num_threads)]
-    
-    par.submit_jobs(_process_chunk, inputs, num_threads)
-    
-    logger.info('Combining datasets...')
-    dataset_list = [da.LMDBDataset(f'{lmdb_path}_tmp_{i}') for i in range(num_threads)]
-    da.combine_datasets(dataset_list, lmdb_path)
-    
-    for i in range(num_threads):
-        os.system(f'rm {lmdb_path}_tmp_{i}/data.mdb')
-        os.system(f'rm {lmdb_path}_tmp_{i}/lock.mdb')
+    logger.info(f'Creating lmdb dataset into {lmdb_path:}...')
+    if not os.path.exists(lmdb_path):
+        os.makedirs(lmdb_path)
+    dataset = da.load_dataset(file_list, filetype, transform=transform)
+    da.make_lmdb_dataset(dataset, lmdb_path)
 
     if not split:
         return
@@ -158,4 +136,15 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
 
 
 if __name__ == "__main__":
+    # data_dir = '/scratch/users/raphtown/atom3d_mirror/mutation_stability_prediction/'
+    # train_sharded = sh.Sharded.load(os.path.join(data_dir, 'split/pairs_train@40'))
+    # keys = train_sharded.get_names()
+    # keys.to_csv('train.txt',index=False, header=False)
+    # val_sharded = sh.Sharded.load(os.path.join(data_dir, 'split/pairs_val@40'))
+    # keys = val_sharded.get_names()
+    # keys.to_csv('val.txt',index=False, header=False)
+    # test_sharded = sh.Sharded.load(os.path.join(data_dir, 'split/pairs_test@40'))
+    # keys = test_sharded.get_names()
+    # keys.to_csv('test.txt',index=False, header=False)
+    # quit()
     prepare()
