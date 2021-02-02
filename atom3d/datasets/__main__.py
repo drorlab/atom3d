@@ -36,8 +36,7 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
 
     dataset = da.load_dataset(file_list, filetype)
     da.make_lmdb_dataset(
-        dataset, output_lmdb, filetype,
-        serialization_format=serialization_format)
+        dataset, output_lmdb, serialization_format=serialization_format)
 
 
 if __name__ == "__main__":
