@@ -113,13 +113,14 @@ class PDBDataset(Dataset):
     :type transform: function, optional
     """
 
-    def __init__(self, file_list, transform=None):
+    def __init__(self, file_list, transform=None, store_file_path=True):
         """constructor
 
         """
         self._file_list = [Path(x).absolute() for x in file_list]
         self._num_examples = len(self._file_list)
         self._transform = transform
+        self._store_file_path = store_file_path
 
     def __len__(self) -> int:
         return self._num_examples
@@ -132,9 +133,10 @@ class PDBDataset(Dataset):
 
         item = {
             'atoms': fo.bp_to_df(fo.read_any(file_path)),
-            'id': file_path.name,
-            'file_path': str(file_path),
+            'id': file_path.name
         }
+        if self._store_file_path:
+            item['file_path'] = str(file_path)
         if self._transform:
             item = self._transform(item)
         return item
@@ -395,8 +397,8 @@ def make_lmdb_dataset(dataset, output_lmdb,
     """
     Make an LMDB dataset from an input dataset.
 
-    :param input_file_list: Path to input files.
-    :type input_file_list: torch.utils.data.Dataset
+    :param dataset: Input dataset to convert
+    :type dataset: torch.utils.data.Dataset
     :param output_lmdb: Path to output LMDB.
     :type output_lmdb: Union[str, Path]
     :param filter_fn: Filter to decided if removing files.
@@ -436,11 +438,11 @@ def make_lmdb_dataset(dataset, output_lmdb,
         txn.put(b'serialization_format', serialization_format.encode())
         txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
-        
+
 def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['atoms'], drop_elements=[]):
     """Convert the molecules from a dataset to a dictionary of numpy arrays.
        Labels are not processed; they are handled differently for every dataset.
-       
+
     :param dataset: LMDB dataset from which to extract coordinates.
     :type dataset: torch.utils.data.Dataset
     :param indices: Indices of the items for which to extract coordinates.
@@ -449,7 +451,7 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['ato
     :type atom_frames: [str]
 
     :return: Dictionary of numpy arrays with number of atoms, charges, and positions
-    :rtype: dict       
+    :rtype: dict
     """
     # Size of the dataset
     if indices is None:
@@ -474,7 +476,7 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['ato
     for j,idx in enumerate(indices):
         item = dataset[idx]
         # concatenate atoms from all desired frames
-        all_atoms = [item[frame] for frame in atom_frames] 
+        all_atoms = [item[frame] for frame in atom_frames]
         atoms = pd.concat(all_atoms, ignore_index=True)
         # only keep atoms that are not one of the elements to drop
         keep = np.array([el not in drop_elements for el in atoms['element']])
@@ -483,16 +485,60 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['ato
         for ia in range(num_atoms[j]):
             element = atoms_to_keep['element'][ia].title()
             charges[j,ia] = fo.atomic_number[element]
-            positions[j,ia,0] = atoms_to_keep['x'][ia] 
+            positions[j,ia,0] = atoms_to_keep['x'][ia]
             positions[j,ia,1] = atoms_to_keep['y'][ia]
             positions[j,ia,2] = atoms_to_keep['z'][ia]
-            
+
     # Create a dictionary with all the arrays
     numpy_dict = {'index':indices, 'num_atoms':num_atoms,
                   'charges':charges, 'positions':positions}
-    
+
     return numpy_dict
 
+def combine_datasets(dataset_list, output_lmdb, filter_fn=None, serialization_format='json'):
+    """
+    Combine list of datasets (in any format) to single LMDB dataset.
+
+    :param dataset_list: List of input datasets
+    :type dataset_list: List[torch.utils.data.Dataset]
+    :param output_lmdb: Path to output LMDB.
+    :type output_lmdb: Union[str, Path]
+    :param filter_fn: Filter to decided if removing files.
+    :type filter_fn: lambda x -> True/False
+    :param serialization_format: How to serialize an entry.
+    :type serialization_format: 'json', 'msgpack', 'pkl'
+    """
+
+    num_examples = np.sum([len(d) for d in dataset_list])
+
+    logger.info(f'{num_examples} examples in combined dataset')
+
+    env = lmdb.open(str(output_lmdb), map_size=int(1e11))
+
+    with env.begin(write=True) as txn:
+
+        id_to_idx = {}
+        i = 0
+
+        for dset in dataset_list:
+            for x in tqdm.tqdm(dset, initial=i, total=num_examples):
+                if filter_fn is not None and filter_fn(x):
+                    continue
+                buf = io.BytesIO()
+                with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=6) as f:
+                    f.write(serialize(x, serialization_format))
+                compressed = buf.getvalue()
+                result = txn.put(str(i).encode(), compressed, overwrite=False)
+                if not result:
+                    raise RuntimeError(f'LMDB entry {i} in {str(output_lmdb)} '
+                                    'already exists')
+
+                id_to_idx[x['id']] = i
+                i += 1
+
+        txn.put(b'num_examples', str(i).encode())
+        txn.put(b'serialization_format', serialization_format.encode())
+        txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
 def download_dataset(name, out_path):
     """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR. Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
