@@ -363,7 +363,7 @@ def get_file_list(input_path, filetype):
             file_list.append(x)
     else:
         file_list = fi.find_files(input_path, fo.patterns[filetype])
-    return file_list
+    return sorted(file_list)
 
 
 def load_dataset(file_list, filetype, transform=None, include_bonds=False):
