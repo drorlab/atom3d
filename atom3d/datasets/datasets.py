@@ -5,6 +5,7 @@ import json
 import io
 import logging
 import msgpack
+import os
 from pathlib import Path
 import pickle as pkl
 import tqdm
@@ -347,6 +348,19 @@ def deserialize(x, serialization_format):
 def get_file_list(input_path, filetype):
     if filetype == 'lmdb':
         file_list = [input_path]
+    elif os.path.isfile(input_path):
+        with open(input_path) as f:
+            all_paths = f.readlines()
+        input_dir = os.path.dirname(input_path)
+        file_list = []
+        for x in all_paths:
+            x = x.strip()
+            if not fo.is_type(x, filetype):
+                continue
+            x = os.path.join(input_dir, x)
+            if not os.path.exists(x):
+                raise RuntimeError(f'{x} does not exist!')
+            file_list.append(x)
     else:
         file_list = fi.find_files(input_path, fo.patterns[filetype])
     return file_list
@@ -356,7 +370,7 @@ def load_dataset(file_list, filetype, transform=None, include_bonds=False):
     """
     Load files in file_list into corresponding dataset object. All files should be of type filetype.
 
-    :param file_list: List containing paths to silent files. Assumes one structure per file.
+    :param file_list: List containing paths to files. Assumes one structure per file.
     :type file_list: list[Union[str, Path]]
     :param filetype: Type of dataset. Allowable types are 'lmdb', 'pdb', 'silent', 'sdf', 'xyz', 'xyz-gdb'.
     :type filetype: str

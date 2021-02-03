@@ -183,6 +183,10 @@ patterns = {
 _regexes = {k: re.compile(v) for k, v in patterns.items()}
 
 
+def is_type(f, filetype):
+    return _regexes[filetype].search(str(f))
+
+
 def is_pdb(f):
     """Check if file is in pdb format."""
     return _regexes['pdb'].search(str(f))
