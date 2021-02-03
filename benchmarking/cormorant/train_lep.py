@@ -33,7 +33,7 @@ def main():
     # Construct PyTorch dataloaders from datasets
     dataloaders = {split: DataLoader(dataset, batch_size=args.batch_size,
                                      shuffle=args.shuffle if (split == 'train') else False,
-                                     num_workers=args.num_workers, collate_fn=collate_fn)
+                                     num_workers=args.num_workers, collate_fn=collate_activity)
                    for split, dataset in datasets.items()}
     # Initialize model
     model = ENN_LEP(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
