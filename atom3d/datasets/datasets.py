@@ -360,7 +360,7 @@ def get_file_list(input_path, filetype):
             x = os.path.join(input_dir, x)
             file_list.append(x)
     else:
-        file_list = fi.find_files(input_path, fo.patterns[filetype])
+        file_list = fi.find_files(input_path, fo.patterns.get(filetype, filetype + r'$'))
     return sorted(file_list)
 
 
