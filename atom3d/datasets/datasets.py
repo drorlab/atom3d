@@ -358,8 +358,6 @@ def get_file_list(input_path, filetype):
             if not fo.is_type(x, filetype):
                 continue
             x = os.path.join(input_dir, x)
-            if not os.path.exists(x):
-                raise RuntimeError(f'{x} does not exist!')
             file_list.append(x)
     else:
         file_list = fi.find_files(input_path, fo.patterns[filetype])

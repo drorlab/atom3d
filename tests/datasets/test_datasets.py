@@ -27,6 +27,12 @@ def test_load_dataset_list():
         assert df['atoms'].y.dtype == 'float'
         assert df['atoms'].z.dtype == 'float'
 
+def test_load_dataset_list_nonexistent():
+    dataset = da.load_dataset('tests/test_data/list/nonexistent.txt', 'pdb')
+    assert len(dataset) == 1
+    with pytest.raises(FileNotFoundError):
+        df = dataset[0]
+
 #def test_load_dataset_sharded():
 #    dataset = da.load_dataset('tests/test_data/sharded', 'sharded')
 #    assert len(dataset) == 4
