@@ -15,29 +15,25 @@ from atom3d.models.enn import ENN
 
 class ENN_SMP(CGModule):
     """
-    Basic Cormorant Network used to train SMP.
+    Basic Cormorant Network used to train on SMP.
 
-    Parameters
-    ----------
-    maxl : :obj:`int` of :obj:`list` of :obj:`int`
-        Maximum weight in the output of CG products. (Expanded to list of
-        length :obj:`num_cg_levels`)
-    max_sh : :obj:`int` of :obj:`list` of :obj:`int`
-        Maximum weight in the output of the spherical harmonics  (Expanded to list of
-        length :obj:`num_cg_levels`)
-    num_cg_levels : :obj:`int`
-        Number of cg levels to use.
-    num_channels : :obj:`int` of :obj:`list` of :obj:`int`
-        Number of channels that the output of each CG are mixed to (Expanded to list of
-        length :obj:`num_cg_levels`)
-    num_species : :obj:`int`
-        Number of species of atoms included in the input dataset.
+    :param maxl: Maximum weight in the output of CG products. (Expanded to list of length :obj:`num_cg_levels`)
+    :type maxl: :obj:`int` of :obj:`list` of :obj:`int`
+    :param max_sh: Maximum weight in the output of the spherical harmonics  (Expanded to list of length :obj:`num_cg_levels`)
+    :type max_sh: :obj:`int` of :obj:`list` of :obj:`int`
+    :param num_cg_levels: Number of cg levels to use.
+    :type num_cg_levels: :obj:`int`
+    :param num_channels: Number of channels that the output of each CG are mixed to (Expanded to list of length :obj:`num_cg_levels`)
+    :type num_channels: :obj:`int` of :obj:`list` of :obj:`int`
+    :param num_species: Number of species of atoms included in the input dataset.
+    :type num_species: :obj:`int`
+    :param device: Device to initialize the level to.
+    :type device: :obj:`torch.device`
+    :param dtype: Data type to initialize the level to level to.
+    :type dtype: :obj:`torch.dtype`
+    :param cg_dict: Clebsch-Gordan dictionary.
+    :type cg_dict: :obj:`nn.cg_lib.CGDict`
 
-    device : :obj:`torch.device`
-        Device to initialize the level to
-    dtype : :obj:`torch.dtype`
-        Data type to initialize the level to level to
-    cg_dict : :obj:`nn.cg_lib.CGDict`
     """
     def __init__(self, maxl, max_sh, num_cg_levels, num_channels, num_species,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
@@ -122,17 +118,14 @@ class ENN_SMP(CGModule):
         """
         Runs a forward pass of the network.
 
-        Parameters
-        ----------
-        data : :obj:`dict`
-            Dictionary of data to pass to the network.
-        covariance_test : :obj:`bool`, optional
-            If true, returns all of the atom-level representations twice.
-
-        Returns
-        -------
-        prediction : :obj:`torch.Tensor`
-            The output of the layer
+        :param data: Dictionary of data to pass to the network.
+        :type data : :obj:`dict`
+        :param covariance_test: If true, returns all of the atom-level representations twice.
+        :type covariance_test: :obj:`bool`, optional
+            
+        :return prediction: The output of the layer
+        :rtype prediction: :obj:`torch.Tensor`
+            
         """
         # Get and prepare the data
         atom_scalars, atom_mask, edge_scalars, edge_mask, atom_positions = self.prepare_input(data)
@@ -166,23 +159,20 @@ class ENN_SMP(CGModule):
 
     def prepare_input(self, data):
         """
-        Extracts input from data class
+        Extracts input from data class.
 
-        Parameters
-        ----------
-        data : ?????
-            Information on the state of the system.
+        :param data: Information on the state of the system.
+        :type data: dict
 
-        Returns
-        -------
-        atom_scalars : :obj:`torch.Tensor`
-            Tensor of scalars for each atom.
-        atom_mask : :obj:`torch.Tensor`
-            Mask used for batching data.
-        atom_positions: :obj:`torch.Tensor`
-            Positions of the atoms
-        edge_mask: :obj:`torch.Tensor`
-            Mask used for batching data.
+        :return atom_scalars: Tensor of scalars for each atom.
+        :rtype atom_scalars: :obj:`torch.Tensor`
+        :return atom_mask: Mask used for batching data.
+        :rtype atom_mask: :obj:`torch.Tensor`
+        :return atom_positions: Positions of the atoms.
+        :rtype atom_positions: :obj:`torch.Tensor`
+        :return edge_mask: Mask used for batching data.
+        :rtype edge_mask: :obj:`torch.Tensor`
+            
         """
         charge_power, charge_scale, device, dtype = self.charge_power, self.charge_scale, self.device, self.dtype
 
