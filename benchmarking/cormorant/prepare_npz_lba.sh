@@ -8,7 +8,7 @@
 
 # Directory definitions
 MAXNUMAT=500
-LMDB_DIR="/oak/stanford/groups/rondror/projects/atom3d/lmdb/ligand_binding_affinity/split-by-sequence-identity-30"
+LMDB_DIR="/oak/stanford/groups/rondror/projects/atom3d/lmdb/LBA/splits/split-by-sequence-identity-30/data"
 NPZ_DIR="/oak/stanford/groups/rondror/projects/atom3d/npz/lba/lba_split-by-sequence-identity-30_maxnumat-$MAXNUMAT"
 # Create output directory
 mkdir -p $NPZ_DIR
