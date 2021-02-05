@@ -21,5 +21,5 @@ NPZDIR=/oak/stanford/groups/rondror/projects/atom3d/npz/lba
 
 python train_lba.py --target neglog_aff --prefix lba-split-id30-maxnumat500 --load --datadir $NPZDIR \
                     --ddir-suffix '_split-by-sequence-identity-30_maxnumat-500' \
-                    --batch-size 1 --num-epoch 150
+                    --batch-size 1 --num-epoch 200
 
