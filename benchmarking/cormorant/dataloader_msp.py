@@ -73,7 +73,7 @@ def collate_msp(batch):
     :type batch: dict of Pytorch tensors
 
     """
-    batch = {prop: batch_stack([mol[prop] for mol in batch]) for prop in batch[0].keys()}
+    batch = {prop: _batch_stack([mol[prop] for mol in batch]) for prop in batch[0].keys()}
     # Define which fields to keep 
     to_keep1 = (batch['original_charges'].sum(0) > 0)
     to_keep2 = (batch['mutated_charges'].sum(0) > 0)
@@ -82,12 +82,12 @@ def collate_msp(batch):
     # Copy label data. 
     new_batch['label'] = batch['label']
     # Split structural data and drop zeros
-    new_batch['charges1']   = drop_zeros( batch['original_charges'],   to_keep1 )
-    new_batch['charges2']   = drop_zeros( batch['mutated_charges'],    to_keep2 )
-    new_batch['positions1'] = drop_zeros( batch['original_positions'], to_keep1 )
-    new_batch['positions2'] = drop_zeros( batch['mutated_positions'],  to_keep2 )
-    new_batch['one_hot1']   = drop_zeros( batch['original_one_hot'],   to_keep1 )
-    new_batch['one_hot2']   = drop_zeros( batch['mutated_one_hot'],    to_keep2 )
+    new_batch['charges1']   = _drop_zeros( batch['original_charges'],   to_keep1 )
+    new_batch['charges2']   = _drop_zeros( batch['mutated_charges'],    to_keep2 )
+    new_batch['positions1'] = _drop_zeros( batch['original_positions'], to_keep1 )
+    new_batch['positions2'] = _drop_zeros( batch['mutated_positions'],  to_keep2 )
+    new_batch['one_hot1']   = _drop_zeros( batch['original_one_hot'],   to_keep1 )
+    new_batch['one_hot2']   = _drop_zeros( batch['mutated_one_hot'],    to_keep2 )
     # Define the atom masks
     atom_mask1 = new_batch['charges1'] > 0
     atom_mask2 = new_batch['charges2'] > 0
@@ -99,6 +99,46 @@ def collate_msp(batch):
     new_batch['edge_mask1'] = edge_mask1
     new_batch['edge_mask2'] = edge_mask2
     return new_batch
+
+
+def _batch_stack(props):
+    """
+    Stack a list of torch.tensors so they are padded to the size of the largest tensor along each axis.
+
+    :param props: Pytorch tensors to stack
+    :type props: list of Pytorch Tensors
+    
+    :return props: Stacked pytorch tensor
+    :rtype props: Pytorch tensor.
+
+    """
+    if not torch.is_tensor(props[0]):
+        return torch.tensor(props)
+    elif props[0].dim() == 0:
+        return torch.stack(props)
+    else:
+        return torch.nn.utils.rnn.pad_sequence(props, batch_first=True, padding_value=0)
+
+
+def _drop_zeros(props, key, to_keep):
+    """
+    Function to drop zeros from batches when the entire dataset is padded to the largest molecule size.
+    
+    :param props: Full Dataset
+    :type props: Pytorch tensor
+    
+    :return props: The dataset with only the retained information.
+    :rtype props: Pytorch tensor
+    
+    """
+    if not torch.is_tensor(props[0]):
+        return props
+    elif props[0].dim() == 0:
+        return props
+    elif key == 'bonds':
+        return props[:, to_keep, ...][:, :, to_keep, ...]
+    else:
+        return props[:, to_keep, ...]
 
 
 def initialize_msp_data(args, datadir, radius=6, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
