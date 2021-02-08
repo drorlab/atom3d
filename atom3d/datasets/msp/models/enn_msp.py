@@ -15,7 +15,7 @@ from atom3d.models.enn import ENN
 
 class ENN_MSP(CGModule):
     """
-    Basic Cormorant Network used to train on MSP.
+    Cormorant Network used to train on MSP.
 
     :param maxl: Maximum weight in the output of CG products. (Expanded to list of length :obj:`num_cg_levels`)
     :type maxl: :obj:`int` of :obj:`list` of :obj:`int`

@@ -3,8 +3,6 @@ import logging
 import torch
 from torch.utils.data import DataLoader
 # Cormorant modules and functions
-from cormorant.data.collate import collate_siamese
-from cormorant.data.utils import initialize_datasets
 from cormorant.engine import Engine
 from cormorant.engine import init_logger, init_cuda
 from cormorant.engine import init_optimizer, init_scheduler
@@ -13,6 +11,7 @@ from cormorant.models.autotest import cormorant_tests
 from utils import init_cormorant_argparse, init_cormorant_file_paths
 # SMP-specific model in ATOM3D
 from atom3d.datasets.msp.models import ENN_MSP
+from dataloader_msp import CormorantDatasetMSP, collate_msp, initialize_msp_data
 
 # This makes printing tensors more readable.
 torch.set_printoptions(linewidth=1000, threshold=100000)
@@ -29,11 +28,11 @@ def main():
     # Initialize device and data type
     device, dtype = init_cuda(args)
     # Initialize dataloader
-    args, datasets, num_species, charge_scale = initialize_datasets(args, args.datadir, 'msp', args.ddir_suffix) 
+    args, datasets, num_species, charge_scale = initialize_msp_data(args, args.datadir)
     # Construct PyTorch dataloaders from datasets
     dataloaders = {split: DataLoader(dataset, batch_size=args.batch_size,
                                      shuffle=args.shuffle if (split == 'train') else False,
-                                     num_workers=args.num_workers, collate_fn=collate_siamese)
+                                     num_workers=args.num_workers, collate_fn=collate_msp)
                    for split, dataset in datasets.items()}
     # Initialize model
     model = ENN_MSP(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
