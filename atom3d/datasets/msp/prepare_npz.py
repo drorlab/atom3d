@@ -38,14 +38,14 @@ class EnvironmentSelection(object):
     def _get_mutation(self, x):
         mutation = x['id'].split('_')[-1]
         chain = mutation[1]
-        resid = mutation[2:-1]
+        resid = int(mutation[2:-1])
         original_resname = mutation[0]
         mutation_resname = mutation[-1]
         return chain, resid
 
-    def _select_environment(self, df, chain, resid):
+    def _select_env(self, df, chain, resid):
         # Find the C-alpha atom of the mutated residue
-        mutated = df[df.chain == chain][df.residue == resid]
+        mutated = df[(df.chain == chain) & (df.residue == resid)]
         mut_c_a = mutated[mutated.name == 'CA']
         # Define the protein atoms
         protein = df
@@ -64,9 +64,9 @@ class EnvironmentSelection(object):
         # Extract mutation info from the ID
         chain, resid = self._get_mutation(x)
         # Select environment in original data frame
-        x['original_atoms'] = self._select_environment(x['original_atoms'], chain, resid)
+        x['original_atoms'] = self._select_env(x['original_atoms'], chain, resid)
         # Select environment in mutated data frame
-        x['mutated_atoms'] = self._select_environment(x['mutated_atoms'], chain, resid)
+        x['mutated_atoms'] = self._select_env(x['mutated_atoms'], chain, resid)
         return x 
 
 
@@ -87,7 +87,8 @@ def _write_npz(dataset, filename, drop):
     save_dict['label'] = np.array(labels, dtype=int)
     # Save the data
     np.savez_compressed(filename,**save_dict)
-    
+    return save_dict 
+
 
 @click.command(help='Prepare MSP dataset')
 @click.argument('input_root', type=click.Path())
@@ -110,19 +111,19 @@ def prepare(input_root, output_file_path, split, droph, radius):
         # Training set
         logger.info(f'Processing training dataset...')
         dataset = da.LMDBDataset(inp_path('train'), transform=EnvironmentSelection(radius))
-        _write_npz(dataset, out_path('train.npz'), drop)
+        _save_dict = _write_npz(dataset, out_path('train.npz'), drop)
         # Validation set
         logger.info(f'Processing validation dataset...')
         dataset = da.LMDBDataset(inp_path('val'), transform=EnvironmentSelection(radius))
-        _write_npz(dataset, out_path('valid.npz'), drop)
+        _save_dict =_write_npz(dataset, out_path('valid.npz'), drop)
         # Test set
         logger.info(f'Processing test dataset...')
         dataset = da.LMDBDataset(inp_path('test'), transform=EnvironmentSelection(radius))
-        _write_npz(dataset, out_path('test.npz'), drop)
+        _save_dict =_write_npz(dataset, out_path('test.npz'), drop)
     else: # use the full data set
         logger.info(f'Processing full dataset from {input_root:}...')
         dataset = da.LMDBDataset(inp_path('all'), transform=EnvironmentSelection(radius))
-        _write_npz(dataset, out_path('all.npz'), drop)
+        _save_dict =_write_npz(dataset, out_path('all.npz'), drop)
 
 
 if __name__ == "__main__":

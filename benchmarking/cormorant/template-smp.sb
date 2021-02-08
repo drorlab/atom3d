@@ -2,7 +2,7 @@
 
 #SBATCH --time=24:00:00
 #SBATCH --mem=20G
-#SBATCH --partition=rondror
+#SBATCH --partition=owners
 #SBATCH --gres gpu:1
 #SBATCH --constraint=GPU_MEM:12GB
 #SBATCH --mail-type=END,FAIL
