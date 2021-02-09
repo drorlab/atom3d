@@ -7,7 +7,7 @@
 
 
 # Directory definitions
-for CUTOFF in 06 07 08 09 10; do
+for CUTOFF in 06 07 08 09 10 12 15 20 25; do
 	LMDB_DIR="/oak/stanford/groups/rondror/projects/atom3d/lmdb/MSP/splits/split-by-seqid30/data"
 	NPZ_DIR="/oak/stanford/groups/rondror/projects/atom3d/npz/msp/msp_split-by-sequence-identity-30_cutoff-${CUTOFF}"
 	# Create output directory

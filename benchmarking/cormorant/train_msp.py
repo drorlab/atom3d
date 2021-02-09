@@ -7,6 +7,7 @@ from cormorant.engine import Engine
 from cormorant.engine import init_logger, init_cuda
 from cormorant.engine import init_optimizer, init_scheduler
 from cormorant.models.autotest import cormorant_tests
+from cormorant.data.utils import initialize_datasets
 # Functions that have been adapted from cormorant functions
 from utils import init_cormorant_argparse, init_cormorant_file_paths
 # SMP-specific model in ATOM3D
@@ -27,8 +28,12 @@ def main():
     init_logger(args)
     # Initialize device and data type
     device, dtype = init_cuda(args)
-    # Initialize dataloader
-    args, datasets, num_species, charge_scale = initialize_msp_data(args, args.datadir)
+    # Initialize dataloader # Use initialize_msp_data to load LMDB directly (needs much more memory)
+    if args.format.lower() == 'lmdb':
+        init = initialize_msp_data(args, args.datadir)
+    else:
+        init = initialize_datasets(args, args.datadir, 'msp', args.ddir_suffix) 
+    args, datasets, num_species, charge_scale = init
     # Construct PyTorch dataloaders from datasets
     dataloaders = {split: DataLoader(dataset, batch_size=args.batch_size,
                                      shuffle=args.shuffle if (split == 'train') else False,

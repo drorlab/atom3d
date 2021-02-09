@@ -31,6 +31,7 @@ def init_cormorant_argparse(dataset):
     """
     parser = argparse.ArgumentParser(description='Cormorant network options.')
     parser = setup_shared_args(parser)
+    parser.add_argument('--format', type=str, default='npz', help='Input data format.')
     # Datasets without additional arguments
     if dataset.lower() in ["smp", "lba"]:
         pass

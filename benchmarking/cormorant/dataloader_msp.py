@@ -21,15 +21,20 @@ class CormorantDatasetMSP(Dataset):
         
     """
     def __init__(self, data, included_species=None, shuffle=False):
-        # Define data and dataset size
+        # Define data
         self.data = data
-        self.num_pts = len(data['original_charges'])
+        # Get the size of all parts of the dataset
+        ds_sizes = [len(self.data[key]) for key in self.data.keys()]
+        # Make sure all parts of the dataset have the same length
+        for size in ds_sizes[1:]: assert size == ds_sizes[0]
+        # Set the dataset size
+        self.num_pts = ds_sizes[0]
         # If included species is not specified
         if included_species is None:
             all_charges = np.concatenate(self.data['original_charges'], self.data['mutated_charges'])
             self.included_species = torch.unique(all_charges, sorted=True)
         else:
-            self.included_species = included_species
+            self.included_species = torch.unique(included_species, sorted=True)
         # Convert charges to one-hot representation
         self.data['original_one_hot'] = self.data['original_charges'].unsqueeze(-1) == included_species.unsqueeze(0).unsqueeze(0)
         self.data['mutated_one_hot'] = self.data['mutated_charges'].unsqueeze(-1) == included_species.unsqueeze(0).unsqueeze(0)
@@ -40,7 +45,7 @@ class CormorantDatasetMSP(Dataset):
         # Get a dictionary of statistics for all properties that are one-dimensional tensors.
         self.calc_stats()
         if shuffle:
-            self.perm = torch.randperm(len(data['original_charges']))[:self.num_pts]
+            self.perm = torch.randperm(self.num_pts)
         else:
             self.perm = None
 
@@ -83,12 +88,9 @@ def collate_msp(batch):
     # Copy label data. 
     new_batch['label'] = batch['label']
     # Split structural data and drop zeros
-    new_batch['charges1']   = drop_zeros( batch['original_charges'],   to_keep1 )
-    new_batch['charges2']   = drop_zeros( batch['mutated_charges'],    to_keep2 )
-    new_batch['positions1'] = drop_zeros( batch['original_positions'], to_keep1 )
-    new_batch['positions2'] = drop_zeros( batch['mutated_positions'],  to_keep2 )
-    new_batch['one_hot1']   = drop_zeros( batch['original_one_hot'],   to_keep1 )
-    new_batch['one_hot2']   = drop_zeros( batch['mutated_one_hot'],    to_keep2 )
+    for key in ['charges','positions','one_hot']:
+        new_batch[key+'1'] = drop_zeros( batch['original_'+key], 'original_'+key, to_keep1 )
+        new_batch[key+'2'] = drop_zeros( batch['mutated_'+key],  'mutated_'+key,  to_keep2 )
     # Define the atom masks
     atom_mask1 = new_batch['charges1'] > 0
     atom_mask2 = new_batch['charges2'] > 0
@@ -174,10 +176,12 @@ def _load_msp_data(datafiles, radius):
         mut = extract_coordinates_as_numpy_arrays(dataset, atom_frames=['mutated_atoms'])
         for k in key_names: mut['mutated_'+k] = mut.pop(k)
         # Merge datasets with atoms
-        datasets[split] = {**ori, **mut}
+        dsdict = {**ori, **mut}
         # Add labels
         labels = [dataset[i]['label'] for i in range(len(dataset))]
-        datasets[split]['label'] = np.array(labels, dtype=int)
+        dsdict['label'] = np.array(labels, dtype=int)
+        # Convert everything to tensors
+        datasets[split] = {key: torch.from_numpy(val) for key, val in dsdict.items()}
     return datasets
 
 
@@ -196,9 +200,9 @@ def _get_species(datasets, ignore_check=False):
 
     """
     # Find the unique list of species in each dataset.
-    split_species = {split: np.array(np.unique(np.concatenate([ds['original_charges'],ds['mutated_charges']],axis=1)),dtype=int) for split, ds in datasets.items()}
+    split_species = {split: torch.cat([ds['original_charges'].unique(),ds['mutated_charges'].unique()]).unique() for split, ds in datasets.items()}
     # Get a list of all species in the dataset across all splits
-    all_species = torch.cat( [torch.from_numpy(s) for s in split_species.values()] ).unique()
+    all_species = torch.cat( tuple(split_species.values()) ).unique()
     # If zero charges (padded, non-existent atoms) are included, remove them
     if all_species[0] == 0: all_species = all_species[1:]
     # Remove zeros if zero-padded charges exst for each split

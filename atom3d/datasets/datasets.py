@@ -467,9 +467,9 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['ato
     """
     # Size of the dataset
     if indices is None:
-        indices = np.arange(len(dataset))
+        indices = np.arange(len(dataset), dtype=int)
     else:
-        indices = np.array(indices)
+        indices = np.array(indices, dtype=int)
         assert len(dataset) > max(indices)
     num_items = len(indices)
 
@@ -480,7 +480,7 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['ato
         atoms = pd.concat([item[frame] for frame in atom_frames])
         keep = np.array([el not in drop_elements for el in atoms['element']])
         num_atoms.append(sum(keep))
-    num_atoms = np.array(num_atoms)
+    num_atoms = np.array(num_atoms, dtype=int)
 
     # All charges and position arrays have the same size
     arr_size  = np.max(num_atoms)

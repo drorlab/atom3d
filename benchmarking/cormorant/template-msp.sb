@@ -8,7 +8,7 @@
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=mvoegele@stanford.edu
 #SBATCH --dependency=singleton
-#SBATCH --job-name=msp-cormorant
+#SBATCH --job-name=msp-cutoff-CUTOFF-bs-BATCHSIZE-FORMAT-cormorant
 
 module load gcc/8.1.0
 module load cuda/10.0
@@ -17,8 +17,12 @@ conda activate cormorant
 
 echo $CUDA_HOME
 
-NPZDIR=/oak/stanford/groups/rondror/projects/atom3d/npz
+NPZDIR=/oak/stanford/groups/rondror/projects/atom3d/npz/msp
 LMDBDIR=/oak/stanford/groups/rondror/projects/atom3d/lmdb/MSP/splits/split-by-seqid30/data
 
-python train_msp.py --prefix msp --load --datadir $LMDBDIR --num-epoch 30
+python train_msp.py --prefix msp_cutoff-CUTOFF_bs-BATCHSIZE_FORMAT --load \
+                    --datadir $FORMATDIR --format FORMAT\
+                    --ddir-suffix "_split-by-sequence-identity-30_cutoff-CUTOFF" \
+                    --batch-size BATCHSIZE \
+                    --num-epoch 50
 

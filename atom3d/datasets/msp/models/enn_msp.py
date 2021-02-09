@@ -141,12 +141,11 @@ class ENN_MSP(CGModule):
         # Construct scalars for network output
         atom_scalars = self.get_scalars_atom(atoms_all)
         edge_scalars = self.get_scalars_edge(edges_all)
-
-        # Prediction in this case will depend only on the atom_scalars. Can make
-        # it more general here.
-        prediction = self.output_layer_atom(atom_scalars, atom_mask)
-
-        return prediction, atoms_all, edges_all
+        return atom_scalars, edge_scalars, atoms_all, edges_all
+        # Prediction in this case will depend only on the atom_scalars. 
+        # Can make it more general here.
+        #prediction = self.output_layer_atom(atom_scalars, atom_mask)
+        #prediction, atoms_all, edges_all
  
 
     def forward(self, data, covariance_test=False):
@@ -162,26 +161,19 @@ class ENN_MSP(CGModule):
         :rtype prediction: :obj:`torch.Tensor`
             
         """
-        data1 = {}
-        data2 = {}
-        data1['label'] = data['label']
-        data2['label'] = data['label']
-        data1['charges']   = data['charges1']
-        data2['charges']   = data['charges2']
-        data1['positions'] = data['positions1']
-        data2['positions'] = data['positions2']
-        data1['one_hot']   = data['one_hot1']
-        data2['one_hot']   = data['one_hot2']
-        data1['atom_mask'] = data['atom_mask1']
-        data2['atom_mask'] = data['atom_mask2']
-        data1['edge_mask'] = data['edge_mask1']
-        data2['edge_mask'] = data['edge_mask2']
-
-        prediction1, atoms_all1, edges_all1 = self.forward_once(data1)
-        prediction2, atoms_all2, edges_all2 = self.forward_once(data2)
-
-        prediction = (prediction2 - prediction1)**2
-
+        # Split the data
+        data1 = {'label': data['label']}
+        data2 = {'label': data['label']}
+        for key in ['charges', 'positions', 'one_hot', 'atom_mask', 'edge_mask']:
+            data1[key] = data[key+'1']
+            data2[key] = data[key+'2']
+        # Run the two separate networks
+        atom_scalars1, edge_scalars2, atoms_all1, edges_all1 = self.forward_once(data1)
+        atom_scalars2, edge_scalars2, atoms_all2, edges_all2 = self.forward_once(data2)
+        # Combine atom scalars
+        atom_scalars = torch.cat((atom_scalars1, atom_scalars1), dim=1)
+        # Apply the output layer
+        prediction = self.output_layer_atom(atom_scalars)
         # Covariance test
         if covariance_test:
             return prediction, atoms_all1, edges_all1
