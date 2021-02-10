@@ -8,6 +8,7 @@ import sys
 import scipy.spatial
 import parallel as par
 import click
+import torch
 
 sys.path.insert(0, '../../..')
 import atom3d.datasets.datasets as da
@@ -104,21 +105,29 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
     file_list = fi.find_files(os.path.join(input_file_path, 'mutated'), fo.patterns[filetype])
     transform = MSPTransform(base_file_dir=input_file_path)
     
-    lmdb_path = os.path.join(output_root, 'all')
+    lmdb_path = os.path.join(output_root, 'raw', 'MSP', 'data')
     if not os.path.exists(lmdb_path):
         os.makedirs(lmdb_path)
         
     logger.info(f'Creating lmdb dataset into {lmdb_path:}...')
     if not os.path.exists(lmdb_path):
         os.makedirs(lmdb_path)
-    dataset = da.load_dataset(file_list, filetype, transform=transform)
-    da.make_lmdb_dataset(dataset, lmdb_path)
+    #dataset = da.load_dataset(file_list, filetype, transform=transform)
+    #da.make_lmdb_dataset(dataset, lmdb_path)
 
     if not split:
         return
 
+    
     logger.info(f'Splitting indices...')
     lmdb_ds = da.load_dataset(lmdb_path, 'lmdb')
+    
+    split_data_path = os.path.join(output_root, 'splits', 'split-by-seqid30', 'data')
+    split_idx_path = os.path.join(output_root, 'splits', 'split-by-seqid30', 'indices')
+    if not os.path.exists(split_data_path):
+        os.makedirs(split_data_path)
+    if not os.path.exists(split_idx_path):
+        os.makedirs(split_idx_path)
 
     def _write_split_indices(split_txt, lmdb_ds, output_txt):
         with open(split_txt, 'r') as f:
@@ -127,12 +136,27 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
         split_ids = list(filter(lambda id: id in split_set, lmdb_ds.ids()))
         # Convert ids into lmdb numerical indices and write into txt file
         split_indices = lmdb_ds.ids_to_indices(split_ids)
+        str_indices = [str(i) for i in split_indices]
         with open(output_txt, 'w') as f:
-            f.write(str('\n'.join([str(i) for i in split_indices])))
+            f.write(str('\n'.join(str_indices)))
+        return split_indices
 
-    _write_split_indices(train_txt, lmdb_ds, os.path.join(output_root, 'train_indices.txt'))
-    _write_split_indices(val_txt, lmdb_ds, os.path.join(output_root, 'val_indices.txt'))
-    _write_split_indices(test_txt, lmdb_ds, os.path.join(output_root, 'test_indices.txt'))
+    
+    logger.info(f'Writing train')
+    train_indices = _write_split_indices(train_txt, lmdb_ds, os.path.join(split_idx_path, 'train_indices.txt'))
+    print(train_indices)
+    train_dataset = torch.utils.data.Subset(lmdb_ds, train_indices)
+    da.make_lmdb_dataset(train_dataset, os.path.join(split_data_path, 'train'))
+
+    logger.info(f'Writing val')
+    val_indices = _write_split_indices(val_txt, lmdb_ds, os.path.join(split_idx_path, 'val_indices.txt'))
+    val_dataset = torch.utils.data.Subset(lmdb_ds, val_indices)
+    da.make_lmdb_dataset(val_dataset, os.path.join(split_data_path, 'val'))
+
+    logger.info(f'Writing test')
+    test_indices = _write_split_indices(test_txt, lmdb_ds, os.path.join(split_idx_path, 'test_indices.txt'))
+    test_dataset = torch.utils.data.Subset(lmdb_ds, test_indices)
+    da.make_lmdb_dataset(test_dataset, os.path.join(split_data_path, 'test'))
 
 
 if __name__ == "__main__":

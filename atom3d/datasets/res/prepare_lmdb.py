@@ -85,7 +85,10 @@ class ResTransform(object):
             tmp['subunit'] = '_'.join([str(x) for x in chain_res])
 
             subunits.append(tmp)
-        subunits = pd.concat(subunits).reset_index(drop=True)
+        if len(subunits) == 0:
+            subunits = pd.DataFrame(columns=df.columns)
+        else:
+            subunits = pd.concat(subunits).reset_index(drop=True)
         x['atoms'] = subunits
         return x
 
@@ -99,7 +102,8 @@ class ResTransform(object):
 @click.option('--val_txt', '-v', type=click.Path(exists=True), default=None)
 @click.option('--test_txt', '-t', type=click.Path(exists=True), default=None)
 @click.option('--num_threads', '-n', type=int, default=8)
-def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, test_txt, num_threads):
+@click.option('--start', '-st', type=int, default=0)
+def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, test_txt, num_threads, start):
     logging.basicConfig(stream=sys.stdout,
                         format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
@@ -124,18 +128,21 @@ def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, te
     lmdb_path = os.path.join(output_root, 'all')
     if not os.path.exists(lmdb_path):
         os.makedirs(lmdb_path)
+    
+    for i in range(start,num_threads):
+        logger.info(f'Processing chunk {i:}...')
+        _process_chunk(chunks[i], 'pdb', f'{lmdb_path}_tmp_{i}', balance)
         
-    inputs = [(chunks[i], filetype, f'{lmdb_path}_tmp_{i}', balance) for i in range(num_threads)]
+    # inputs = [(chunks[i], filetype, f'{lmdb_path}_tmp_{i}', balance) for i in range(num_threads)]
+    # par.submit_jobs(_process_chunk, inputs, num_threads)
     
-    par.submit_jobs(_process_chunk, inputs, num_threads)
+    # logger.info('Combining datasets...')
+    # dataset_list = [da.LMDBDataset(f'{lmdb_path}_tmp_{i}') for i in range(num_threads)]
+    # da.combine_datasets(dataset_list, lmdb_path)
     
-    logger.info('Combining datasets...')
-    dataset_list = [da.LMDBDataset(f'{lmdb_path}_tmp_{i}') for i in range(num_threads)]
-    da.combine_datasets(dataset_list, lmdb_path)
-    
-    for i in range(num_threads):
-        os.system(f'rm {lmdb_path}_tmp_{i}/data.mdb')
-        os.system(f'rm {lmdb_path}_tmp_{i}/lock.mdb')
+    # for i in range(num_threads):
+    #     os.system(f'rm {lmdb_path}_tmp_{i}/data.mdb')
+    #     os.system(f'rm {lmdb_path}_tmp_{i}/lock.mdb')
 
     if not split:
         return
