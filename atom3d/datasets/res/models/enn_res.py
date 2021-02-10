@@ -6,16 +6,16 @@ import logging
 from cormorant.cg_lib import CGModule, SphericalHarmonicsRel
 
 from cormorant.nn import RadialFilters
-from cormorant.nn import InputMPNN
-from cormorant.nn import OutputPMLP, GetScalarsAtom
+from cormorant.nn import InputLinear, InputMPNN
+from cormorant.nn import OutputLinear, OutputPMLP, OutputSoftmax, GetScalarsAtom
 from cormorant.nn import NoLayer
 
 from atom3d.models.enn import ENN
 
 
-class ENN_SMP(CGModule):
+class ENN_RES(CGModule):
     """
-    Basic Cormorant Network used to train on SMP.
+    Basic Cormorant Network used to train on RES.
 
     :param maxl: Maximum weight in the output of CG products. (Expanded to list of length :obj:`num_cg_levels`)
     :type maxl: :obj:`int` of :obj:`list` of :obj:`int`
@@ -33,13 +33,15 @@ class ENN_SMP(CGModule):
     :type dtype: :obj:`torch.dtype`
     :param cg_dict: Clebsch-Gordan dictionary.
     :type cg_dict: :obj:`nn.cg_lib.CGDict`
-
+    
     """
     def __init__(self, maxl, max_sh, num_cg_levels, num_channels, num_species,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
                  weight_init, level_gain, charge_power, basis_set,
                  charge_scale, gaussian_mask,
-                 top, input, num_mpnn_layers, activation='leakyrelu',
+                 top, input, num_mpnn_layers, num_classes=20, 
+                 activation='leakyrelu', cgprod_bounded=False,
+                 cg_agg_normalization='none', cg_pow_normalization='none',
                  device=None, dtype=None, cg_dict=None):
 
         logging.info('Initializing network!')
@@ -63,8 +65,6 @@ class ENN_SMP(CGModule):
         super().__init__(maxl=max(maxl+max_sh), device=device, dtype=dtype, cg_dict=cg_dict)
         device, dtype, cg_dict = self.device, self.dtype, self.cg_dict
 
-        print('CGDICT', cg_dict.maxl)
-
         self.num_cg_levels = num_cg_levels
         self.num_channels = num_channels
         self.charge_power = charge_power
@@ -83,9 +83,8 @@ class ENN_SMP(CGModule):
         # Set up input layers
         num_scalars_in = self.num_species * (self.charge_power + 1)
         num_scalars_out = num_channels[0]
-        self.input_func_atom = InputMPNN(num_scalars_in, num_scalars_out, num_mpnn_layers,
-                                         soft_cut_rad[0], soft_cut_width[0], hard_cut_rad[0],
-                                         activation=activation, device=self.device, dtype=self.dtype)
+        self.input_func_atom = InputLinear(num_scalars_in, num_scalars_out,
+                                           device=self.device, dtype=self.dtype)
         self.input_func_edge = NoLayer()
 
         # Set up the central Clebsch-Gordan network
@@ -94,20 +93,23 @@ class ENN_SMP(CGModule):
         self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge, tau_pos, 
                                 num_cg_levels, num_channels, level_gain, weight_init,
                                 cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
+                                cat=True, gaussian_mask=False,
+                                cgprod_bounded=cgprod_bounded,
+                                cg_agg_normalization=cg_agg_normalization,
+                                cg_pow_normalization=cg_pow_normalization,
                                 device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
 
         # Get atom and edge scalars
         tau_cg_levels_atom = self.cormorant_cg.tau_levels_atom
         tau_cg_levels_edge = self.cormorant_cg.tau_levels_edge
-        self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom, 
-                                               device=self.device, dtype=self.dtype)
+        self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom, device=self.device, dtype=self.dtype)
         self.get_scalars_edge = NoLayer()
 
         # Set up the output networks
         num_scalars_atom = self.get_scalars_atom.num_scalars
         num_scalars_edge = self.get_scalars_edge.num_scalars
-        self.output_layer_atom = OutputPMLP(num_scalars_atom, activation=activation, 
-                                            device=self.device, dtype=self.dtype)
+        self.output_layer_atom = OutputSoftmax(num_scalars_atom, num_classes, bias=True,
+                                               device=self.device, dtype=self.dtype) 
         self.output_layer_edge = NoLayer()
 
         logging.info('Model initialized. Number of parameters: {}'.format(
@@ -200,5 +202,3 @@ def expand_var_list(var, num_cg_levels):
     else:
         raise ValueError('Incorrect type {}'.format(type(var)))
     return var_list
-
-

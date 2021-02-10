@@ -1,0 +1,4 @@
+../pdb/2olx.pdb
+../pdb/11as.pdb
+../pdb/103l.pdb
+../pdb/117e.pdb

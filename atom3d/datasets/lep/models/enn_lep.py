@@ -6,16 +6,16 @@ import logging
 from cormorant.cg_lib import CGModule, SphericalHarmonicsRel
 
 from cormorant.nn import RadialFilters
-from cormorant.nn import InputMPNN
-from cormorant.nn import OutputPMLP, GetScalarsAtom
+from cormorant.nn import InputLinear, InputMPNN
+from cormorant.nn import OutputSoftmax, GetScalarsAtom
 from cormorant.nn import NoLayer
 
 from atom3d.models.enn import ENN
 
 
-class ENN_SMP(CGModule):
+class ENN_LEP(CGModule):
     """
-    Basic Cormorant Network used to train on SMP.
+    Basic Cormorant Network used to train on LEP.
 
     :param maxl: Maximum weight in the output of CG products. (Expanded to list of length :obj:`num_cg_levels`)
     :type maxl: :obj:`int` of :obj:`list` of :obj:`int`
@@ -38,8 +38,9 @@ class ENN_SMP(CGModule):
     def __init__(self, maxl, max_sh, num_cg_levels, num_channels, num_species,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
                  weight_init, level_gain, charge_power, basis_set,
-                 charge_scale, gaussian_mask,
-                 top, input, num_mpnn_layers, activation='leakyrelu',
+                 charge_scale, gaussian_mask, #top, input, num_mpnn_layers, 
+                 activation='leakyrelu', num_classes=2, cgprod_bounded=False,
+                 cg_agg_normalization='none', cg_pow_normalization='none',
                  device=None, dtype=None, cg_dict=None):
 
         logging.info('Initializing network!')
@@ -63,8 +64,6 @@ class ENN_SMP(CGModule):
         super().__init__(maxl=max(maxl+max_sh), device=device, dtype=dtype, cg_dict=cg_dict)
         device, dtype, cg_dict = self.device, self.dtype, self.cg_dict
 
-        print('CGDICT', cg_dict.maxl)
-
         self.num_cg_levels = num_cg_levels
         self.num_channels = num_channels
         self.charge_power = charge_power
@@ -75,7 +74,7 @@ class ENN_SMP(CGModule):
         self.sph_harms = SphericalHarmonicsRel(max(max_sh), conj=True,
                                                device=device, dtype=dtype, cg_dict=cg_dict)
 
-        # Set up position functions, now independent of spherical harmonics
+        # Set up position functions, independent of spherical harmonics
         self.rad_funcs = RadialFilters(max_sh, basis_set, num_channels, num_cg_levels,
                                        device=self.device, dtype=self.dtype)
         tau_pos = self.rad_funcs.tau
@@ -83,9 +82,8 @@ class ENN_SMP(CGModule):
         # Set up input layers
         num_scalars_in = self.num_species * (self.charge_power + 1)
         num_scalars_out = num_channels[0]
-        self.input_func_atom = InputMPNN(num_scalars_in, num_scalars_out, num_mpnn_layers,
-                                         soft_cut_rad[0], soft_cut_width[0], hard_cut_rad[0],
-                                         activation=activation, device=self.device, dtype=self.dtype)
+        self.input_func_atom = InputLinear(num_scalars_in, num_scalars_out,
+                                           device=self.device, dtype=self.dtype)
         self.input_func_edge = NoLayer()
 
         # Set up the central Clebsch-Gordan network
@@ -94,29 +92,33 @@ class ENN_SMP(CGModule):
         self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge, tau_pos, 
                                 num_cg_levels, num_channels, level_gain, weight_init,
                                 cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
+                                cat=True, gaussian_mask=False, 
+                                cgprod_bounded=cgprod_bounded,
+                                cg_agg_normalization=cg_agg_normalization, 
+                                cg_pow_normalization=cg_pow_normalization,
                                 device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
 
         # Get atom and edge scalars
         tau_cg_levels_atom = self.cormorant_cg.tau_levels_atom
         tau_cg_levels_edge = self.cormorant_cg.tau_levels_edge
-        self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom, 
+        self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom,
                                                device=self.device, dtype=self.dtype)
         self.get_scalars_edge = NoLayer()
 
         # Set up the output networks
         num_scalars_atom = self.get_scalars_atom.num_scalars
         num_scalars_edge = self.get_scalars_edge.num_scalars
-        self.output_layer_atom = OutputPMLP(num_scalars_atom, activation=activation, 
-                                            device=self.device, dtype=self.dtype)
+        self.output_layer_atom = OutputSoftmax(num_scalars_atom, num_classes, bias=True,
+                                               device=self.device, dtype=self.dtype) 
         self.output_layer_edge = NoLayer()
 
         logging.info('Model initialized. Number of parameters: {}'.format(
             sum([p.nelement() for p in self.parameters()])))
 
 
-    def forward(self, data, covariance_test=False):
+    def forward_once(self, data):
         """
-        Runs a forward pass of the network.
+        Runs a single forward pass of the network.
 
         :param data: Dictionary of data to pass to the network.
         :type data : :obj:`dict`
@@ -150,9 +152,45 @@ class ENN_SMP(CGModule):
         # it more general here.
         prediction = self.output_layer_atom(atom_scalars, atom_mask)
 
+        return prediction, atoms_all, edges_all
+
+ 
+    def forward(self, data, covariance_test=False):
+        """
+        Runs a forward pass of the network.
+
+        :param data: Dictionary of data to pass to the network.
+        :type data : :obj:`dict`
+        :param covariance_test: If true, returns all of the atom-level representations twice.
+        :type covariance_test: :obj:`bool`, optional
+            
+        :return prediction: The output of the layer
+        :rtype prediction: :obj:`torch.Tensor`
+            
+        """
+        data1 = {}
+        data2 = {}
+        data1['label'] = data['label']
+        data2['label'] = data['label']
+        data1['charges']   = data['charges1']
+        data2['charges']   = data['charges2']
+        data1['positions'] = data['positions1']
+        data2['positions'] = data['positions2']
+        data1['one_hot']   = data['one_hot1']
+        data2['one_hot']   = data['one_hot2']
+        data1['atom_mask'] = data['atom_mask1']
+        data2['atom_mask'] = data['atom_mask2']
+        data1['edge_mask'] = data['edge_mask1']
+        data2['edge_mask'] = data['edge_mask2']
+
+        prediction1, atoms_all1, edges_all1 = self.forward_once(data1)
+        prediction2, atoms_all2, edges_all2 = self.forward_once(data2)
+
+        prediction = (prediction2 - prediction1)**2
+
         # Covariance test
         if covariance_test:
-            return prediction, atoms_all, atoms_all
+            return prediction, atoms_all1, edges_all1
         else:
             return prediction
 

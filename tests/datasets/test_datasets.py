@@ -18,6 +18,21 @@ def test_load_dataset_lmdb():
         assert df['atoms'].z.dtype == 'float'
 
 
+def test_load_dataset_list():
+    dataset = da.load_dataset('tests/test_data/list/pdbs.txt', 'pdb')
+    assert len(dataset) == 4
+    for df in dataset:
+        print(df)
+        assert df['atoms'].x.dtype == 'float'
+        assert df['atoms'].y.dtype == 'float'
+        assert df['atoms'].z.dtype == 'float'
+
+def test_load_dataset_list_nonexistent():
+    dataset = da.load_dataset('tests/test_data/list/nonexistent.txt', 'pdb')
+    assert len(dataset) == 1
+    with pytest.raises(FileNotFoundError):
+        df = dataset[0]
+
 #def test_load_dataset_sharded():
 #    dataset = da.load_dataset('tests/test_data/sharded', 'sharded')
 #    assert len(dataset) == 4

@@ -7,7 +7,7 @@
 
 
 # Directory definitions
-LMDB_DIR=/oak/stanford/groups/rondror/projects/atom3d/lmdb/small_molecule_properties
+LMDB_DIR=/oak/stanford/groups/rondror/projects/atom3d/lmdb/SMP/splits/random/data
 NPZ_DIR=/oak/stanford/groups/rondror/projects/atom3d/npz/smp
 
 # Create output directory

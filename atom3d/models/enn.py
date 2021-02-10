@@ -53,7 +53,7 @@ class ENN(CGModule):
     def __init__(self, maxl, max_sh, tau_in_atom, tau_in_edge, tau_pos,
                  num_cg_levels, num_channels, level_gain, weight_init,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
-                 gaussian_mask=False, cgprod_bounded=False,
+                 cat=True, gaussian_mask=False, cgprod_bounded=False,
                  cg_agg_normalization='none', cg_pow_normalization='none',
                  device=None, dtype=None, cg_dict=None):
         # Initialize CG module 

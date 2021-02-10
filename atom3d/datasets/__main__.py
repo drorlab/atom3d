@@ -30,14 +30,12 @@ def main(input_dir, output_lmdb, filetype, score_path, serialization_format):
         fileext = 'xyz'
     else:
         fileext = filetype
-    file_list = fi.find_files(input_dir, fo.patterns[fileext])
-    file_list.sort()
+    file_list = da.get_file_list(input_dir, fileext)
     logger.info(f'Found {len(file_list)} files.')
 
     dataset = da.load_dataset(file_list, filetype)
     da.make_lmdb_dataset(
-        dataset, output_lmdb, filetype,
-        serialization_format=serialization_format)
+        dataset, output_lmdb, serialization_format=serialization_format)
 
 
 if __name__ == "__main__":

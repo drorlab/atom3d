@@ -38,7 +38,10 @@ class Scores(object):
             .set_index('description')
 
     def _key_from_silent_file(self, silent_file):
-        return silent_file.stem.split('.')[0]
+        tmp = silent_file.stem.split('.')[0]
+        if 'farna_rebuild' in tmp:
+            tmp = silent_file.parent.stem
+        return tmp
 
     def _lookup(self, file_path):
         file_path = Path(file_path)
@@ -46,6 +49,9 @@ class Scores(object):
         if key in self._scores.index:
             return key, self._scores.loc[key]
         key = (file_path.parent.stem, file_path.stem)
+        if key in self._scores.index:
+            return key, self._scores.loc[key]
+        key = (file_path.parent.parent.stem, file_path.stem)
         if key in self._scores.index:
             return key, self._scores.loc[key]
         return key, None
