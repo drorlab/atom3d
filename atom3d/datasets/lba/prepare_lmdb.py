@@ -133,37 +133,8 @@ class LBADataset(Dataset):
         return item
 
 
-@click.command(help='Prepare LBA dataset')
-@click.argument('input_file_path', type=click.Path())
-@click.argument('output_root', type=click.Path())
-@click.option('--split', '-s', is_flag=True)
-@click.option('--train_txt', '-tr', type=click.Path(exists=True), default=None)
-@click.option('--val_txt', '-v', type=click.Path(exists=True), default=None)
-@click.option('--test_txt', '-t', type=click.Path(exists=True), default=None)
-@click.option('--score_path', type=click.Path(exists=True), default=None)
-def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt,
-            score_path):
-    logging.basicConfig(stream=sys.stdout,
-                        format='%(asctime)s %(levelname)s %(process)d: ' +
-                        '%(message)s',
-                        level=logging.INFO)
-
-    scores = Scores(score_path) if score_path else None
-
-    # Assume subdirectories containing the protein/pocket/ligand files are
-    # structured as <input_file_path>/<pdbcode>
-    pdbcodes = os.listdir(input_file_path)
-
-    lmdb_path = os.path.join(output_root, 'all')
-    logger.info(f'Creating lmdb dataset into {lmdb_path:}...')
-
-    dataset = LBADataset(input_file_path, pdbcodes, transform=scores)
-    da.make_lmdb_dataset(dataset, lmdb_path)
-
-    if not split:
-        return
-
-    logger.info(f'Splitting indices...')
+def split_lmdb_dataset(lmdb_path, train_txt, val_txt, test_txt, split_dir):
+    logger.info(f'Splitting indices, load data from {lmdb_path:}...')
     lmdb_ds = da.load_dataset(lmdb_path, 'lmdb')
 
     def _write_split_indices(split_txt, lmdb_ds, output_txt):
@@ -177,14 +148,61 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt,
             f.write(str('\n'.join([str(i) for i in split_indices])))
         return split_indices
 
-    indices_train = _write_split_indices(train_txt, lmdb_ds, os.path.join(output_root, 'train_indices.txt'))
-    indices_val = _write_split_indices(val_txt, lmdb_ds, os.path.join(output_root, 'val_indices.txt'))
-    indices_test = _write_split_indices(test_txt, lmdb_ds, os.path.join(output_root, 'test_indices.txt'))
+    logger.info(f'Write results to {split_dir:}...')
+    os.makedirs(os.path.join(split_dir, 'indices'), exist_ok=True)
+    os.makedirs(os.path.join(split_dir, 'data'), exist_ok=True)
 
-    train_dataset, val_dataset, test_dataset = spl.split(lmdb_ds, indices_train, indices_val, indices_test)
-    da.make_lmdb_dataset(train_dataset, os.path.join(output_root, 'train'))
-    da.make_lmdb_dataset(val_dataset, os.path.join(output_root, 'val'))
-    da.make_lmdb_dataset(test_dataset, os.path.join(output_root, 'test'))
+    indices_train = _write_split_indices(
+        train_txt, lmdb_ds, os.path.join(split_dir, 'indices/train_indices.txt'))
+    indices_val = _write_split_indices(
+        val_txt, lmdb_ds, os.path.join(split_dir, 'indices/val_indices.txt'))
+    indices_test = _write_split_indices(
+        test_txt, lmdb_ds, os.path.join(split_dir, 'indices/test_indices.txt'))
+
+    train_dataset, val_dataset, test_dataset = spl.split(
+        lmdb_ds, indices_train, indices_val, indices_test)
+    da.make_lmdb_dataset(train_dataset, os.path.join(split_dir, 'data/train'))
+    da.make_lmdb_dataset(val_dataset, os.path.join(split_dir, 'data/val'))
+    da.make_lmdb_dataset(test_dataset, os.path.join(split_dir, 'data/test'))
+
+
+def make_lmdb_dataset(input_file_path, score_path, output_root):
+    scores = Scores(score_path) if score_path else None
+
+    # Assume subdirectories containing the protein/pocket/ligand files are
+    # structured as <input_file_path>/<pdbcode>
+    pdbcodes = os.listdir(input_file_path)
+
+    lmdb_path = os.path.join(output_root, 'data')
+    os.makedirs(lmdb_path, exist_ok=True)
+    logger.info(f'Creating lmdb dataset into {lmdb_path:}...')
+
+    dataset = LBADataset(input_file_path, pdbcodes, transform=scores)
+    da.make_lmdb_dataset(dataset, lmdb_path)
+    return lmdb_path
+
+
+@click.command(help='Prepare LBA dataset')
+@click.argument('input_file_path', type=click.Path())
+@click.argument('output_root', type=click.Path())
+@click.option('--no_gen', '-ng', is_flag=True,
+              help="If specified, we don't process the data to lmdb")
+@click.option('--split', '-s', is_flag=True)
+@click.option('--train_txt', '-tr', type=click.Path(exists=True), default=None)
+@click.option('--val_txt', '-v', type=click.Path(exists=True), default=None)
+@click.option('--test_txt', '-t', type=click.Path(exists=True), default=None)
+@click.option('--score_path', type=click.Path(exists=True), default=None)
+def prepare(input_file_path, output_root, no_gen, split,
+            train_txt, val_txt, test_txt, score_path):
+    logging.basicConfig(stream=sys.stdout,
+                        format='%(asctime)s %(levelname)s %(process)d: ' +
+                        '%(message)s',
+                        level=logging.INFO)
+    if not no_gen:
+        input_file_path = make_lmdb_dataset(input_file_path, score_path, output_root)
+        output_root = os.path.join(output_root, 'split')
+    if split:
+        split_lmdb_dataset(input_file_path, train_txt, val_txt, test_txt, output_root)
 
 
 if __name__ == "__main__":
