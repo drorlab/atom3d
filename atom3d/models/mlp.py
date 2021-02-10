@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class FeedForward(nn.Module):
-    """A basic feed-forward neural network, with tunable hidden layer number and dimension. 
+class MLP(nn.Module):
+    """A basic feed-forward neural network (multi-layer perceptron), with tunable hidden layer number and dimension. 
         The number of layers is assumed to be equal to :math:`len(hidden\_dims) + 2`, including the input and output layers.
         Dropout can optionally be specified and is applied after every layer (except output).
 
@@ -17,7 +17,7 @@ class FeedForward(nn.Module):
         :type dropout: float, optional
         """    
     def __init__(self, in_dim, hidden_dims, out_dim, dropout=0.0):    
-        super(FeedForward, self).__init__()
+        super(MLP, self).__init__()
         self.dropout = dropout
         self.hidden = nn.ModuleList()
         hidden_dims = [in_dim] + hidden_dims # add in dim to list for simplicity
