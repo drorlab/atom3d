@@ -31,6 +31,9 @@ class LMDBDataset(Dataset):
 
     :param data_file: path to LMDB file containing dataset
     :type data_file: Union[str, Path]
+    :param transform: Transformation function to apply to each item.
+    :type transform: Function, optional
+    
     """
 
     def __init__(self, data_file, transform=None):
@@ -90,10 +93,13 @@ class LMDBDataset(Dataset):
                 serialized = f.read()
             item = deserialize(serialized, self._serialization_format)
 
-        # Items that start or end with 'atoms' are assumed to be a dataframe.
-        for x in item.keys():
-            if x.startswith('atoms') or x.endswith('atoms'):
-                item[x] = pd.DataFrame(**item[x])
+        # Recover special data types (currently only pandas dataframes).
+        if 'types' in item.keys():
+            for x in item.keys():
+                if item['types'][x] == str(pd.DataFrame):
+                    item[x] = pd.DataFrame(**item[x])
+        else:
+            logging.warning('Data types in item %i not defined. Will use basic types only.'%index)
 
         if self._transform:
             item = self._transform(item)
@@ -428,10 +434,13 @@ def make_lmdb_dataset(dataset, output_lmdb,
     env = lmdb.open(str(output_lmdb), map_size=int(1e11))
 
     with env.begin(write=True) as txn:
-
         id_to_idx = {}
         i = 0
         for x in tqdm.tqdm(dataset, total=num_examples):
+            # Add an entry that stores the original types of all entries
+            x['types'] = {key: str(type(val)) for key, val in x.items()}
+            # ... including itself
+            x['types']['types'] = str(type(x['types']))
             if filter_fn is not None and filter_fn(x):
                 continue
             buf = io.BytesIO()
@@ -442,7 +451,6 @@ def make_lmdb_dataset(dataset, output_lmdb,
             if not result:
                 raise RuntimeError(f'LMDB entry {i} in {str(output_lmdb)} '
                                    'already exists')
-
             id_to_idx[x['id']] = i
             i += 1
 
@@ -552,6 +560,7 @@ def combine_datasets(dataset_list, output_lmdb, filter_fn=None, serialization_fo
         txn.put(b'serialization_format', serialization_format.encode())
         txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
+        
 def download_dataset(name, out_path):
     """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR. Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
 
