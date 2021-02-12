@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.optim.lr_scheduler as sched
 
-from cormorant.engine.args import setup_shared_args
+from cormorant.engine.args import setup_shared_args, BoolArg, Range
 
 import logging
 logger = logging.getLogger(__name__)
@@ -47,6 +47,8 @@ def init_cormorant_argparse(dataset):
                             help='number of classes for the classification.')
         parser.add_argument('--radius', type=float, default=6.,
                             help='radius of the selected region around the mutated residue.') 
+        parser.add_argument('--droph', action=BoolArg, default=False,
+                            help='drop hydrogen atoms.')
     else: raise ValueError("Dataset %s is not recognized."%dataset)
     args = parser.parse_args()
     d = vars(args)

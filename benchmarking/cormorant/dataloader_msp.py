@@ -128,7 +128,7 @@ def initialize_msp_data(args, datadir, splits = {'train':'train', 'valid':'val',
     # Define data files.
     datafiles = {split: os.path.join(datadir,splits[split]) for split in splits.keys()}
     # Load datasets
-    datasets = _load_msp_data(datafiles, args.radius)
+    datasets = _load_msp_data(datafiles, args.radius, droph=args.droph)
     # Check the training/test/validation splits have the same set of keys.
     keys = [list(data.keys()) for data in datasets.values()]
     _msg = 'Datasets must have the same set of keys!'
@@ -150,7 +150,7 @@ def initialize_msp_data(args, datadir, splits = {'train':'train', 'valid':'val',
     return args, datasets, num_species, max_charge
 
 
-def _load_msp_data(datafiles, radius):
+def _load_msp_data(datafiles, radius, droph=False):
     """
     Load MSP datasets from LMDB format.
 
@@ -158,6 +158,8 @@ def _load_msp_data(datafiles, radius):
     :type datafiles: dict
     :param radius: Radius of the selected region around the mutated residue.
     :type radius: float
+    :param radius: Drop hydrogen atoms.
+    :type radius: bool
 
     :return datasets: Dictionary of processed dataset objects.
     :rtype datasets: dict
@@ -166,7 +168,7 @@ def _load_msp_data(datafiles, radius):
     datasets = {}
     key_names = ['index', 'num_atoms', 'charges', 'positions']
     for split, datafile in datafiles.items():
-        dataset = LMDBDataset(datafile, transform=EnvironmentSelection(radius))
+        dataset = LMDBDataset(datafile, transform=EnvironmentSelection(radius, droph))
         # Load original atoms
         ori = extract_coordinates_as_numpy_arrays(dataset, atom_frames=['original_atoms'])
         for k in key_names: ori['original_'+k] = ori.pop(k)
@@ -227,8 +229,9 @@ class EnvironmentSelection(object):
     :rtype new_df: pandas.DataFrame
 
     """
-    def __init__(self, dist):
+    def __init__(self, dist, droph):
         self._dist = dist
+        self._droph = droph
 
     def _get_mutation(self, x):
         mutation = x['id'].split('_')[-1]
@@ -237,6 +240,10 @@ class EnvironmentSelection(object):
         original_resname = mutation[0]
         mutation_resname = mutation[-1]
         return chain, resid
+
+    def _drop_hydrogen(self, df):
+        df_noh = df[df['element'] != 'H']
+        return df_noh
 
     def _select_env(self, df, chain, resid):
         # Find the C-alpha atom of the mutated residue
@@ -262,5 +269,9 @@ class EnvironmentSelection(object):
         x['original_atoms'] = self._select_env(x['original_atoms'], chain, resid)
         # Select environment in mutated data frame
         x['mutated_atoms'] = self._select_env(x['mutated_atoms'], chain, resid)
+        # Drop the hydrogen atoms
+        if self._droph:
+            x['original_atoms'] = self._drop_hydrogen(x['original_atoms'])
+            x['mutated_atoms'] = self._drop_hydrogen(x['mutated_atoms'])
         return x
 

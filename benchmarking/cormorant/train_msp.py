@@ -30,7 +30,7 @@ def main():
     # Initialize device and data type
     device, dtype = init_cuda(args)
     # Initialize dataloader # Use initialize_msp_data to load LMDB directly (needs much more memory)
-    if args.format.lower() == 'lmdb':
+    if args.format.lower().startswith('lmdb'):
         init = initialize_msp_data(args, args.datadir)
     else:
         init = initialize_datasets(args, args.datadir, 'msp', args.ddir_suffix) 
