@@ -42,10 +42,20 @@ def _write_npz(dataset, filename, indices, drop):
     save_dict = da.extract_coordinates_as_numpy_arrays(dataset, indices, 
         atom_frames=['atoms_pocket','atoms_ligand'], drop_elements=['H'])
     # Add the label data 
-    save_dict['neglog_aff'] = np.array([item['scores']['data'][0] for item in dataset])
+    save_dict['neglog_aff'] = np.array([dataset[i]['scores']['data'][0] for i in indices])
     # Save the data
     np.savez_compressed(filename,**save_dict)
     
+
+class UpdateTypes():
+    def __init__(self, df_keys):
+        self.df_keys = df_keys
+    def __call__(self,x):
+        for key in self.df_keys:
+            if key in x and type(x[key]) != pd.DataFrame: 
+                x[key] = pd.DataFrame(**x[key])
+        return x
+
 
 @click.command(help='Prepare SMP dataset')
 @click.argument('input_root', type=click.Path())
@@ -67,22 +77,22 @@ def prepare(input_root, output_file_path, split, droph, maxnumat):
         logger.info(f'Processing datasets from {input_root:}.')
         # Training set
         logger.info(f'Processing training dataset...')
-        dataset = da.LMDBDataset(inp_path('train'))
+        dataset = da.LMDBDataset(inp_path('train'), transform=UpdateTypes(['atoms_pocket','atoms_ligand']))
         indices = _filter(dataset, maxnumat)
         _write_npz(dataset, out_path('train.npz'), indices, drop)
         # Validation set
         logger.info(f'Processing validation dataset...')
-        dataset = da.LMDBDataset(inp_path('val'))
+        dataset = da.LMDBDataset(inp_path('val'), transform=UpdateTypes(['atoms_pocket','atoms_ligand']))
         indices = _filter(dataset, maxnumat)
         _write_npz(dataset, out_path('valid.npz'), indices, drop)
         # Test set
         logger.info(f'Processing test dataset...')
-        dataset = da.LMDBDataset(inp_path('test'))
+        dataset = da.LMDBDataset(inp_path('test'), transform=UpdateTypes(['atoms_pocket','atoms_ligand']))
         indices = _filter(dataset, maxnumat)
         _write_npz(dataset, out_path('test.npz'), indices, drop)
     else: # use the full data set
         logger.info(f'Processing full dataset from {input_root:}...')
-        dataset = da.LMDBDataset(inp_path('all'))
+        dataset = da.LMDBDataset(inp_path('all'), transform=UpdateTypes(['atoms_pocket','atoms_ligand']))
         indices = _filter(dataset, maxnumat)
         _write_npz(dataset, out_path('all.npz'), indices, drop)
 

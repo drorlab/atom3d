@@ -39,9 +39,14 @@ def init_cormorant_argparse(dataset):
     elif dataset == "res":
         parser.add_argument('--num_classes', type=int, default=20,
                             help='number of classes for the classification.')
-    elif dataset in ["msp", "lep"]:
+    elif dataset == "lep":
         parser.add_argument('--num_classes', type=int, default=2,
                             help='number of classes for the classification.')
+    elif dataset == "msp":
+        parser.add_argument('--num_classes', type=int, default=2,
+                            help='number of classes for the classification.')
+        parser.add_argument('--radius', type=float, default=6.,
+                            help='radius of the selected region around the mutated residue.') 
     else: raise ValueError("Dataset %s is not recognized."%dataset)
     args = parser.parse_args()
     d = vars(args)

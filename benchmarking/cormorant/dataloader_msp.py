@@ -104,7 +104,7 @@ def collate_msp(batch):
     return new_batch
 
 
-def initialize_msp_data(args, datadir, radius=6, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
+def initialize_msp_data(args, datadir, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
     """
     Initialize datasets.
 
@@ -112,8 +112,6 @@ def initialize_msp_data(args, datadir, radius=6, splits = {'train':'train', 'val
     :type args: dict
     :param datadir: Path to the directory where the data and calculations and is, or will be, stored.
     :type datadir: str
-    :param radius: Radius of the selected region around the mutated residue.
-    :type radius: float
     :param splits: Dictionary with sub-folder names for training, validation, and test set. Keys must be 'train', 'valid', 'test'.
     :type splits: dict, optional
 
@@ -130,17 +128,17 @@ def initialize_msp_data(args, datadir, radius=6, splits = {'train':'train', 'val
     # Define data files.
     datafiles = {split: os.path.join(datadir,splits[split]) for split in splits.keys()}
     # Load datasets
-    datasets = _load_msp_data(datafiles, radius)
+    datasets = _load_msp_data(datafiles, args.radius)
     # Check the training/test/validation splits have the same set of keys.
     keys = [list(data.keys()) for data in datasets.values()]
-    _msg = 'Datasets must have same set of keys!'
+    _msg = 'Datasets must have the same set of keys!'
     assert all([key == keys[0] for key in keys]), _msg
     # Get a list of all species across the entire dataset
     all_species = _get_species(datasets)
     # Now initialize the internal datasets based upon loaded data
     datasets = {split: CormorantDatasetMSP(data, included_species=all_species) for split, data in datasets.items()}
     # Check that all datasets have the same included species:
-    _msg = 'All datasets must have same included_species! {}'.format({key: data.included_species for key, data in datasets.items()})
+    _msg = 'All datasets must have the same included_species! {}'.format({key: data.included_species for key, data in datasets.items()})
     assert (len(set(tuple(data.included_species.tolist()) for data in datasets.values())) == 1), _msg
     # These parameters are necessary to initialize the network
     num_species = datasets['train'].num_species

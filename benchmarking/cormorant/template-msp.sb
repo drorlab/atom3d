@@ -23,6 +23,7 @@ LMDBDIR=/oak/stanford/groups/rondror/projects/atom3d/lmdb/MSP/splits/split-by-se
 python train_msp.py --prefix msp_cutoff-CUTOFF_bs-BATCHSIZE_FORMAT --load \
                     --datadir $FORMATDIR --format FORMAT\
                     --ddir-suffix "_split-by-sequence-identity-30_cutoff-CUTOFF" \
+                    --radius CUTOFF \
                     --batch-size BATCHSIZE \
                     --num-epoch 50
 
