@@ -16,7 +16,7 @@ Status](https://readthedocs.org/projects/atom3d/badge/?version=latest)](http://a
 
 For more detailed information, [read the documentation](https://atom3d.readthedocs.io/en/latest/).
 
-## Installation/Usage
+## Installation
 
 Install with:
 
@@ -32,6 +32,18 @@ conda activate atom3d
 pip install atom3d
 ```
 
+## Usage
+
+### Loading a dataset
+
+From python:
+```
+import atom3d.datasets as da
+dataset = da.load_dataset(PATH_TO_INPUT_DIR, {'lmdb', 'pdb','silent','sdf','xyz','xyz-gdb'})
+print(len(dataset))  # Print length
+print(dataset[0].keys())
+```
+
 ### LMDB datasets
 
 LMDB allows for compressed, fast, random access to your structures, all within a
@@ -42,17 +54,6 @@ single database.  Currently, we support creating LMDB datasets from PDB files, s
 From command line:
 ```
 python -m atom3d.datasets PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype {pdb,silent,xyz,xyz-gdb} 
-```
-
-#### Loading an LMDB dataset
-
-From python:
-```
-from atom3d.datasets import LMDBDataset
-
-dataset = LMDBDataset(PATH_TO_LMDB)
-print(len(dataset))  # Print length
-print(dataset[0])  # Print 1st entry
 ```
 
 From C++:

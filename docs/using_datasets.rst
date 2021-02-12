@@ -10,7 +10,7 @@ All datasets can be downloaded in LMDB format from `atom3d.ai <atom3d.ai>`_, or 
     
 .. code:: pycon
 
-  >>> import atom3d.datasets.datasets as da
+  >>> import atom3d.datasets as da
   >>> da.download_dataset('lba', TARGET_PATH)
 
 See the ATOM3D website or the :ref:`FAQ <sec:datasets-faq>` for more information about the datasets available.
@@ -25,7 +25,7 @@ See :doc:`/data_formats` for details on the format of each data entry.
 
 .. code:: python
 
-    import atom3d.datasets.datasets as da
+    import atom3d.datasets as da
 
     dataset = da.load_dataset(PATH_TO_INPUT_DIR, {'lmdb', 'pdb','silent','sdf','xyz','xyz-gdb'})
     print(len(dataset))  # Print length 
