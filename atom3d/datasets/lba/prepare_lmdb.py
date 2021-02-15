@@ -29,7 +29,7 @@ class Scores(object):
 
     def _lookup(self, pdbcode):
         if pdbcode in self._scores.index:
-            return self._scores.loc[pdbcode]
+            return self._scores.loc[pdbcode].to_dict()
         return None
 
     def __call__(self, x, error_if_missing=False):

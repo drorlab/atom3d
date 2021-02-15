@@ -1,4 +1,5 @@
 import collections as col
+import numpy as np
 import pandas as pd
 import logging
 import os
@@ -28,7 +29,8 @@ class Scores(object):
         decoy = util.get_decoy_name(file_path)
         key = (target, decoy)
         if key in self._scores.index:
-            return key, self._scores.loc[key]
+            score = self._scores.loc[key].head(1).astype(np.float64).squeeze().to_dict()
+            return key, score
         return key, None
 
     def __call__(self, x, error_if_missing=False):

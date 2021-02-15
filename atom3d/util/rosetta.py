@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import subprocess
 
+import numpy as np
 import pandas as pd
 import tqdm
 
@@ -43,17 +44,23 @@ class Scores(object):
             tmp = silent_file.parent.stem
         return tmp
 
+    def _lookup_helper(self, key):
+        # If there are multiple rows matching key, return only the first one.
+        # Sometime pandas return single row pd.DataFrame, so we use .squeeze()
+        # to ensure it always return a pd.Series.
+        return self._scores.loc[key].head(1).astype(np.float64).squeeze().to_dict()
+
     def _lookup(self, file_path):
         file_path = Path(file_path)
         key = (file_path.stem, file_path.name)
         if key in self._scores.index:
-            return key, self._scores.loc[key]
+            return key, self._lookup_helper(key)
         key = (file_path.parent.stem, file_path.stem)
         if key in self._scores.index:
-            return key, self._scores.loc[key]
+            return key, self._lookup_helper(key)
         key = (file_path.parent.parent.stem, file_path.stem)
         if key in self._scores.index:
-            return key, self._scores.loc[key]
+            return key, self._lookup_helper(key)
         return key, None
 
     def __call__(self, x, error_if_missing=False):

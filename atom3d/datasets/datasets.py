@@ -33,7 +33,7 @@ class LMDBDataset(Dataset):
     :type data_file: Union[str, Path]
     :param transform: Transformation function to apply to each item.
     :type transform: Function, optional
-    
+
     """
 
     def __init__(self, data_file, transform=None):
@@ -434,29 +434,30 @@ def make_lmdb_dataset(dataset, output_lmdb,
     env = lmdb.open(str(output_lmdb), map_size=int(1e11))
 
     with env.begin(write=True) as txn:
-        id_to_idx = {}
-        i = 0
-        for x in tqdm.tqdm(dataset, total=num_examples):
-            # Add an entry that stores the original types of all entries
-            x['types'] = {key: str(type(val)) for key, val in x.items()}
-            # ... including itself
-            x['types']['types'] = str(type(x['types']))
-            if filter_fn is not None and filter_fn(x):
-                continue
-            buf = io.BytesIO()
-            with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=6) as f:
-                f.write(serialize(x, serialization_format))
-            compressed = buf.getvalue()
-            result = txn.put(str(i).encode(), compressed, overwrite=False)
-            if not result:
-                raise RuntimeError(f'LMDB entry {i} in {str(output_lmdb)} '
-                                   'already exists')
-            id_to_idx[x['id']] = i
-            i += 1
-
-        txn.put(b'num_examples', str(i).encode())
-        txn.put(b'serialization_format', serialization_format.encode())
-        txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
+        try:
+            id_to_idx = {}
+            i = 0
+            for x in tqdm.tqdm(dataset, total=num_examples):
+                # Add an entry that stores the original types of all entries
+                x['types'] = {key: str(type(val)) for key, val in x.items()}
+                # ... including itself
+                x['types']['types'] = str(type(x['types']))
+                if filter_fn is not None and filter_fn(x):
+                    continue
+                buf = io.BytesIO()
+                with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=6) as f:
+                    f.write(serialize(x, serialization_format))
+                compressed = buf.getvalue()
+                result = txn.put(str(i).encode(), compressed, overwrite=False)
+                if not result:
+                    raise RuntimeError(f'LMDB entry {i} in {str(output_lmdb)} '
+                                       'already exists')
+                id_to_idx[x['id']] = i
+                i += 1
+        finally:
+            txn.put(b'num_examples', str(i).encode())
+            txn.put(b'serialization_format', serialization_format.encode())
+            txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
 
 def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['atoms'], drop_elements=[]):
@@ -536,31 +537,31 @@ def combine_datasets(dataset_list, output_lmdb, filter_fn=None, serialization_fo
     env = lmdb.open(str(output_lmdb), map_size=int(1e11))
 
     with env.begin(write=True) as txn:
+        try:
+            id_to_idx = {}
+            i = 0
 
-        id_to_idx = {}
-        i = 0
+            for dset in dataset_list:
+                for x in tqdm.tqdm(dset, initial=i, total=num_examples):
+                    if filter_fn is not None and filter_fn(x):
+                        continue
+                    buf = io.BytesIO()
+                    with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=6) as f:
+                        f.write(serialize(x, serialization_format))
+                    compressed = buf.getvalue()
+                    result = txn.put(str(i).encode(), compressed, overwrite=False)
+                    if not result:
+                        raise RuntimeError(f'LMDB entry {i} in {str(output_lmdb)} '
+                                        'already exists')
 
-        for dset in dataset_list:
-            for x in tqdm.tqdm(dset, initial=i, total=num_examples):
-                if filter_fn is not None and filter_fn(x):
-                    continue
-                buf = io.BytesIO()
-                with gzip.GzipFile(fileobj=buf, mode="wb", compresslevel=6) as f:
-                    f.write(serialize(x, serialization_format))
-                compressed = buf.getvalue()
-                result = txn.put(str(i).encode(), compressed, overwrite=False)
-                if not result:
-                    raise RuntimeError(f'LMDB entry {i} in {str(output_lmdb)} '
-                                    'already exists')
+                    id_to_idx[x['id']] = i
+                    i += 1
+        finally:
+            txn.put(b'num_examples', str(i).encode())
+            txn.put(b'serialization_format', serialization_format.encode())
+            txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
-                id_to_idx[x['id']] = i
-                i += 1
 
-        txn.put(b'num_examples', str(i).encode())
-        txn.put(b'serialization_format', serialization_format.encode())
-        txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
-
-        
 def download_dataset(name, out_path):
     """Download an ATOM3D dataset in LMDB format. Available datasets are SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR. Please see `FAQ <datasets target>`_ or `atom3d.ai <atom3d.ai>`_ for more details on each dataset.
 

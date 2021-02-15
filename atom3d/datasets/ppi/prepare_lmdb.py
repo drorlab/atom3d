@@ -151,15 +151,6 @@ def prepare(input_file_path, output_root, no_gen, split, train_txt, val_txt,
                         '%(message)s',
                         level=logging.INFO)
 
-    #lmdb_ds = da.load_dataset('/oak/stanford/groups/rondror/projects/atom3d/lmdb/protein_protein_interfaces/raw/DB5/data', 'lmdb')
-    #lmdb_ds = da.load_dataset('/oak/stanford/groups/rondror/projects/atom3d/lmdb/protein_protein_interfaces/raw/DIPS/data', 'lmdb')
-    ds1 = da.load_dataset('/oak/stanford/groups/rondror/projects/atom3d/lmdb/LBA/splits/split-by-sequence-identity-60/data/train', 'lmdb')
-    ds2 = da.load_dataset('/oak/stanford/groups/rondror/projects/atom3d/lmdb/LBA/splits/split-by-sequence-identity-60/data/test', 'lmdb')
-    ds3 = da.load_dataset('/oak/stanford/groups/rondror/projects/atom3d/lmdb/LBA/splits/split-by-sequence-identity-60/data/val', 'lmdb')
-    #lmdb_ds = da.load_dataset('/oak/stanford/groups/rondror/projects/atom3d/lmdb/LBA/raw/pdbbind_2019-refined-set/data_old', 'lmdb')
-    #print(lmdb_ds.get('1A2K')['atoms_pairs'])
-    import pdb; pdb.set_trace()
-
     if not no_gen:
         input_file_path = make_lmdb_dataset(
             input_file_path, filetype, cutoff, cutoff_type, ensembler, output_root)
