@@ -32,16 +32,27 @@ def init_cormorant_argparse(dataset):
     parser = argparse.ArgumentParser(description='Cormorant network options.')
     parser = setup_shared_args(parser)
     parser.add_argument('--format', type=str, default='npz', help='Input data format.')
-    # Datasets without additional arguments
-    if dataset.lower() in ["smp", "lba"]:
+    if dataset.lower() in ["smp"]:
         pass
-    # Datasets for classification tasks
+    elif dataset == "lba":
+        parser.add_argument('--radius', type=float, default=6.,
+                            help='radius of the selected region around the ligand.')
+        parser.add_argument('--maxnum', type=float, default=500,
+                            help='maximum total number of atoms of the ligand + the region around it.')
+        parser.add_argument('--siamese', action=BoolArg, default=False,
+                            help='use a Siamese architecture.')
     elif dataset == "res":
         parser.add_argument('--num_classes', type=int, default=20,
                             help='number of classes for the classification.')
     elif dataset == "lep":
         parser.add_argument('--num_classes', type=int, default=2,
                             help='number of classes for the classification.')
+        parser.add_argument('--radius', type=float, default=6.,
+                            help='radius of the selected region around the ligand.')
+        parser.add_argument('--maxnum', type=float, default=460,
+                            help='maximum total number of atoms of the ligand + the region around it.')
+        parser.add_argument('--droph', action=BoolArg, default=False,
+                            help='drop hydrogen atoms.')
     elif dataset == "msp":
         parser.add_argument('--num_classes', type=int, default=2,
                             help='number of classes for the classification.')

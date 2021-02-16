@@ -6,16 +6,16 @@ import logging
 from cormorant.cg_lib import CGModule, SphericalHarmonicsRel
 
 from cormorant.nn import RadialFilters
-from cormorant.nn import InputMPNN, InputLinear
-from cormorant.nn import OutputPMLP, OutputLinear, GetScalarsAtom
+from cormorant.nn import InputLinear, InputMPNN
+from cormorant.nn import OutputLinear, OutputPMLP, OutputSoftmax, GetScalarsAtom
 from cormorant.nn import NoLayer
 
 from atom3d.models.enn import ENN
 
 
-class ENN_LBA(CGModule):
+class ENN_LBA_Siamese(CGModule):
     """
-    Basic Cormorant Network used to train on LBA.
+    Siamese Cormorant Network used to train on LBA.
 
     :param maxl: Maximum weight in the output of CG products. (Expanded to list of length :obj:`num_cg_levels`)
     :type maxl: :obj:`int` of :obj:`list` of :obj:`int`
@@ -87,33 +87,32 @@ class ENN_LBA(CGModule):
         # Set up the central Clebsch-Gordan network
         tau_in_atom = self.input_func_atom.tau
         tau_in_edge = self.input_func_edge.tau
-        self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge,
-                     tau_pos, num_cg_levels, num_channels, level_gain, weight_init,
-                     cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
-                     cgprod_bounded=True,
-                     device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
+        self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge, tau_pos, 
+                                num_cg_levels, num_channels, level_gain, weight_init,
+                                cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
+                                cat=True, gaussian_mask=False, cgprod_bounded=True,
+                                device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
 
         # Get atom and edge scalars
         tau_cg_levels_atom = self.cormorant_cg.tau_levels_atom
         tau_cg_levels_edge = self.cormorant_cg.tau_levels_edge
-        self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom,
-                                               device=self.device, dtype=self.dtype)
+        self.get_scalars_atom = GetScalarsAtom(tau_cg_levels_atom, device=self.device, dtype=self.dtype)
         self.get_scalars_edge = NoLayer()
 
         # Set up the output networks
         num_scalars_atom = self.get_scalars_atom.num_scalars
         num_scalars_edge = self.get_scalars_edge.num_scalars
         self.output_layer_atom = OutputLinear(num_scalars_atom, bias=True,
-                                              device=self.device, dtype=self.dtype)
+                                              device=self.device, dtype=self.dtype) 
         self.output_layer_edge = NoLayer()
 
         logging.info('Model initialized. Number of parameters: {}'.format(
             sum([p.nelement() for p in self.parameters()])))
 
 
-    def forward(self, data, covariance_test=False):
+    def forward_once(self, data):
         """
-        Runs a forward pass of the network.
+        Runs a single forward pass of the network.
 
         :param data: Dictionary of data to pass to the network.
         :type data : :obj:`dict`
@@ -142,14 +141,43 @@ class ENN_LBA(CGModule):
         # Construct scalars for network output
         atom_scalars = self.get_scalars_atom(atoms_all)
         edge_scalars = self.get_scalars_edge(edges_all)
+        return atom_scalars, edge_scalars, atoms_all, edges_all, atom_mask, edge_mask
+        # Prediction in this case will depend only on the atom_scalars. 
+        # Can make it more general here.
+        #prediction = self.output_layer_atom(atom_scalars, atom_mask)
+        #prediction, atoms_all, edges_all
+ 
 
-        # Prediction in this case will depend only on the atom_scalars. Can make
-        # it more general here.
+    def forward(self, data, covariance_test=False):
+        """
+        Runs a forward pass of the network.
+
+        :param data: Dictionary of data to pass to the network.
+        :type data : :obj:`dict`
+        :param covariance_test: If true, returns all of the atom-level representations twice.
+        :type covariance_test: :obj:`bool`, optional
+            
+        :return prediction: The output of the first network.
+        :rtype prediction: :obj:`torch.Tensor`
+            
+        """
+        # Split the data
+        data1 = {'neglog_aff': data['neglog_aff']}
+        data2 = {'neglog_aff': data['neglog_aff']}
+        for key in ['charges', 'positions', 'one_hot', 'atom_mask', 'edge_mask']:
+            data1[key] = data[key+'1']
+            data2[key] = data[key+'2']
+        # Run the two separate networks
+        atom_scalars1, edge_scalars2, atoms_all1, edges_all1, atom_mask1, edge_mask1 = self.forward_once(data1)
+        atom_scalars2, edge_scalars2, atoms_all2, edges_all2, atom_mask2, edge_mask2 = self.forward_once(data2)
+        # Combine atom scalars
+        atom_scalars = torch.cat((atom_scalars1, atom_scalars1), dim=1)
+        atom_mask = torch.cat((atom_mask1, atom_mask1), dim=1)
+        # Apply the output layer
         prediction = self.output_layer_atom(atom_scalars, atom_mask)
-
         # Covariance test
         if covariance_test:
-            return prediction, atoms_all, atoms_all
+            return prediction, atoms_all1, edges_all1
         else:
             return prediction
 
@@ -197,4 +225,5 @@ def expand_var_list(var, num_cg_levels):
     else:
         raise ValueError('Incorrect type {}'.format(type(var)))
     return var_list
+
 
