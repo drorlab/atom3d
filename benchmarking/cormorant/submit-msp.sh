@@ -1,5 +1,5 @@
 for REP in $(seq 1 2 3); do
-        for CUTOFF in 06 08 10 12 15;  do
+        for CUTOFF in 06 07 08 09 10 12 15;  do
 		for BATCHSIZE in 1 2 4 8; do
 			for FORMAT in NPZ LMDB; do
 				SB_FILE=msp_cutoff${CUTOFF}_bs${BATCHSIZE}_${FORMAT}_rep${REP}.sb

@@ -1,4 +1,4 @@
-for REP in $(seq 1 2 3); do
+for REP in $(seq 1 3); do
         for CUTOFF in 08 09 10 11 12 13 14;  do
 		for BATCHSIZE in 1 2; do
 			FORMAT=LMDB-noH
