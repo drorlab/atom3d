@@ -107,7 +107,7 @@ def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, te
     logging.basicConfig(stream=sys.stdout,
                         format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
-                        level=logging.INFO)
+                       level=logging.INFO)
     
     def _process_chunk(file_list, filetype, lmdb_path, balance):
         logger.info(f'Creating lmdb dataset into {lmdb_path:}...')
@@ -130,6 +130,7 @@ def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, te
         os.makedirs(lmdb_path)
     
     for i in range(start,num_threads):
+        #print(chunks[i][2268:2273])
         logger.info(f'Processing chunk {i:}...')
         _process_chunk(chunks[i], 'pdb', f'{lmdb_path}_tmp_{i}', balance)
         
