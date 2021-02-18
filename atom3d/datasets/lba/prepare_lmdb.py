@@ -124,6 +124,7 @@ class LBADataset(Dataset):
             'atoms_protein': protein['atoms'],
             'atoms_pocket': pocket['atoms'],
             'atoms_ligand': ligand['atoms'],
+            'bonds': ligand['atoms'],
             'id': pdbcode,
             'seq': protein['seq'],
             'smiles': ligand['smiles'],

@@ -61,7 +61,7 @@ class Scores(object):
         key = (file_path.parent.parent.stem, file_path.stem)
         if key in self._scores.index:
             return key, self._lookup_helper(key)
-        return key, None
+        return file_path.parent.stem, None
 
     def __call__(self, x, error_if_missing=False):
         key, x['scores'] = self._lookup(x['file_path'])

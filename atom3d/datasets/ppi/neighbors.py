@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import scipy.spatial as spa
 
-import atom3d.shard.shard as sh
 import atom3d.util.log as log
 
 logger = log.get_logger('neighbors')
@@ -12,27 +11,6 @@ logger = log.get_logger('neighbors')
 
 index_columns = \
     ['ensemble', 'subunit', 'structure', 'model', 'chain', 'residue']
-
-
-@click.command(help='Find neighbors for entry in sharded.')
-@click.argument('sharded_path', type=click.Path())
-@click.argument('ensemble')
-@click.argument('output_labels', type=click.Path())
-@click.option('-c', '--cutoff', type=int, default=8,
-              help='Maximum distance (in angstroms), for two residues to be '
-              'considered neighbors.')
-@click.option('--cutoff-type', default='CA',
-              type=click.Choice(['heavy', 'CA'], case_sensitive=False),
-              help='How to compute distance between residues: CA is based on '
-              'alpha-carbons, heavy is based on any heavy atom.')
-def get_neighbors_main(sharded_path, ensemble, output_labels, cutoff,
-                       cutoff_type):
-    sharded = sh.Sharded.load(sharded_path)
-    ensemble = sharded.read_keyed(ensemble)
-
-    neighbors = neighbors_from_ensemble(ensemble, cutoff, cutoff_type)
-    # Write label file.
-    neighbors.to_csv(output_labels, index=False)
 
 
 def neighbors_from_ensemble(ensemble, cutoff, cutoff_type):
