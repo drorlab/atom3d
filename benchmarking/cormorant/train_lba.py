@@ -32,7 +32,7 @@ def main():
     if args.format == 'npz':
         args, datasets, num_species, charge_scale = initialize_datasets(args, args.datadir, 'lba', args.ddir_suffix) 
     else:
-        args, datasets, num_species, charge_scale = initialize_lba_data(args, args.datadir, dist=6, maxnum=500, siamese=args.siamese)        
+        args, datasets, num_species, charge_scale = initialize_lba_data(args, args.datadir)        
     # Further differences for Siamese networks
     if args.siamese:
         collate_fn = collate_lba_siamese

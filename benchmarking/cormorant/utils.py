@@ -49,7 +49,7 @@ def init_cormorant_argparse(dataset):
                             help='number of classes for the classification.')
         parser.add_argument('--radius', type=float, default=6.,
                             help='radius of the selected region around the ligand.')
-        parser.add_argument('--maxnum', type=float, default=460,
+        parser.add_argument('--maxnum', type=float, default=400,
                             help='maximum total number of atoms of the ligand + the region around it.')
         parser.add_argument('--droph', action=BoolArg, default=False,
                             help='drop hydrogen atoms.')

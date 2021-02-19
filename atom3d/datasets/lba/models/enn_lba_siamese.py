@@ -6,6 +6,7 @@ import logging
 from cormorant.cg_lib import CGModule, SphericalHarmonicsRel
 
 from cormorant.nn import RadialFilters
+from cormorant.nn import BasicMLP
 from cormorant.nn import InputLinear, InputMPNN
 from cormorant.nn import OutputLinear, OutputPMLP, OutputSoftmax, GetScalarsAtom
 from cormorant.nn import NoLayer
@@ -102,9 +103,11 @@ class ENN_LBA_Siamese(CGModule):
         # Set up the output networks
         num_scalars_atom = self.get_scalars_atom.num_scalars
         num_scalars_edge = self.get_scalars_edge.num_scalars
-        self.output_layer_atom = OutputLinear(num_scalars_atom, bias=True,
+        self.output_layer_atom = OutputLinearOnce(num_scalars_atom, bias=True,
                                               device=self.device, dtype=self.dtype) 
         self.output_layer_edge = NoLayer()
+
+        self.output_layer = OutputSiamesePMLP(36, device=self.device, dtype=self.dtype)
 
         logging.info('Model initialized. Number of parameters: {}'.format(
             sum([p.nelement() for p in self.parameters()])))
@@ -141,11 +144,9 @@ class ENN_LBA_Siamese(CGModule):
         # Construct scalars for network output
         atom_scalars = self.get_scalars_atom(atoms_all)
         edge_scalars = self.get_scalars_edge(edges_all)
-        return atom_scalars, edge_scalars, atoms_all, edges_all, atom_mask, edge_mask
         # Prediction in this case will depend only on the atom_scalars. 
-        # Can make it more general here.
-        #prediction = self.output_layer_atom(atom_scalars, atom_mask)
-        #prediction, atoms_all, edges_all
+        prediction = self.output_layer_atom(atom_scalars, atom_mask)
+        return prediction, atoms_all, edges_all
  
 
     def forward(self, data, covariance_test=False):
@@ -168,13 +169,10 @@ class ENN_LBA_Siamese(CGModule):
             data1[key] = data[key+'1']
             data2[key] = data[key+'2']
         # Run the two separate networks
-        atom_scalars1, edge_scalars2, atoms_all1, edges_all1, atom_mask1, edge_mask1 = self.forward_once(data1)
-        atom_scalars2, edge_scalars2, atoms_all2, edges_all2, atom_mask2, edge_mask2 = self.forward_once(data2)
-        # Combine atom scalars
-        atom_scalars = torch.cat((atom_scalars1, atom_scalars1), dim=1)
-        atom_mask = torch.cat((atom_mask1, atom_mask1), dim=1)
-        # Apply the output layer
-        prediction = self.output_layer_atom(atom_scalars, atom_mask)
+        prediction1, atoms_all1, edges_all1 = self.forward_once(data1)
+        prediction2, atoms_all2, edges_all2 = self.forward_once(data2)
+        # Apply the output layer to the concatenated outputs of the two networks
+        prediction = self.output_layer(torch.cat((prediction1, prediction2), dim=1))
         # Covariance test
         if covariance_test:
             return prediction, atoms_all1, edges_all1
@@ -226,4 +224,101 @@ def expand_var_list(var, num_cg_levels):
         raise ValueError('Incorrect type {}'.format(type(var)))
     return var_list
 
+
+
+class OutputLinearOnce(nn.Module):
+    """
+    Module to create prediction based upon a set of rotationally invariant
+    atom feature vectors. This is performed in a permutation invariant way
+    by using a (batch-masked) sum over all atoms, and then applying a
+    linear mixing layer to predict a single output.
+    Parameters
+    ----------
+    num_scalars : :class:`int`
+        Number scalars that will be used in the prediction at the output
+        of the network.
+    bias : :class:`bool`, optional
+        Include a bias term in the linear mixing level.
+    device : :class:`torch.device`, optional
+        Device to instantite the module to.
+    dtype : :class:`torch.dtype`, optional
+        Data type to instantite the module to.
+    """
+    def __init__(self, num_scalars, bias=True, device=torch.device('cpu'), dtype=torch.float):
+        super(OutputLinearOnce, self).__init__()
+        self.num_scalars = num_scalars
+        self.bias = bias
+        self.lin = nn.Linear(2*num_scalars, 36, bias=bias)
+        self.lin.to(device=device, dtype=dtype)
+        self.zero = torch.tensor(0, dtype=dtype, device=device)
+
+    def forward(self, atom_scalars, atom_mask):
+        """
+        Forward step for :class:`OutputLinear`
+        Parameters
+        ----------
+        atom_scalars : :class:`torch.Tensor`
+            Scalar features for each atom used to predict the final learning target.
+        atom_mask : :class:`torch.Tensor`
+            Unused. Included only for pedagogical purposes.
+        Returns
+        -------
+        predict : :class:`torch.Tensor`
+            Tensor used for predictions.
+        """
+        s = atom_scalars.shape
+        atom_scalars = atom_scalars.view((s[0], s[1], -1)).sum(1)  
+        predict = self.lin(atom_scalars)
+        predict = predict.squeeze(-1)
+        return predict
+
+
+class OutputSiamesePMLP(nn.Module):
+    """
+    Module to create prediction based upon a set of rotationally invariant
+    atom feature vectors.
+    This is peformed in a three-step process::
+    (1) A MLP is applied to each set of scalar atom-features.
+    (2) The environments are summed up.
+    (3) Another MLP is applied to the output to predict a single learning target.
+    Parameters
+    ----------
+    num_scalars : :class:`int`
+        Number scalars that will be used in the prediction at the output
+        of the network.
+    bias : :class:`bool`, optional
+        Include a bias term in the linear mixing level.
+    device : :class:`torch.device`, optional
+        Device to instantite the module to.
+    dtype : :class:`torch.dtype`, optional
+        Data type to instantite the module to.
+    """
+    def __init__(self, num_scalars, num_mixed=64, activation='leakyrelu', device=torch.device('cpu'), dtype=torch.float):
+        super(OutputSiamesePMLP, self).__init__()
+        self.num_scalars = num_scalars
+        self.num_mixed = num_mixed
+        self.mlp1 = BasicMLP(2*num_scalars, num_mixed, num_hidden=1, activation=activation, device=device, dtype=dtype)
+        self.mlp2 = BasicMLP(num_mixed, 1, num_hidden=1, activation=activation, device=device, dtype=dtype)
+        self.zero = torch.tensor(0, device=device, dtype=dtype)
+
+    def forward(self, atom_scalars):
+        """
+        Forward step for :class:`OutputSiamesePMLP`
+        Parameters
+        ----------
+        atom_scalars : :class:`torch.Tensor`
+            Scalar features for each atom used to predict the final learning target.
+        Returns
+        -------
+        predict : :class:`torch.Tensor`
+            Tensor used for predictions.
+        """
+        # Reshape scalars appropriately
+        print('atom_scalars:', atom_scalars.shape)
+        # First MLP applied to each atom
+        x = self.mlp1(atom_scalars)
+        # Prediction on permutation invariant representation of molecules
+        predict = self.mlp2(x)
+        predict = predict.squeeze(-1)
+        return predict
 

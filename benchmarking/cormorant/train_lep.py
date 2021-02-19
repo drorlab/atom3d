@@ -1,4 +1,5 @@
 import logging
+import gc
 # PyTorch modules
 import torch
 from torch.utils.data import DataLoader
@@ -52,6 +53,7 @@ def main():
     scheduler, restart_epochs = init_scheduler(args, optimizer)
     # Define cross-entropy as the loss function.
     loss_fn = torch.nn.functional.cross_entropy
+    gc.collect()
     # Apply the covariance and permutation invariance tests.
     cormorant_tests(model, dataloaders['train'], args, charge_scale=charge_scale, siamese=True)
     # Instantiate the training class

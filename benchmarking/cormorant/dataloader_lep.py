@@ -128,7 +128,7 @@ def initialize_lep_data(args, datadir, splits = {'train':'train', 'valid':'val',
     # Define data files.
     datafiles = {split: os.path.join(datadir,splits[split]) for split in splits.keys()}
     # Load datasets
-    datasets = _load_lep_data(datafiles, args.radius, droph=args.droph, maxnum=args.maxnum)
+    datasets = _load_lep_data(datafiles, args.radius, args.droph, args.maxnum)
     # Check the training/test/validation splits have the same set of keys.
     keys = [list(data.keys()) for data in datasets.values()]
     _msg = 'Datasets must have the same set of keys!'
@@ -150,7 +150,7 @@ def initialize_lep_data(args, datadir, splits = {'train':'train', 'valid':'val',
     return args, datasets, num_species, max_charge
 
 
-def _load_lep_data(datafiles, radius, droph=False, maxnum=5000):
+def _load_lep_data(datafiles, radius, droph, maxnum):
     """
     Load LEP datasets from LMDB format.
 
@@ -273,7 +273,7 @@ class EnvironmentSelection(object):
         ligand = df[df['chain']==chain]
         pocket = df[df['chain']!=chain]
         # Max. number of protein atoms
-        num = max([0, self._maxnum - len(ligand.x)])
+        num = int(max([1, self._maxnum - len(ligand.x)]))
         # Extract coordinates
         ligand_coords = np.array([ligand.x, ligand.y, ligand.z]).T
         pocket_coords = np.array([pocket.x, pocket.y, pocket.z]).T

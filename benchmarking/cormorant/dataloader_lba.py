@@ -140,7 +140,7 @@ def collate_lba_siamese(batch):
     return new_batch
 
 
-def initialize_lba_data(args, datadir, dist=6, maxnum=500, siamese=False, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
+def initialize_lba_data(args, datadir, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
     """
     Initialize datasets.
 
@@ -168,10 +168,10 @@ def initialize_lba_data(args, datadir, dist=6, maxnum=500, siamese=False, splits
     # Define data files.
     datafiles = {split: os.path.join(datadir,splits[split]) for split in splits.keys()}
     # Load datasets
-    if siamese:
-        datasets = _load_lba_data_siamese(datafiles, dist, maxnum)
+    if args.siamese:
+        datasets = _load_lba_data_siamese(datafiles, args.radius, args.maxnum)
     else:
-        datasets = _load_lba_data(datafiles, dist, maxnum)
+        datasets = _load_lba_data(datafiles, args.radius, args.maxnum)
     # Check the training/test/validation splits have the same set of keys.
     keys = [list(data.keys()) for data in datasets.values()]
     _msg = 'Datasets must have same set of keys!'
@@ -193,7 +193,7 @@ def initialize_lba_data(args, datadir, dist=6, maxnum=500, siamese=False, splits
     return args, datasets, num_species, max_charge
 
 
-def _load_lba_data(datafiles, dist, maxnum=500):
+def _load_lba_data(datafiles, dist, maxnum):
     """
     Load LBA datasets from LMDB format.
 
@@ -210,7 +210,7 @@ def _load_lba_data(datafiles, dist, maxnum=500):
     """
     datasets = {}
     for split, datafile in datafiles.items():
-        dataset = LMDBDataset(datafile, transform=TransformLBA(dist=dist, maxnum=maxnum))
+        dataset = LMDBDataset(datafile, transform=TransformLBA(dist, maxnum, move_lig=False))
         # Load original atoms
         dsdict = extract_coordinates_as_numpy_arrays(dataset, atom_frames=['atoms_pocket','atoms_ligand'])
         # Add the label data
@@ -238,7 +238,7 @@ def _load_lba_data_siamese(datafiles, dist, maxnum):
     datasets = {}
     key_names = ['index', 'num_atoms', 'charges', 'positions']
     for split, datafile in datafiles.items():
-        dataset = LMDBDataset(datafile, transform=TransformLBA(dist=dist, maxnum=maxnum, move_lig=True))
+        dataset = LMDBDataset(datafile, transform=TransformLBA(dist, maxnum, move_lig=True))
         # Load original atoms
         bound = extract_coordinates_as_numpy_arrays(dataset, atom_frames=['atoms_pocket','atoms_ligand'])
         for k in key_names: bound['bound_'+k] = bound.pop(k)
@@ -293,7 +293,7 @@ def _get_species(datasets, ignore_check=False):
 
 class TransformLBA(object):
 
-    def __init__(self, dist=6., maxnum=500, move_lig=True):
+    def __init__(self, dist, maxnum, move_lig=True):
         self._dist = dist
         self._maxnum = maxnum
         self._dx = 0
@@ -334,7 +334,8 @@ class TransformLBA(object):
 
     def _select_env_by_num(self, pocket, ligand):
         # Max. number of protein atoms 
-        num = max([0, self._maxnum - len(ligand.x)])
+        num = int(max([1, self._maxnum - len(ligand.x)]))
+        print('Select a maximum of',num,'atoms.')
         # Extract coordinates
         ligand_coords = np.array([ligand.x, ligand.y, ligand.z]).T
         pocket_coords = np.array([pocket.x, pocket.y, pocket.z]).T
@@ -342,13 +343,13 @@ class TransformLBA(object):
         kd_tree = sp.spatial.KDTree(pocket_coords)
         dd, ii = kd_tree.query(ligand_coords, k=len(pocket.x), p=2.0)
         # Get minimum distance to any lig atom for each protein atom
-        dist = [ min(dd[ii==j]) for j in range(len(pocket.x)) ]
+        dis = [ min(dd[ii==j]) for j in range(len(pocket.x)) ]
         # Sort indices by distance
-        indices = np.argsort(dist)
+        idx = np.argsort(dis)
         # Select the num closest atoms
-        indices = np.sort(indices[:num])
+        idx = np.sort(idx[:num])
         # Construct the new data frame
-        new_pocket = pd.concat([ pocket.iloc[indices] ], ignore_index=True)
+        new_pocket = pd.concat([ pocket.iloc[idx] ], ignore_index=True)
         return new_pocket
 
     def __call__(self, x):
