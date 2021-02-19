@@ -147,7 +147,3 @@ def _get_heavy_neighbors(df0, df1, cutoff):
     res = pd.concat((res0, res1), axis=1)
     res = res.drop_duplicates()
     return res
-
-
-if __name__ == "__main__":
-    get_neighbors_main()
