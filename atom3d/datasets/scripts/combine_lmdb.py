@@ -16,17 +16,22 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.argument('lmdb_list', nargs=-1)
 @click.argument('output_lmdb', type=click.Path(exists=False))
-def main(lmdb_list, output_lmdb):
+@click.option('--append', '-a',  is_flag=True)
+def main(lmdb_list, output_lmdb, append):
     logging.basicConfig(stream=sys.stdout,
                         format='%(asctime)s %(levelname)s %(process)d: ' +
                         '%(message)s',
                        level=logging.INFO)
     env = lmdb.open(str(output_lmdb), map_size=int(1e12))
+    max_i = 0
+    if append:
+        for key, value in env.cursor():
+            max_i = max(max_i, key)
 
     with env.begin(write=True) as txn:
         id_to_idx = {}
-        i = 0
-        for db_idx, db in enumerate(lmdb_list):
+        i = max_i + 1
+        for db_idx, db in enumerate(lmdb_list[16:]):
             logger.info(f'on database {db_idx + 1} of {len(lmdb_list)}')
             
             dataset = LMDBDataset(db)

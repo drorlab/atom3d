@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class MLP(nn.Module):
-    """A basic feed-forward neural network (multi-layer perceptron), with tunable hidden layer number and dimension. 
+    """A basic feed-forward neural network (MLP), with tunable hidden layer number and dimension. 
         The number of layers is assumed to be equal to :math:`len(hidden\_dims) + 2`, including the input and output layers.
         Dropout can optionally be specified and is applied after every layer (except output).
 
