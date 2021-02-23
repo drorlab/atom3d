@@ -9,10 +9,10 @@ layout: default
   - **Splitting criteria:** We split structures temporally by competition year.
   - **Downloads:**
 
-    - Full dataset [[dataset]]('https://drive.google.com/uc?export=download&id=16sbDowF_IyAkJAZ_UyUAirbIug2Oi4EU')
+    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=16sbDowF_IyAkJAZ_UyUAirbIug2Oi4EU)
     - Split by year
-      [[datasets]]('https://drive.google.com/uc?export=download&id=1yI03LSslNrOaculxoM0sUbSC1z0hKnt6')
-      [[indices]]('https://drive.google.com/uc?export=download&id=1RYPuYEN014jZVkF3KJ0prwOecipP36dD')
+      [[datasets]](https://drive.google.com/uc?export=download&id=1yI03LSslNrOaculxoM0sUbSC1z0hKnt6)
+      [[indices]](https://drive.google.com/uc?export=download&id=1RYPuYEN014jZVkF3KJ0prwOecipP36dD)
 
 ### References
 

@@ -9,10 +9,10 @@ layout: default
   - **Splitting criteria:** We split molecules randomly.
   - **Downloads:**
 
-    - Full dataset [[dataset]]('https://drive.google.com/uc?export=download&id=1Qj67Y3cmTZoo9NCnjjI9CIs1KXnRY36O')
+    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1Qj67Y3cmTZoo9NCnjjI9CIs1KXnRY36O)
     - Split randomly
-      [[datasets]]('https://drive.google.com/uc?export=download&id=1MtqouZsV_7nEb3CZMoaJejAHrS1_bFMN')
-      [[indices]]('https://drive.google.com/uc?export=download&id=1xhIM0z_wa3BYlAnG2o_OXSj9TbTXqIIB')
+      [[datasets]](https://drive.google.com/uc?export=download&id=1MtqouZsV_7nEb3CZMoaJejAHrS1_bFMN)
+      [[indices]](https://drive.google.com/uc?export=download&id=1xhIM0z_wa3BYlAnG2o_OXSj9TbTXqIIB)
 
 ### References
 

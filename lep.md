@@ -9,10 +9,10 @@ layout: default
   - **Splitting criteria:** We split complex pairs by protein.
   - **Downloads:**
 
-    - Full dataset [[dataset]]('https://drive.google.com/uc?export=download&id=1V0r_VutAKKfwHYdx_nPUZi84a_Ud-rri')
+    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1V0r_VutAKKfwHYdx_nPUZi84a_Ud-rri)
     - Split by protein
-      [[datasets]]('https://drive.google.com/uc?export=download&id=1tCHqotbAqcHmgtEeVidSld3pOyY2MUIh')
-      [[indices]]('https://drive.google.com/uc?export=download&id=1ZsGTv8t_QwQLYOmHADM0xRb7InFu3M3j')
+      [[datasets]](https://drive.google.com/uc?export=download&id=1tCHqotbAqcHmgtEeVidSld3pOyY2MUIh)
+      [[indices]](https://drive.google.com/uc?export=download&id=1ZsGTv8t_QwQLYOmHADM0xRb7InFu3M3j)
 
 ### References
 
