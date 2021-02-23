@@ -2,11 +2,17 @@
 layout: default
 ---
 
-## Ligand Efficacy Prediction (LEP) [[download]](https://drive.google.com/uc?export=download&id=15A85q2h6C1WFKjVttv6sInFNnB5z7Ha7)
+## Ligand Efficacy Prediction (LEP)
   - **Impact:** Many proteins switch on or off their function by changing shape. Predicting which shape a drug will favor is thus an important task in drug design.
   - **Dataset description:** We develop a novel dataset by curating proteins from several families with both ”active” and ”inactive” state structures, and model in 527 small molecules with known activating or inactivating function using the program Glide (Friesner et al., 2004).
   - **Task:** We formulate this as a binary classification task where we predict whether or not a molecule bound to the structures will be an activator of the protein’s function or not.
   - **Splitting criteria:** We split complex pairs by protein.
+  - **Downloads:**
+
+    - Full dataset [[dataset]]('https://drive.google.com/uc?export=download&id=1V0r_VutAKKfwHYdx_nPUZi84a_Ud-rri')
+    - Split by protein
+      [[datasets]]('https://drive.google.com/uc?export=download&id=1tCHqotbAqcHmgtEeVidSld3pOyY2MUIh')
+      [[indices]]('https://drive.google.com/uc?export=download&id=1ZsGTv8t_QwQLYOmHADM0xRb7InFu3M3j')
 
 ### References
 

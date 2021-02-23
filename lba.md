@@ -9,7 +9,7 @@ layout: default
   - **Splitting criteria:** We split protein-ligand complexes by protein sequence identity at 30% (most stringent) and 60% (less stringent).
   - **Downloads:**
 
-    - [[raw dataset]]('https://drive.google.com/uc?export=download&id=16U5imKQ9bZr2GQPbmOE6FlcKeXuUrETa')
+    - Full dataset [[dataset]]('https://drive.google.com/uc?export=download&id=16U5imKQ9bZr2GQPbmOE6FlcKeXuUrETa')
     - 30% sequence identity split
       [[datasets]]('https://drive.google.com/uc?export=download&id=1WQERC8h3t2DSkKkg12xpoOaYfB9dzeCB')
       [[indices]]('https://drive.google.com/uc?export=download&id=1VBRted2RuHftQkkjDba9qfKzERBjC7kk')
