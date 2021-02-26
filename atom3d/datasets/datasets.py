@@ -91,6 +91,7 @@ class LMDBDataset(Dataset):
             buf = io.BytesIO(compressed)
             with gzip.GzipFile(fileobj=buf, mode="rb") as f:
                 serialized = f.read()
+
             item = deserialize(serialized, self._serialization_format)
 
         # Recover special data types (currently only pandas dataframes).
@@ -431,7 +432,7 @@ def make_lmdb_dataset(dataset, output_lmdb,
 
     logger.info(f'{num_examples} examples')
 
-    env = lmdb.open(str(output_lmdb), map_size=int(1e11))
+    env = lmdb.open(str(output_lmdb), map_size=int(1e12))
 
     with env.begin(write=True) as txn:
         try:
@@ -669,5 +670,5 @@ def download_dataset(name, out_path, split=None):
         os.makedirs(out_path)
     cmd = f"wget --load-cookies /tmp/cookies.txt \"https://drive.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id={link}' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\\1\\n/p'  | tr -d \"n\")&id={link}\" -O {out_path}/{name}.tar.gz"
     subprocess.call(cmd, shell=True)
-    cmd2 = f"tar xzvf {out_path}/{name}.tar.gz"
+    cmd2 = f"tar xzvf {out_path}/{name}.tar.gz -C {out_path}"
     subprocess.call(cmd2, shell=True)
