@@ -14,7 +14,7 @@ Create a conda environment, defining the correct version of the CUDA toolkit (he
     conda create --name cormorant python=3.7 pip scipy pytorch cudatoolkit=10.1 -c pytorch
     conda activate cormorant
 
-If you do not know your CUDA version, you can find out via
+If you do not know your CUDA version, you can find out via::
 
     nvcc --version
     
@@ -27,9 +27,10 @@ Within the created environment, execute::
     pip install atom3d
     
     
-OR install the development version from the atom3d repo::
+OR install the development version from the ATOM3D repo::
 
-   git clone https://github.com/drorlab/cormorant.git
+   cd ~
+   git clone https://github.com/drorlab/atom3d.git
    cd atom3d
    pip install -e .
 
@@ -39,6 +40,7 @@ Install Cormorant
 
 The Cormorant fork used for this project can be cloned directly from the git repo using::
 
+    cd ~
     git clone https://github.com/drorlab/cormorant.git
 
 
@@ -46,6 +48,7 @@ You can currently only install it in development mode by going to the directory 
 
     cd cormorant
     python setup.py develop
+    cd ~
 
 
 Dataset
@@ -59,10 +62,15 @@ Then extract it from the zipped archive.
 Training
 --------
   
-The training scripts can be invoked using::
+The training scripts can be invoked from the example folder using::
 
-    python train.py --target mu --prefix smp-mu --load --datadir $LMDBDIR --format lmdb --num-epoch 150
+    cd atom3d/examples/smp/enn
+    python train.py --target mu --prefix smp-mu --load --datadir $LMDBDIR --format lmdb --num-epoch 50
 
 where LMDBDIR is the path to the subfolder data of the LMDB dataset.
 
+To see further options for training, use::
+
+    python train.py --help
+    
 
