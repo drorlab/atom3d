@@ -67,7 +67,7 @@ The training scripts can be invoked from the example folder using::
     cd atom3d/examples/smp/enn
     python train.py --target mu --prefix smp-mu --load --datadir $LMDBDIR --format lmdb --num-epoch 50
 
-where LMDBDIR is the path to the subfolder data of the LMDB dataset.
+where LMDBDIR is the path to the subfolder "/data" of the split LMDB dataset.
 
 To see further options for training, use::
 
