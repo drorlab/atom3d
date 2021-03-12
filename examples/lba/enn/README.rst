@@ -55,8 +55,9 @@ Dataset
 -------
 
 
-Download the randomly split SMP dataset from `the ATOM3D website <https://www.atom3d.ai/smp.html>`_.
-Then extract it from the zipped archive.
+Download the randomly split LBA dataset from `the ATOM3D website <https://www.atom3d.ai/lba.html>`_.
+We recommend using a split based on 30% sequence identity but also provide a split based on 60% sequence identity as has been used by some groups in previous work.
+Once the download has finished, extract the datasets from the zipped archive.
 
 
 Training
