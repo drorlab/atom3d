@@ -55,6 +55,65 @@ The base models provided are the following:
     Although any method could be used instead, this feed-forward network is simple but flexible, and easy to plug into any machine learning pipeline.
 
 
+Model-specific installation instructions
+*****************************************
+
+The standard installation described in the `introduction <https://atom3d.readthedocs.io/en/latest/getting_started.html#installation>`_ lets you use all the data loading and processing functions included in ATOM3D. 
+To use the specific machine learning models, additional dependencies can be necessary. Here we describe which ones you need for each type of model.
+
+3DCNN
+"""""""""""""""""""""
+
+No additional dependencies are needed to use 3D convolutional neural networks.
+
+GNN
+"""""""""""""""""""""
+
+The graph neural networks in ATOM3D are based on `PyTorch Geometric <https://github.com/rusty1s/pytorch_geometric>`_
+
+In order to use it, you should install ATOM3D in a dedicated environment, defining the correct version of the CUDA toolkit (here: 10.2)::
+
+    conda create --name geometric -c pytorch -c rdkit pip rdkit pytorch=1.5 cudatoolkit=10.2
+    conda activate geometric
+    pip install atom3d
+
+Then install PyTorch Geometric by running::
+
+    pip install torch-scatter==latest+${CUDA} -f https://pytorch-geometric.com/whl/torch-1.5.0.html
+    pip install torch-sparse==latest+${CUDA} -f https://pytorch-geometric.com/whl/torch-1.5.0.html
+    pip install torch-cluster==latest+${CUDA} -f https://pytorch-geometric.com/whl/torch-1.5.0.html
+    pip install torch-spline-conv==latest+${CUDA} -f https://pytorch-geometric.com/whl/torch-1.5.0.html
+    pip install torch-geometric
+
+where `${CUDA}` should be replaced by either `cpu`, `cu92`, `cu101` or `cu102` depending on your PyTorch installation (`cu102` if installed as above).
+
+ENN
+"""""""""""""""""""""
+
+The equivariant networks in ATOM3D are based on `Cormorant <https://arxiv.org/abs/1906.04015>`_.
+
+In order to use it, you should install ATOM3D in a dedicated environment, defining the correct version of the CUDA toolkit (here: 10.1)::
+
+    conda create --name cormorant python=3.7 pip scipy pytorch cudatoolkit=10.1 -c pytorch
+    conda activate cormorant
+    pip install atom3d
+
+If you do not know your CUDA version, you can find out via::
+
+    nvcc --version
+
+The Cormorant fork used for this project can be cloned directly from the git repo using::
+
+    cd ~
+    git clone https://github.com/drorlab/cormorant.git
+
+
+You can currently only install it in development mode by going to the directory with setup.py and running::
+
+    cd cormorant
+    python setup.py develop
+
+
 Task-specific models and dataloaders
 *************************************
 
