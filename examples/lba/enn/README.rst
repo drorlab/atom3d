@@ -34,5 +34,10 @@ where LMDBDIR is the path to the subfolder "/data" of the split LMDB dataset.
 To see further options for training, use::
 
     python train.py --help
-    
+ 
+ 
+Analysis
+--------
+
+We will make standardized model evaluation code available soon.
 
