@@ -39,9 +39,12 @@ To install with RDKit (needed for processing small molecule files, e.g. SDF/MOL2
       conda activate atom3d
       make requirements
       
-      
-This standard installation lets you use all the data loading and processing functions included in ATOM3D. 
+Model-specific dependencies
+""""""""""""""""""""""""""""
+
+The standard installation described above lets you use all the data loading and processing functions included in ATOM3D. 
 To use the specific machine learning models, additional dependencies can be necessary. We describe these in the `machine learning section <https://atom3d.readthedocs.io/en/latest/training_models.html>`_.
+
 
 
 Frequently Asked Questions
