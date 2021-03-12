@@ -87,6 +87,11 @@ Then install PyTorch Geometric by running::
 
 where `${CUDA}` should be replaced by either `cpu`, `cu92`, `cu101` or `cu102` depending on your PyTorch installation (`cu102` if installed as above).
 
+If you do not know your CUDA version, you can find out via::
+
+    nvcc --version
+    
+
 ENN
 """""""""""""""""""""
 
