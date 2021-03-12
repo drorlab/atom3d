@@ -5,50 +5,7 @@ Training an ENN model for SMP data
 Installation
 ------------
 
-
-Create the environment
-````````````````````````
-
-Create a conda environment, defining the correct version of the CUDA toolkit (here: 10.1)::
-
-    conda create --name cormorant python=3.7 pip scipy pytorch cudatoolkit=10.1 -c pytorch
-    conda activate cormorant
-
-If you do not know your CUDA version, you can find out via::
-
-    nvcc --version
-    
-    
-Install ATOM3D
-````````````````````
-
-Within the created environment, execute::
-
-    pip install atom3d
-    
-    
-OR install the development version from the ATOM3D repo::
-
-   cd ~
-   git clone https://github.com/drorlab/atom3d.git
-   cd atom3d
-   pip install -e .
-
-
-Install Cormorant
-````````````````````
-
-The Cormorant fork used for this project can be cloned directly from the git repo using::
-
-    cd ~
-    git clone https://github.com/drorlab/cormorant.git
-
-
-You can currently only install it in development mode by going to the directory with setup.py and running::
-
-    cd cormorant
-    python setup.py develop
-    cd ~
+To use the ENN model, make sure to install our Cormorant fork alongside ATOM3D as described in the `ENN installation documentation <https://atom3d.readthedocs.io/en/latest/training_models.html#enn>`_.
 
 
 Dataset
