@@ -43,7 +43,7 @@ Model-specific dependencies
 """"""""""""""""""""""""""""
 
 The standard installation described above lets you use all the data loading and processing functions included in ATOM3D. 
-To use the specific machine learning models, additional dependencies can be necessary. We describe these in the `machine learning section <https://atom3d.readthedocs.io/en/latest/training_models.html>`_.
+To use the specific machine learning models, additional dependencies can be necessary. We describe these in the `machine learning section <https://atom3d.readthedocs.io/en/latest/training_models.html#model-specific-installation-instructions>`_.
 
 
 
