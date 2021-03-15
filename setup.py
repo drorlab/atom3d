@@ -15,7 +15,7 @@ setup(
         'atom3d.filters',
         'atom3d.data',
     ]),
-    version='0.2.0',
+    version='0.2.1',
     description='ATOM3D: Tasks On Molecules in 3 Dimensions',
     author='ATOM3D developers',
     license='MIT',
