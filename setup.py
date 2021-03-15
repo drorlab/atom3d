@@ -10,6 +10,7 @@ setup(
         'atom3d.protein',
         'atom3d.util',
         'atom3d.datasets',
+        'atom3d.models',
         'atom3d.splits',
         'atom3d.filters',
         'atom3d.data',
