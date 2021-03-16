@@ -293,12 +293,12 @@ class OutputSiamesePMLP(nn.Module):
     dtype : :class:`torch.dtype`, optional
         Data type to instantite the module to.
     """
-    def __init__(self, num_scalars, num_mixed=64, activation='leakyrelu', device=torch.device('cpu'), dtype=torch.float):
+    def __init__(self, num_scalars, num_classes=1, num_mixed=64, activation='leakyrelu', device=torch.device('cpu'), dtype=torch.float):
         super(OutputSiamesePMLP, self).__init__()
         self.num_scalars = num_scalars
         self.num_mixed = num_mixed
         self.mlp1 = BasicMLP(2*num_scalars, num_mixed, num_hidden=1, activation=activation, device=device, dtype=dtype)
-        self.mlp2 = BasicMLP(num_mixed, 1, num_hidden=1, activation=activation, device=device, dtype=dtype)
+        self.mlp2 = BasicMLP(num_mixed, num_classes, num_hidden=1, activation=activation, device=device, dtype=dtype)
         self.zero = torch.tensor(0, device=device, dtype=dtype)
 
     def forward(self, atom_scalars):
