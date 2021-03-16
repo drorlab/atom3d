@@ -5,7 +5,7 @@ Training an ENN model for SMP data
 Installation
 ------------
 
-To use the ENN model, make sure to install our Cormorant fork alongside ATOM3D as described in the `ENN installation documentation <https://atom3d.readthedocs.io/en/latest/training_models.html#enn>`_.
+To use the ENN model, make sure to install our Cormorant fork alongside ATOM3D as described in the `ENN installation instructions <https://atom3d.readthedocs.io/en/latest/training_models.html#enn>`_.
 
 
 Dataset
