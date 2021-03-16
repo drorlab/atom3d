@@ -12,7 +12,7 @@ Dataset
 -------
 
 
-Download one of the split LBA dataset from `the ATOM3D website <https://www.atom3d.ai/lba.html>`_.
+Download one of the *split* LBA datasets from `the ATOM3D website <https://www.atom3d.ai/lba.html>`_.
 We recommend using the split based on 30% sequence identity but also provide a split based on 60% sequence identity as has been used by some groups in previous work.
 Once the download has finished, extract the datasets from the zipped archive.
 
