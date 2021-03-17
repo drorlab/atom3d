@@ -9,5 +9,8 @@ layout: default
   - **Splitting criteria:** We split residue environments by domain-level CATH protein topology class.
   - **Downloads:**
 
-    - LMDB Dataset coming soon!
+    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1nmSNqAyOKof9-76l4gYQvODsEHNZLxv7)
+    - Split by CATH 4.2 class
+      [[datasets]](https://drive.google.com/uc?export=download&id=1rJEAyyoFN0Y6pgnLJyG0Fy5FKqAopOqC)
+      [[indices]](https://drive.google.com/uc?export=download&id=1xOX7HNuDvJib3-wHxh0JFq0LMLLYQu-6)
 

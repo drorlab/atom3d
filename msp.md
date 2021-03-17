@@ -11,8 +11,8 @@ layout: default
 
     - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1ACkgojNUKo_ck34F3VEvsjHtlqIs2ecx)
     - 30% sequence identity split
-      [[datasets]](https://drive.google.com/uc?export=download&id=1f2GUGRIxR82l5eb8r8OFX7QkST4zbuZ3)
-      [[indices]](https://drive.google.com/uc?export=download&id=1ppUxfz9eMmEzFfyirUxsPeCmZ3OfZ2X6)
+      [[datasets]](https://drive.google.com/uc?export=download&id=13aIU0JVD-PznEdrEzeCdL5ICEgWSS9Jj)
+      [[indices]](https://drive.google.com/uc?export=download&id=1duge3FQeEs1Oup0az2lZhdvJLDmbx6-H)
 
 ### References
 
