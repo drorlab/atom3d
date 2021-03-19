@@ -212,3 +212,8 @@ This example uses a simple feed-forward neural network with one hidden layer.
             loss.backward()
             optimizer.step()
         print('Epoch {}: train loss {}'.format(epoch, loss))
+
+2. **Train an equivariant model on ligand binding affinity.**
+
+We provide several example training scripts (+ model implementations and dataloaders) in a dedicated folder in the GitHub repository.
+One particularly educative example is training of an  `equivariant neural network on ligand binding affinity data <https://github.com/drorlab/atom3d/tree/master/examples/lba/enn>`_.
