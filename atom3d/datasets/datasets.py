@@ -91,9 +91,10 @@ class LMDBDataset(Dataset):
             buf = io.BytesIO(compressed)
             with gzip.GzipFile(fileobj=buf, mode="rb") as f:
                 serialized = f.read()
-
-            item = deserialize(serialized, self._serialization_format)
-
+            try:
+                item = deserialize(serialized, self._serialization_format)
+            except:
+                return None
         # Recover special data types (currently only pandas dataframes).
         if 'types' in item.keys():
             for x in item.keys():
@@ -615,7 +616,13 @@ def download_dataset(name, out_path, split=None):
             logger.warning(f'specified split {split} not available. Possible values are "DIPS".')
             return
     elif name == 'res':
-        link = '1XgZ19YYwloHxEtZUk78PLVzHipFkqIm5'
+        if split is None:
+            link = '1nmSNqAyOKof9-76l4gYQvODsEHNZLxv7'
+        elif split == 'cath-topology':
+            link = '1rJEAyyoFN0Y6pgnLJyG0Fy5FKqAopOqC'
+        else:
+            logger.warning(f'specified split {split} not available. Possible values are "cath-topology".')
+            return
     elif name == 'msp':
         if split is None:
             link = '1ACkgojNUKo_ck34F3VEvsjHtlqIs2ecx'
