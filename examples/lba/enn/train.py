@@ -46,13 +46,15 @@ def main():
         model = ENN_LBA_Siamese(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
                         args.cutoff_type, args.hard_cut_rad, args.soft_cut_rad, args.soft_cut_width,
                         args.weight_init, args.level_gain, args.charge_power, args.basis_set,
-                        charge_scale, args.gaussian_mask,
+                        charge_scale, args.gaussian_mask, cgprod_bounded=args.cgprod_bounded,
+                        cg_pow_normalization=args.cg_pow_normalization, cg_agg_normalization=args.cg_agg_normalization,
                         device=device, dtype=dtype)
     else:
         model = ENN_LBA(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
                         args.cutoff_type, args.hard_cut_rad, args.soft_cut_rad, args.soft_cut_width,
                         args.weight_init, args.level_gain, args.charge_power, args.basis_set,
-                        charge_scale, args.gaussian_mask, 
+                        charge_scale, args.gaussian_mask, cgprod_bounded=args.cgprod_bounded,
+                        cg_pow_normalization=args.cg_pow_normalization, cg_agg_normalization=args.cg_agg_normalization,
                         device=device, dtype=dtype)
     # Initialize the scheduler and optimizer
     optimizer = init_optimizer(args, model)

@@ -21,6 +21,7 @@ LMDBDIR=/oak/stanford/groups/rondror/projects/atom3d/lmdb/LBA/splits/split-by-se
 
 python train.py --target neglog_aff --prefix lba-id30_cutoff-CUTOFF_maxnumat-MAXNUM --load \
                 --datadir $LMDBDIR --format lmdb \
+		--cgprod-bounded \
                 --radius CUTOFF \
                 --maxnum MAXNUM \
                 --batch-size 1 \

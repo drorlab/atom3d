@@ -126,7 +126,7 @@ def collate_lba_siamese(batch):
     # Split structural data and drop zeros
     for key in ['charges','positions','one_hot']:
         new_batch[key+'1'] = drop_zeros( batch['bound_'+key], 'bound_'+key, to_keep1 )
-        new_batch[key+'2'] = drop_zeros( batch['apart_'+key], 'apart_'+key,  to_keep2 )
+        new_batch[key+'2'] = drop_zeros( batch['apart_'+key], 'apart_'+key, to_keep2 )
     # Define the atom masks
     atom_mask1 = new_batch['charges1'] > 0
     atom_mask2 = new_batch['charges2'] > 0
@@ -334,7 +334,7 @@ class TransformLBA(object):
     def _select_env_by_num(self, pocket, ligand):
         # Max. number of protein atoms 
         num = int(max([1, self._maxnum - len(ligand.x)]))
-        print('Select a maximum of',num,'atoms.')
+        #print('Select a maximum of',num,'atoms.')
         # Extract coordinates
         ligand_coords = np.array([ligand.x, ligand.y, ligand.z]).T
         pocket_coords = np.array([pocket.x, pocket.y, pocket.z]).T

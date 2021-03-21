@@ -26,6 +26,7 @@ The training script can be invoked from the example folder using, e.g.::
     python train.py --target neglog_aff --load \
                     --prefix lba-id30_cutoff-06_maxnumat-600 \
                     --datadir $LMDBDIR --format lmdb \
+                    --cgprod-bounded \
                     --radius 6 --maxnum 600 \
                     --batch-size 1 --num-epoch 150
 

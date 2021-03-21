@@ -39,7 +39,8 @@ class ENN_LBA(CGModule):
     def __init__(self, maxl, max_sh, num_cg_levels, num_channels, num_species,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
                  weight_init, level_gain, charge_power, basis_set,
-                 charge_scale, gaussian_mask, 
+                 charge_scale, gaussian_mask, cgprod_bounded=True,
+                 cg_pow_normalization='none', cg_agg_normalization='none', 
                  device=None, dtype=None, cg_dict=None):
 
         logging.info('Initializing network!')
@@ -91,7 +92,9 @@ class ENN_LBA(CGModule):
         self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge,
                      tau_pos, num_cg_levels, num_channels, level_gain, weight_init,
                      cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
-                     cgprod_bounded=True,
+                     cgprod_bounded=cgprod_bounded, 
+                     cg_pow_normalization=cg_pow_normalization, 
+                     cg_agg_normalization=cg_agg_normalization,
                      device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
 
         # Get atom and edge scalars
@@ -223,7 +226,8 @@ class ENN_LBA_Siamese(CGModule):
     def __init__(self, maxl, max_sh, num_cg_levels, num_channels, num_species,
                  cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
                  weight_init, level_gain, charge_power, basis_set,
-                 charge_scale, gaussian_mask, 
+                 charge_scale, gaussian_mask, cgprod_bounded=True,
+                 cg_pow_normalization='none', cg_agg_normalization='none',
                  device=None, dtype=None, cg_dict=None):
 
         logging.info('Initializing network!')
@@ -275,7 +279,9 @@ class ENN_LBA_Siamese(CGModule):
         self.cormorant_cg = ENN(maxl, max_sh, tau_in_atom, tau_in_edge, tau_pos, 
                                 num_cg_levels, num_channels, level_gain, weight_init,
                                 cutoff_type, hard_cut_rad, soft_cut_rad, soft_cut_width,
-                                cat=True, gaussian_mask=False, cgprod_bounded=True,
+                                cat=True, gaussian_mask=False, cgprod_bounded=cgprod_bounded,
+                                cg_pow_normalization=cg_pow_normalization,
+                                cg_agg_normalization=cg_agg_normalization,
                                 device=self.device, dtype=self.dtype, cg_dict=self.cg_dict)
 
         # Get atom and edge scalars
