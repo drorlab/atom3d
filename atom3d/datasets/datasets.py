@@ -103,12 +103,12 @@ class LMDBDataset(Dataset):
         else:
             logging.warning('Data types in item %i not defined. Will use basic types only.'%index)
 
-        if self._transform:
-            item = self._transform(item)
         if 'file_path' not in item:
             item['file_path'] = str(self.data_file)
         if 'id' not in item:
             item['id'] = str(index)
+        if self._transform:
+            item = self._transform(item)
         return item
 
 

@@ -1,22 +1,79 @@
 import atom3d.util.voxelize as vox
 
-def graph_transform(item, structure_keys=['atoms'], label_key='labels'):
-    """Transform for converting dataframes to graphs, to be applied when defining a :mod:`Dataset <atom3d.datasets.datasets>`.
+class GraphTransform(object):
+    def __init__(self, atom_keys, label_key):
+        self.atom_keys = atom_keys
+        self.label_key = label_key
+    
+    def __call__(self, item):
+        # transform protein and/or pocket to PTG graphs
+        item = prot_graph_transform(item, atom_keys=self.atom_keys, label_key=self.label_key)
+        
+        return item
+    
+class PairedGraphTransform(object):
+    def __init__(self, key_1, key_2, label_key):
+        self.key_1 = key_1
+        self.key_2 = key_2
+        self.label_key = label_key
+    
+    def __call__(self, item):
+        # transform protein and/or pocket to PTG graphs
+        item = prot_graph_transform(item, atom_keys=[self.key_1, self.key_2], label_key=self.label_key)
+        
+        return item[self.key_1], item[self.key_2]
+    
+    def collator(self, data_list):
+        from torch_geometric.data import Batch
+        batch_1 = Batch.from_data_list([d[0] for d in data_list])
+        batch_2 = Batch.from_data_list([d[1] for d in data_list])
+        return batch_1, batch_2
+
+def prot_graph_transform(item, atom_keys=['atoms'], label_key='scores'):
+    """Transform for converting dataframes to Pytorch Geometric graphs, to be applied when defining a :mod:`Dataset <atom3d.datasets.datasets>`.
     Operates on Dataset items, assumes that the item contains all keys specified in ``keys`` and ``labels`` arguments.
 
     :param item: Dataset item to transform
     :type item: dict
-    :param keys: list of keys to transform, where each key contains a dataset of atoms, defaults to ['atoms']
-    :type keys: list, optional
+    :param atom_keys: list of keys to transform, where each key contains a dataframe of atoms, defaults to ['atoms']
+    :type atom_keys: list, optional
+    :param label_key: name of key containing labels, defaults to ['scores']
+    :type label_key: str, optional
     :return: Transformed Dataset item
     :rtype: dict
     """    
     from torch_geometric.data import Data
     import atom3d.util.graph as gr
 
-    for key in structure_keys:
+    for key in atom_keys:
         node_feats, edge_index, edge_feats, pos = gr.prot_df_to_graph(item[key])
         item[key] = Data(node_feats, edge_index, edge_feats, y=item[label_key], pos=pos)
+
+    return item
+
+def mol_graph_transform(item, atom_key='atoms', label_key='scores', use_bonds=False):
+    """Transform for converting dataframes to Pytorch Geometric graphs, to be applied when defining a :mod:`Dataset <atom3d.datasets.datasets>`.
+    Operates on Dataset items, assumes that the item contains all keys specified in ``keys`` and ``labels`` arguments.
+
+    :param item: Dataset item to transform
+    :type item: dict
+    :param atom_key: name of key containing molecule structure as a dataframe, defaults to 'atoms'
+    :type atom_keys: list, optional
+    :param label_key: name of key containing labels, defaults to 'scores'
+    :type label_key: str, optional
+    :param use_bonds: whether to use molecular bond information for edges instead of distance. Assumes bonds are stored under 'bonds' key, defaults to False
+    :type use_bonds: bool, optional
+    :return: Transformed Dataset item
+    :rtype: dict
+    """    
+    from torch_geometric.data import Data
+    import atom3d.util.graph as gr
+    if use_bonds:
+        bonds = item['bonds']
+    else:
+        bonds = None
+    node_feats, edge_index, edge_feats, pos = gr.mol_df_to_graph(item[atom_key], bonds=bonds)
+    item[atom_key] = Data(node_feats, edge_index, edge_feats, y=item[label_key], pos=pos)
 
     return item
 
@@ -42,6 +99,7 @@ def voxel_transform(item, grid_config, rot_mat=None, center_fn=vox.get_center, r
     :return: Transformed Dataset item
     :rtype: dict
     """    
+    
     for key in structure_keys:
         df = item[key]
         center = center_fn(df)

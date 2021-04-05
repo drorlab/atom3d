@@ -42,7 +42,6 @@ def prot_df_to_graph(df, feat_col='element', allowable_feats=prot_atoms, edge_di
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node
     :rtype: Tuple
     """ 
-
     node_pos = torch.FloatTensor(df[['x', 'y', 'z']].to_numpy())
 
     kd_tree = ss.KDTree(node_pos)
@@ -51,13 +50,13 @@ def prot_df_to_graph(df, feat_col='element', allowable_feats=prot_atoms, edge_di
 
     node_feats = torch.FloatTensor([one_of_k_encoding_unk(e, allowable_feats) for e in df[feat_col]])
     edge_weights = torch.FloatTensor(
-        [1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edge_tuples]).view(-1, 1)
+        [1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edge_tuples]).view(-1)
     # feats = F.one_hot(elems, num_classes=len(atom_int_dict))
     
-    return node_feats, edges, edge_weights.view(-1), node_pos
+    return node_feats, edges, edge_weights, node_pos
 
 
-def mol_df_to_graph(mol, allowable_atoms=mol_atoms):
+def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=4.5):
     """
     Converts molecule to a graph compatible with Pytorch-Geometric
 
@@ -74,13 +73,19 @@ def mol_df_to_graph(mol, allowable_atoms=mol_atoms):
         - edge_feats (torch.FloatTensor): Edge features given by bond type. Single = 1.0, Double = 2.0, Triple = 3.0, Aromatic = 1.5.
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node.
     """
-    node_pos = torch.FloatTensor(fo.get_coordinates_of_conformer(mol))
-    bonds = fo.get_bonds_matrix_from_mol(mol)
-    edge_tuples = np.argwhere(bonds)
+    node_pos = torch.FloatTensor(df[['x', 'y', 'z']].to_numpy())
+    
+    if bonds is not None:
+        bond_data = bonds.to_numpy()
+        edge_tuples = bond_data[:, :2]
+        edge_feats = torch.FloatTensor(bond_data[:,-1]).view(-1)
+    else:
+        kd_tree = ss.KDTree(node_pos)
+        edge_tuples = list(kd_tree.query_pairs(edge_dist_cutoff))
+        edge_feats = torch.FloatTensor([1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edge_tuples]).view(-1)
+        
     edges = torch.LongTensor(edge_tuples).t().contiguous()
-
-    node_feats = torch.FloatTensor([one_of_k_encoding_unk(a.GetSymbol(), mol_atoms) for a in mol.GetAtoms()])
-    edge_feats = torch.FloatTensor([bonds[i, j] for i, j in edge_tuples]).view(-1, 1)
+    node_feats = torch.FloatTensor([one_of_k_encoding_unk(e, allowable_atoms) for e in df['element']])
 
     return node_feats, edges, edge_feats, node_pos
 
@@ -103,8 +108,8 @@ def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node in combined graph.
     :rtype: Tuple
     """    
-    node_feats1, edges1, edge_feats1, pos1 = graph1
-    node_feats2, edges2, edge_feats2, pos2 = graph2
+    node_feats1, edges1, edge_feats1, pos1 = graph1.x, graph1.edge_index, graph1.edge_attr, graph1.pos
+    node_feats2, edges2, edge_feats2, pos2 = graph2.x, graph2.edge_index, graph2.edge_attr, graph2.pos
 
     dummy_node_feats1 = torch.zeros(pos1.shape[0], node_feats2.shape[1])
     dummy_node_feats2 = torch.zeros(pos2.shape[0], node_feats1.shape[1])
@@ -152,7 +157,7 @@ def edges_between_graphs(pos1, pos2, dist=4.5):
             edge_weights.append(np.linalg.norm(pos1[i] - pos2[j]))
 
     edges = torch.LongTensor(edges).t().contiguous()
-    edge_weights = torch.FloatTensor(edge_weights).view(-1, 1)
+    edge_weights = torch.FloatTensor(edge_weights).view(-1)
     return edges, edge_weights    
 
 

@@ -90,8 +90,8 @@ class LBADataset(Dataset):
         pocket_list = []
         ligand_list = []
         for pdbcode in pdbcodes:
-            protein_path = os.path.join(input_file_path, f'{pdbcode:}/{pdbcode:}_protein.pdb')
-            pocket_path = os.path.join(input_file_path, f'{pdbcode:}/{pdbcode:}_pocket.pdb')
+            protein_path = os.path.join(input_file_path, f'{pdbcode:}/{pdbcode:}_protein.cif')
+            pocket_path = os.path.join(input_file_path, f'{pdbcode:}/{pdbcode:}_pocket.cif')
             ligand_path = os.path.join(input_file_path, f'{pdbcode:}/{pdbcode:}_ligand.sdf')
             if os.path.exists(protein_path) and os.path.exists(pocket_path) and \
                     os.path.exists(ligand_path):
@@ -124,7 +124,7 @@ class LBADataset(Dataset):
             'atoms_protein': protein['atoms'],
             'atoms_pocket': pocket['atoms'],
             'atoms_ligand': ligand['atoms'],
-            'bonds': ligand['atoms'],
+            'bonds': ligand['bonds'],
             'id': pdbcode,
             'seq': protein['seq'],
             'smiles': ligand['smiles'],
