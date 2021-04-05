@@ -8,12 +8,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.data import DataLoader
 from model import GNN_LEP, MLP_LEP
 from atom3d.util.transforms import PairedGraphTransform
 from atom3d.datasets import LMDBDataset
 from scipy.stats import spearmanr
+from sklearn.metrics import roc_auc_score, average_precision_score
 
 def train_loop(epoch, gcn_model, ff_model, loader, criterion, optimizer, device):
     gcn_model.train()
@@ -111,8 +113,7 @@ def train(args, device, log_dir, seed=None, test_mode=False):
     ff_model = MLP_LEP(args.hidden_dim).to(device)
 
     best_val_loss = 999
-    best_rp = 0
-    best_rs = 0
+    best_val_auroc = 0
 
 
     params = [x for x in gcn_model.parameters()] + [x for x in ff_model.parameters()]

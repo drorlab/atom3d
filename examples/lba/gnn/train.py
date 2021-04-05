@@ -108,8 +108,8 @@ def train(args, device, log_dir, seed=None, test_mode=False):
         # logger.info('{:03d}\t{:.7f}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(epoch, train_loss, val_loss, r_p, r_s))
 
     if test_mode:
-        test_file = os.path.join(log_dir, f'test_results_{split}.txt')
-        model.load_state_dict(torch.load(os.path.join(log_dir, f'best_weights_{split}.pt')))
+        test_file = os.path.join(log_dir, f'test_results.txt')
+        model.load_state_dict(torch.load(os.path.join(log_dir, f'best_weights.pt')))
         rmse, pearson, spearman, y_true, y_pred = test(model, test_loader, device)
         # plot_corr(y_true, y_pred, os.path.join(log_dir, f'corr_{split}_test.png'))
         print('Test RMSE: {:.7f}, Pearson R: {:.7f}, Spearman R: {:.7f}'.format(rmse, pearson, spearman))
