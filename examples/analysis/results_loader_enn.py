@@ -33,15 +33,15 @@ class LoaderENN()
         for r, rep in enumerate(self.reps):
             prediction_fn = self.name + '-rep'+str(int(rep))+'.best'
             # Load the Cormorant predictions
-            targets_tr, predict_tr = get_prediction(prediction_fn+'.train.pt')
-            targets_va, predict_va = get_prediction(prediction_fn+'.valid.pt')
-            targets_te, predict_te = get_prediction(prediction_fn+'.test.pt')
+            targets_tr, predict_tr = self.get_prediction(prediction_fn+'.train.pt')
+            targets_va, predict_va = self.get_prediction(prediction_fn+'.valid.pt')
+            targets_te, predict_te = self.get_prediction(prediction_fn+'.test.pt')
             targets = {'train':targets_tr, 'valid':targets_va, 'test':targets_te}
             predict = {'train':predict_tr, 'valid':predict_va, 'test':predict_te}
             results['rep'+str(int(rep))] = {'targets':targets, 'predict':predict}
         return targets, predict
 
-    def get_log(self):
+    def get_log(self, log_file):
         """
         Reads logged loss metrics of each epoch from a Cormorant log file.
          - for regression: MAE and RMSE 
@@ -49,7 +49,7 @@ class LoaderENN()
         """
         mae_tr, rmse_tr = [], [] # training loss
         mae_va, rmse_va = [], [] # validation loss
-        with open(self.log_file,'r') as in_file:
+        with open(log_file,'r') as in_file:
             while True: 
                 # Read the next line 
                 line = in_file.readline() 
@@ -69,10 +69,10 @@ class LoaderENN()
         mae_va, rmse_va = np.array(mae_va), np.array(rmse_va)
         return mae_tr, rmse_tr, mae_va, rmse_va
 
-    def plot_log(self):
+    def plot_log(self, rep):
     
         # Load the Cormorant log
-        mae_tr, rmse_tr, mae_va, rmse_va = self.get_log()
+        mae_tr, rmse_tr, mae_va, rmse_va = self.get_log(self.name+'-'+rep+'.log')
     
         # Create the figure
         fig, ax = plt.subplots(2, 1, figsize=[4,4], sharex=True, dpi=100)
