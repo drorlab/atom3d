@@ -39,7 +39,7 @@ class LoaderENN()
             targets = {'train':targets_tr, 'valid':targets_va, 'test':targets_te}
             predict = {'train':predict_tr, 'valid':predict_va, 'test':predict_te}
             results['rep'+str(int(rep))] = {'targets':targets, 'predict':predict}
-        return targets, predict
+        return results
 
     def get_log(self, log_file):
         """
