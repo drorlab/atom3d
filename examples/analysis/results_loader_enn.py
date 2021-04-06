@@ -13,7 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 
 
 
-class LoaderENN()
+class LoaderENN():
 
     def __init__(self, name, reps=[1,2,3]):
         self.name = name
