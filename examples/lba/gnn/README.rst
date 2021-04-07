@@ -5,7 +5,7 @@ Training a GNN model for LBA data
 Installation
 ------------
 
-The GNN models require Pytorch Geometric — see <https://atom3d.readthedocs.io/en/latest/training_models.html#model-specific-installation-instructions>_ or <https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html>_ for details. 
+The GNN models require Pytorch Geometric — see details in either <ATOM3D https://atom3d.readthedocs.io/en/latest/training_models.html#model-specific-installation-instructions>_ or <PTG https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html>_ documentation.
 
 Dataset
 -------
