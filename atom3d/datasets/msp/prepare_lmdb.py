@@ -1,38 +1,15 @@
 import numpy as np
 import pandas as pd
-import collections as col
 import logging
 import os
-import re
-import sys
-import scipy.spatial
-import parallel as par
 import click
 import torch
 
-sys.path.insert(0, '../../..')
 import atom3d.datasets.datasets as da
-#import atom3d.datasets.res.util as util
-import atom3d.splits.splits as spl
 import atom3d.util.file as fi
 import atom3d.util.formats as fo
 
-import atom3d.shard.shard as sh
-
 logger = logging.getLogger(__name__)
-
-label_res_dict={0:'HIS',1:'LYS',2:'ARG',3:'ASP',4:'GLU',5:'SER',6:'THR',7:'ASN',8:'GLN',9:'ALA',10:'VAL',11:'LEU',12:'ILE',13:'MET',14:'PHE',15:'TYR',16:'TRP',17:'PRO',18:'GLY',19:'CYS'}
-res_label_dict={'HIS':0,'LYS':1,'ARG':2,'ASP':3,'GLU':4,'SER':5,'THR':6,'ASN':7,'GLN':8,'ALA':9,'VAL':10,'LEU':11,'ILE':12,'MET':13,'PHE':14,'TYR':15,'TRP':16,'PRO':17,'GLY':18,'CYS':19}
-bb_atoms = ['N', 'CA', 'C', 'O']
-allowed_atoms = ['C', 'O', 'N', 'S', 'P', 'SE']
-
-# computed statistics from training set
-res_wt_dict = {'HIS': 0.581391659111514, 'LYS': 0.266061611865989, 'ARG': 0.2796785729861747, 'ASP': 0.26563454667840314, 'GLU': 0.22814679094919596, 'SER': 0.2612916369563003, 'THR': 0.27832512315270935, 'ASN': 0.3477441570413752, 'GLN': 0.37781509139381086, 'ALA': 0.20421144813311043, 'VAL': 0.22354397064847012, 'LEU': 0.18395198072344454, 'ILE': 0.2631600545792168, 'MET': 0.6918305148744505, 'PHE': 0.3592224851905275, 'TYR': 0.4048964515721682, 'TRP': 0.9882874205355423, 'PRO': 0.32994186046511625, 'GLY': 0.2238561093317741, 'CYS': 1.0}
-
-gly_CB_mu = np.array([-0.5311191 , -0.75842446,  1.2198311 ], dtype=np.float32)
-gly_CB_sigma = np.array([[1.63731114e-03, 2.40018381e-04, 6.38361679e-04],
-       [2.40018381e-04, 6.87853419e-05, 1.43898267e-04],
-       [6.38361679e-04, 1.43898267e-04, 3.25022011e-04]], dtype=np.float32)
 
 
 class MSPTransform(object):
@@ -45,7 +22,7 @@ class MSPTransform(object):
         self.labels = self._get_labels_from_file(os.path.join(base_file_dir, 'mutated', 'data_keep.csv'))
         self.mut_orig_mapping = self._match_files(os.listdir(self.mut_file_dir) + os.listdir(self.orig_file_dir))
 
-    def __call__(self, x, error_if_missing=False):
+    def __call__(self, x):
         name = os.path.splitext(x['id'])[0]
         x['id'] = name
         orig_file = self.mut_orig_mapping[name]['original']
@@ -160,15 +137,5 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
 
 
 if __name__ == "__main__":
-    # data_dir = '/scratch/users/raphtown/atom3d_mirror/mutation_stability_prediction/'
-    # train_sharded = sh.Sharded.load(os.path.join(data_dir, 'split/pairs_train@40'))
-    # keys = train_sharded.get_names()
-    # keys.to_csv('train.txt',index=False, header=False)
-    # val_sharded = sh.Sharded.load(os.path.join(data_dir, 'split/pairs_val@40'))
-    # keys = val_sharded.get_names()
-    # keys.to_csv('val.txt',index=False, header=False)
-    # test_sharded = sh.Sharded.load(os.path.join(data_dir, 'split/pairs_test@40'))
-    # keys = test_sharded.get_names()
-    # keys.to_csv('test.txt',index=False, header=False)
-    # quit()
+    
     prepare()

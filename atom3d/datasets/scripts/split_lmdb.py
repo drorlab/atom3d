@@ -13,7 +13,7 @@ def read_split_file(txt):
             split_indices.append(int(line.strip()))
     return split_indices
     
-@click.command(help='Prepare RES dataset')
+@click.command(help='Split dataset')
 @click.argument('in_path', type=click.Path())
 @click.argument('output_root', type=click.Path())
 @click.option('--train_txt', '-tr', type=click.Path(exists=True), default=None)

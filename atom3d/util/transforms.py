@@ -23,11 +23,6 @@ class PairedGraphTransform(object):
         
         return item[self.key_1], item[self.key_2]
     
-    def collator(self, data_list):
-        from torch_geometric.data import Batch
-        batch_1 = Batch.from_data_list([d[0] for d in data_list])
-        batch_2 = Batch.from_data_list([d[1] for d in data_list])
-        return batch_1, batch_2
 
 def prot_graph_transform(item, atom_keys=['atoms'], label_key='scores'):
     """Transform for converting dataframes to Pytorch Geometric graphs, to be applied when defining a :mod:`Dataset <atom3d.datasets.datasets>`.

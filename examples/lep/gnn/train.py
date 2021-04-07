@@ -27,13 +27,14 @@ def train_loop(epoch, gcn_model, ff_model, loader, criterion, optimizer, device)
     total = 0
     print_frequency = 10
     for it, (active, inactive) in enumerate(loader):
+        labels = torch.FloatTensor([a == 'A' for a in active.y]).to(device)
         active = active.to(device)
         inactive = inactive.to(device)
         optimizer.zero_grad()
         out_active = gcn_model(active.x, active.edge_index, active.edge_attr.view(-1), active.batch)
         out_inactive = gcn_model(inactive.x, inactive.edge_index, inactive.edge_attr.view(-1), inactive.batch)
         output = ff_model(out_active, out_inactive)
-        loss = criterion(output, active.y)
+        loss = criterion(output, labels)
         loss.backward()
         # loss_all += loss.item() * active.num_graphs
         # total += active.num_graphs
@@ -61,16 +62,17 @@ def test(gcn_model, ff_model, loader, criterion, device):
     y_pred = []
 
     for it, (active, inactive) in enumerate(loader):
+        labels = torch.FloatTensor([a == 'A' for a in active.y]).to(device)
         active = active.to(device)
         inactive = inactive.to(device)
         out_active = gcn_model(active.x, active.edge_index, active.edge_attr.view(-1), active.batch)
         out_inactive = gcn_model(inactive.x, inactive.edge_index, inactive.edge_attr.view(-1), inactive.batch)
         output = ff_model(out_active, out_inactive)
-        loss = criterion(output, active.y)
+        loss = criterion(output, labels)
         # loss_all += loss.item() * active.num_graphs
         # total += active.num_graphs
         losses.append(loss.item())
-        y_true.extend(active.y.tolist())
+        y_true.extend(labels.tolist())
         y_pred.extend(output.tolist())
         if it % print_frequency == 0:
             print(f'iter {it}, loss {np.mean(losses)}')

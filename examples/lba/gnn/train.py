@@ -74,9 +74,9 @@ def train(args, device, log_dir, seed=None, test_mode=False):
     val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'), transform=GNNTransformLBA())
     test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'), transform=GNNTransformLBA())
     
-    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False, num_workers=4)
+    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4)
 
     for data in train_loader:
         num_features = data.num_features
@@ -127,7 +127,7 @@ if __name__=="__main__":
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--hidden_dim', type=int, default=64)
-    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--num_epochs', type=int, default=50)
     parser.add_argument('--learning_rate', type=float, default=1e-4)
     parser.add_argument('--log_dir', type=str, default=None)
     args = parser.parse_args()
