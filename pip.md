@@ -9,7 +9,7 @@ layout: default
   - **Splitting criteria:** We split protein complexes by sequence identity at 30%.
   - **Downloads:**
 
-    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1QYAXy71s9oStaSBnaVIL0i62jNSpiGQB)
+    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1pBzhSccSdCx4QPBZmW1lH19KehWqQHsE)
     - DIPS split at 30% sequence identity
       [[datasets]](https://drive.google.com/uc?export=download&id=1ddUdYTr5aqXJv0Ncz1TWloqiLCLPLO_K)
       [[indices]](https://drive.google.com/uc?export=download&id=1X7Y4S_QXRFGo3VyL1OroOHt_4YiE5Sfl)

@@ -9,13 +9,13 @@ layout: default
   - **Splitting criteria:** We split protein-ligand complexes by protein sequence identity at 30% (most stringent) and 60% (less stringent).
   - **Downloads:**
 
-    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=16U5imKQ9bZr2GQPbmOE6FlcKeXuUrETa)
+    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1tudH6z5_-LVTIS7k44QcdXO9nPhIgYeS)
     - 30% sequence identity split
-      [[datasets]](https://drive.google.com/uc?export=download&id=1WQERC8h3t2DSkKkg12xpoOaYfB9dzeCB)
-      [[indices]](https://drive.google.com/uc?export=download&id=1VBRted2RuHftQkkjDba9qfKzERBjC7kk)
+      [[datasets]](https://drive.google.com/uc?export=download&id=1P80r0Snq8EcTK36OyBQcZD5KYCaYuIBm)
+      [[indices]](https://drive.google.com/uc?export=download&id=1S8xQH0nmOrKvv7vpx3ETr7fzpmSWoN7_)
     - 60% sequence identity split
-      [[datasets]](https://drive.google.com/uc?export=download&id=1pGOe_V-JL6Mn_qxXjFwpRTFxYODhBZMR)
-      [[indices]](https://drive.google.com/uc?export=download&id=15HpOgxJTYYLA4p_kVaDpZ3BJ4yB6t6MP)
+      [[datasets]](https://drive.google.com/uc?export=download&id=1IM_Fn5dvvqogwGaq0TD0BRWbv3iST-mN)
+      [[indices]](https://drive.google.com/uc?export=download&id=1k_3DTRd9GfDnBS0C2yGRTgrS1WeHy-J_)
 
 
 
