@@ -633,11 +633,11 @@ def download_dataset(name, out_path, split=None):
             return
     elif name == 'lba':
         if split is None:
-            link = '16U5imKQ9bZr2GQPbmOE6FlcKeXuUrETa'
+            link = '1tudH6z5_-LVTIS7k44QcdXO9nPhIgYeS'
         elif split == 'sequence-identity-30':
-            link = '1WQERC8h3t2DSkKkg12xpoOaYfB9dzeCB'
+            link = '1P80r0Snq8EcTK36OyBQcZD5KYCaYuIBm'
         elif split == 'sequence-identity-60':
-            link = '1pGOe_V-JL6Mn_qxXjFwpRTFxYODhBZMR'
+            link = '1IM_Fn5dvvqogwGaq0TD0BRWbv3iST-mN'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "sequence-identity-30", "sequence-identity-60".')
             return
@@ -659,9 +659,9 @@ def download_dataset(name, out_path, split=None):
             return
     elif name == 'rsr':
         if split is None:
-            link = '16sbDowF_IyAkJAZ_UyUAirbIug2Oi4EU'
+            link = '1EQs3L9gU5tx4OAF5Gu-F8p9Vfmz68y1b'
         elif split == 'year':
-            link = '1yI03LSslNrOaculxoM0sUbSC1z0hKnt6'
+            link = '14kv95QuTQueBEfVZ6Bo6y7g-sdG0B_Dw'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "year".')
             return

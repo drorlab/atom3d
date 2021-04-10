@@ -48,7 +48,7 @@ class GCN(torch.nn.Module):
         x = F.relu(x)
         x = self.conv5(x, edge_index, edge_weight)
         x = self.bn5(x)
-        # x = torch.index_select(x, 0, mut_idx)
+        x = torch.index_select(x, 0, mut_idx)
         x = global_add_pool(x, batch[mut_idx])
         return x
 

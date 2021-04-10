@@ -4,14 +4,28 @@ import pandas as pd
 import numpy as np
 import scipy as sp
 import scipy.stats as stats
+import sklearn.metrics
 import matplotlib.pyplot as plt
 
 
 
-def r2(targets, predict):
+    
+def pearson(targets, predict):
     r = stats.pearsonr(targets, predict)[0]
-    return r**2
+    return r
+    
+def spearman(targets, predict):
+    rho = stats.spearmanr(targets, predict)[0]
+    return rho
+    
+def kendall(targets, predict):
+    tau = stats.kendalltau(targets, predict)[0]
+    return tau
 
+def r2(targets, predict):
+    r = pearson(targets, predict)
+    return r**2
+        
 def mae(targets, predict):
     abs_err = np.abs(targets - predict)
     return np.mean(abs_err)
@@ -19,6 +33,18 @@ def mae(targets, predict):
 def rmse(targets, predict):
     sq_err = ((predict - targets) ** 2)
     return np.sqrt(np.mean(sq_err))
+    
+def auroc(targets, predict):
+    auc = sklearn.metrics.roc_auc_score(targets, predict)
+    return auc
+    
+def auprc(targets, predict):
+    ap = sklearn.metrics.average_precision_score(targets, predict)
+    return ap
+
+def accuracy(targets, predict):
+    ac = sklearn.metrics.accuracy_score(targets, predict)
+    return ac
     
     
 def evaluate_average(results, metric=r2, verbose=True):
