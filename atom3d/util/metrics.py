@@ -1,13 +1,9 @@
 import os, sys
 import pickle
-import pandas as pd
 import numpy as np
 import scipy as sp
 import scipy.stats as stats
 import sklearn.metrics
-import matplotlib.pyplot as plt
-
-
 
     
 def pearson(targets, predict):
@@ -77,7 +73,4 @@ def evaluate_average(results, metric=r2, verbose=True):
         print(' Validation: %7.3f +/- %7.3f'%summary_va)
         print(' Test:       %7.3f +/- %7.3f'%summary_te)
     return summary_tr, summary_va, summary_te
-
-    
-
 

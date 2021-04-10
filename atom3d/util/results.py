@@ -1,12 +1,9 @@
 import os, sys
 import pickle
 import torch
-import pandas as pd
 import numpy as np
 import scipy as sp
 import scipy.stats as stats
-import matplotlib.pyplot as plt
-
 
 
 class Results3DCNN():
@@ -124,30 +121,4 @@ class ResultsENN():
         mae_tr, rmse_tr = np.array(mae_tr), np.array(rmse_tr)
         mae_va, rmse_va = np.array(mae_va), np.array(rmse_va)
         return mae_tr, rmse_tr, mae_va, rmse_va
-
-    def plot_log(self, rep):
-    
-        # Load the Cormorant log
-        mae_tr, rmse_tr, mae_va, rmse_va = self.get_log('log/'+self.name+'-'+rep+'.log')
-    
-        # Create the figure
-        fig, ax = plt.subplots(2, 1, figsize=[4,4], sharex=True, dpi=100)
-        # Plot data
-        epoch = np.arange(1, len(mae_tr)+1)
-        ax[0].plot(epoch, mae_tr, label='training')
-        ax[1].plot(epoch, rmse_tr, label='training') 
-        ax[0].plot(epoch, mae_va, label='validation')
-        ax[1].plot(epoch, rmse_va, label='validation')
-        # Limits
-        ax[0].set_xlim(0, len(mae_tr)+1)
-        #ax[0].set_ylim(0, np.max(mae_tr)+0.05)
-        #ax[1].set_ylim(0, np.max(rmse_tr)+0.05)
-        # Labels
-        ax[0].set_ylabel('MAE')
-        ax[1].set_ylabel('RMSE')
-        ax[1].set_xlabel('epoch')
-        ax[0].legend()
-        ax[1].legend()
-        # Layout
-        fig.tight_layout()
 

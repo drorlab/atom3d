@@ -35,6 +35,7 @@ setup(
         'pandas',
         'python-dotenv>=0.5.1',
         'scipy',
+        'scikit-learn',
         'tables',
         'torch',
         'tqdm',
