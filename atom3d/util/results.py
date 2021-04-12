@@ -77,8 +77,12 @@ class ResultsENN():
         Reads targets and prediction from pt file.
         """
         pr_data = torch.load(prediction_fn)
-        targets = np.array( pr_data['targets']*pr_data['sigma']+pr_data['mu'] )
-        predict = np.array( pr_data['predict']*pr_data['sigma']+pr_data['mu'] )
+        if 'sigma' in pr_data.keys():
+            targets = np.array( pr_data['targets']*pr_data['sigma']+pr_data['mu'] )
+            predict = np.array( pr_data['predict']*pr_data['sigma']+pr_data['mu'] )
+        else:
+            targets = np.array( pr_data['targets'] )
+            predict = np.array( pr_data['predict'] )
         return targets, predict
 
     def get_all_predictions(self):
