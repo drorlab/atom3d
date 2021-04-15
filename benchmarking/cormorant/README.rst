@@ -1,6 +1,10 @@
 Using Cormorant
 ===============
 
+NOTE: 
+All examples here are outdated! They will be removed soon.
+You can find the updated code in the "examples" directory.
+
 
 Installation
 ------------
