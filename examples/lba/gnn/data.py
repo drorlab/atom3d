@@ -26,7 +26,7 @@ class GNNTransformLBA(object):
         
 if __name__=="__main__":
     dataset = LMDBDataset('/scratch/users/aderry/lmdb/atom3d/lba_lmdb/splits/split-by-sequence-identity-30/data/train', transform=GNNTransformLBA())
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=False)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
     # for item in dataset[0]:
     #     print(item, type(dataset[0][item]))
     for item in dataloader:

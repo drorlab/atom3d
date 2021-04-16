@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.spatial as ss
 import torch
+from torch_geometric.utils import to_undirected
 
 import atom3d.util.formats as fo
 
@@ -47,10 +48,11 @@ def prot_df_to_graph(df, feat_col='element', allowable_feats=prot_atoms, edge_di
     kd_tree = ss.KDTree(node_pos)
     edge_tuples = list(kd_tree.query_pairs(edge_dist_cutoff))
     edges = torch.LongTensor(edge_tuples).t().contiguous()
+    edges = to_undirected(edges)
 
     node_feats = torch.FloatTensor([one_of_k_encoding_unk(e, allowable_feats) for e in df[feat_col]])
     edge_weights = torch.FloatTensor(
-        [1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edge_tuples]).view(-1)
+        [1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edges.t()]).view(-1)
     # feats = F.one_hot(elems, num_classes=len(atom_int_dict))
     
     return node_feats, edges, edge_weights, node_pos
@@ -62,6 +64,8 @@ def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=
 
     :param df: Molecule structure in dataframe format
     :type mol: pandas.DataFrame
+    :param bonds: Molecule structure in dataframe format
+    :type bonds: pandas.DataFrame
     :param allowable_atoms: List containing allowable atom types
     :type allowable_atoms: list[str], optional
 
@@ -74,15 +78,17 @@ def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=
     node_pos = torch.FloatTensor(df[['x', 'y', 'z']].to_numpy())
     
     if bonds is not None:
-        bond_data = bonds.to_numpy()
-        edge_tuples = bond_data[:, :2]
-        edge_feats = torch.FloatTensor(bond_data[:,-1]).view(-1)
+        bond_data = torch.FloatTensor(bonds.to_numpy())
+        edge_tuples = torch.cat((bond_data[:, :2], torch.flip(bond_data[:, :2], dims=(1,))), dim=0)
+        edges = edge_tuples.t().long().contiguous()
+        edge_feats = torch.cat((torch.FloatTensor(bond_data[:,-1]).view(-1), torch.FloatTensor(bond_data[:,-1]).view(-1)), dim=0)
     else:
         kd_tree = ss.KDTree(node_pos)
         edge_tuples = list(kd_tree.query_pairs(edge_dist_cutoff))
-        edge_feats = torch.FloatTensor([1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edge_tuples]).view(-1)
+        edges = torch.LongTensor(edge_tuples).t().contiguous()
+        edges = to_undirected(edges)
+        edge_feats = torch.FloatTensor([1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edges.t()]).view(-1)
         
-    edges = torch.LongTensor(edge_tuples).t().contiguous()
     node_feats = torch.FloatTensor([one_of_k_encoding_unk(e, allowable_atoms) for e in df['element']])
 
     return node_feats, edges, edge_feats, node_pos
