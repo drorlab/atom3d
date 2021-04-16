@@ -35,7 +35,7 @@ pip install atom3d
 ## Usage
 
 
-### Downloading and using a dataset
+### Downloading
 
 From python:
 ```
