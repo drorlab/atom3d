@@ -34,14 +34,25 @@ pip install atom3d
 
 ## Usage
 
+
+### Downloading and using a dataset
+
+From python:
+```
+import atom3d.datasets as da
+da.download_dataset('lba', PATH_TO_DATASET) # Download LBA dataset.
+```
+
+Or, download and unzip from the [website](https://www.atom3d.ai/).
+
 ### Loading a dataset
 
 From python:
 ```
 import atom3d.datasets as da
-dataset = da.load_dataset(PATH_TO_INPUT_DIR, {'lmdb', 'pdb','silent','sdf','xyz','xyz-gdb'})
+dataset = da.load_dataset(PATH_TO_DATASET, {'lmdb','pdb','silent','sdf','xyz','xyz-gdb'})
 print(len(dataset))  # Print length
-print(dataset[0].keys())
+print(dataset[0].keys())  # Print keys
 ```
 
 ### LMDB datasets
@@ -53,13 +64,9 @@ single database.  Currently, we support creating LMDB datasets from PDB files, s
 
 From command line:
 ```
-python -m atom3d.datasets PATH_TO_PDB_DIR PATH_TO_LMDB_OUTPUT --filetype {pdb,silent,xyz,xyz-gdb} 
+python -m atom3d.datasets PATH_TO_PDB_DIR PATH_TO_DATASET --filetype {pdb,silent,xyz,xyz-gdb} 
 ```
 
-From C++:
-
- We provide example C++ code to load the LMDB datasets [here](https://github.com/drorlab/atom3d/tree/master/atom3d/cpp/lmdb-reader).
- 
 For more usage, please see the [documentation](https://atom3d.readthedocs.io/en/latest/).
 
 ## Contribute

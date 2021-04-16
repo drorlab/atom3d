@@ -169,11 +169,7 @@ The following examples illustrate some useful functionalities of ATOM3D using a 
 >>> chain_sequences # Contains sequences for all chains/monomers, identified by tuple of (ensemble, subunit, structure, model, chain)
 [(('11as.pdb', '0', '11as.pdb', '1', 'A'), 'AYIAKQRQISFVKS...PAAVRESVPSLLN')]
 
-3. **Get SMILES strings from small molecule structure.**
-
-TODO
-
-4. **Extract all atoms within 5 Angstroms of a ligand**
+3. **Extract all atoms within 5 Angstroms of a ligand**
 
 In this example, the ligand is assumed to be stored as a subunit in the atoms dataframe, under the label "LIG". 
 In practice, the ligand could be stored in different way (e.g. in a separate dataframe or under a different label), depending on how the dataset was constructed.

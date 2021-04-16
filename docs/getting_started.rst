@@ -13,7 +13,7 @@ Install using pip
 """""""""""""""""""
 
   .. code:: bash
-    
+
     pip install atom3d
 
 Install from source
@@ -45,7 +45,30 @@ Model-specific dependencies
 The standard installation described above lets you use all the data loading and processing functions included in ATOM3D. 
 To use the specific machine learning models, additional dependencies can be necessary. We describe these in the `machine learning section <https://atom3d.readthedocs.io/en/latest/training_models.html#model-specific-installation-instructions>`_.
 
+Usage
+*****
 
+Downloading datasets
+""""""""""""""""""""
+
+All datasets can be downloaded in LMDB format from `atom3d.ai <atom3d.ai>`_, or using the Python API:
+
+     .. code:: pycon
+
+        >>> import atom3d.datasets.datasets as da
+        >>> da.download_dataset('lba', PATH_TO_DATASET) # Download LBA dataset
+
+See :doc:`/using_datasets` for more details.
+
+Loading datasets
+""""""""""""""""
+
+.. code:: pycon
+
+    >>> import atom3d.datasets as da
+    >>> dataset = da.load_dataset(PATH_TO_DATASET, 'lmdb') # Load LMDB format dataset
+    >>> print(len(dataset))  # Print length
+    >>> print(dataset[0].keys()) # Print keys stored in first structure
 
 Frequently Asked Questions
 **************************
@@ -98,30 +121,20 @@ Frequently Asked Questions
      
 .. _sec:download-faq:
 
-2. **How do I download the ATOM3D datasets?**
-"""""""""""""""""""""""""""""""""""""""""""""""
-   
-   | All datasets can be downloaded in LMDB format from `atom3d.ai <atom3d.ai>`_, or using the Python API:
-     
-     .. code:: pycon
-   
-        >>> import atom3d.datasets.datasets as da
-        >>> da.download_dataset('lba', '/path/to/target')
-
-3. **Do I have to use the provided train/val/test splits for ATOM3D datasets?**
+2. **Do I have to use the provided train/val/test splits for ATOM3D datasets?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
    | No, you may create your own splitting functions and apply them to any dataset. Please see :doc:`/using_datasets` for more details.
 
 
-4. **What kind of utility functions exist in ATOM3D?**
+3. **What kind of utility functions exist in ATOM3D?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
    | There are functions available for performing many common tasks on macromolecular structure. See the :ref:`usage examples <examples>` for some common use cases, and explore the API documentation to find specific functions. 
 
    | If we are missing a function you think would be useful, please consider :doc:`contributing </contributing>`!
 
-5. **Can I contribute datasets and models back to ATOM3D?**
+4. **Can I contribute datasets and models back to ATOM3D?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
    | Yes!  We are happy to accept new datasets and models!  See :doc:`contributing </contributing>` for details.
