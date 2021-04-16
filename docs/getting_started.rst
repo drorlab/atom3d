@@ -119,13 +119,10 @@ Frequently Asked Questions
      
        Similar to proteins, RNA plays major functional roles (e.g., gene regulation) and can adopt well-defined 3D shapes. However the problem is data-poor, with only a few hundred known structures. PSR contains candidate structures for the first 21 released RNA Puzzle challenges, a blind structure prediction competition for RNA.
      
-.. _sec:download-faq:
-
 2. **Do I have to use the provided train/val/test splits for ATOM3D datasets?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
    | No, you may create your own splitting functions and apply them to any dataset. Please see :doc:`/using_datasets` for more details.
-
 
 3. **What kind of utility functions exist in ATOM3D?**
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
