@@ -15,8 +15,8 @@ class GNNTransformMSP(object):
     def __call__(self, item):
         # transform each atoms df to PTG graphs
         mutation = item['id'].split('_')[-1]
-        orig_df = item['original_atoms']
-        mut_df = item['original_atoms']
+        orig_df = item['original_atoms'].reset_index(drop=True)
+        mut_df = item['mutated_atoms'].reset_index(drop=True)
         orig_idx = self._extract_mut_idx(orig_df, mutation)
         mut_idx = self._extract_mut_idx(mut_df, mutation)
 
@@ -43,19 +43,22 @@ class CollaterMSP(object):
         self.batch_size = batch_size
 
     def collate(self, data_list):
-        batch_1 = self.adjust_graph_indices(Batch.from_data_list([d[0] for d in data_list]))
-        batch_2 = self.adjust_graph_indices(Batch.from_data_list([d[1] for d in data_list]))
+        if len(data_list) != self.batch_size:
+            bs = len(data_list)
+        else:
+            bs = self.batch_size
+        batch_1 = self.adjust_graph_indices(Batch.from_data_list([d[0] for d in data_list]), bs)
+        batch_2 = self.adjust_graph_indices(Batch.from_data_list([d[1] for d in data_list]), bs)
         return batch_1, batch_2
     
-    def adjust_graph_indices(self, graph):
+    def adjust_graph_indices(self, graph, bs):
         total_n = 0
         total_n_mut = 0
         
-        for i in range(self.batch_size-1):
+        for i in range(bs-1):
             n_nodes = graph.n_nodes[i].item()
             total_n += n_nodes
             total_n_mut += graph.num_mut_atoms[i]
-            # mut_start = (i+1)*total_n_mut
             graph.mut_idx[total_n_mut:total_n_mut+graph.num_mut_atoms[i+1]] += total_n
         return graph
 
@@ -64,12 +67,19 @@ class CollaterMSP(object):
 
         
 if __name__=="__main__":
-    dataset = LMDBDataset(os.path.join('/scratch/users/raphtown/atom3d_mirror/lmdb/MSP/splits/split-by-sequence-identity-30/data', 'train'), transform=GNNTransformMSP())
-    dataloader = DataLoader(dataset, batch_size=3, shuffle=True, collate_fn=CollaterMSP(batch_size=3))
-    for original, mutated in dataloader:
-        print(original, mutated)
-        print(original.y)
-        break
-    # for item in dataloader:
+    from tqdm import tqdm
+    # dataset = LMDBDataset(os.path.join('/scratch/users/raphtown/atom3d_mirror/lmdb/MSP/splits/split-by-sequence-identity-30/data', 'train'))
+    # dataloader = DataLoader(dataset, batch_size=3, shuffle=False, num_workers=4)
+    # for i, item in tqdm(enumerate(dataloader)):
+    #     if i < 578:
+    #         continue
     #     print(item)
-    #     break
+        
+    
+    dataset = LMDBDataset(os.path.join('/scratch/users/raphtown/atom3d_mirror/lmdb/MSP/splits/split-by-sequence-identity-30/data', 'train'), transform=GNNTransformMSP())
+    dataloader = DataLoader(dataset, batch_size=3, shuffle=False, collate_fn=CollaterMSP(batch_size=3), num_workers=4)
+    for original, mutated in tqdm(dataloader):
+        if mutated.mut_idx.max() > mutated.batch.shape[0]:
+            print(mutated.batch.shape)
+            print(mutated.mut_idx)
+            break

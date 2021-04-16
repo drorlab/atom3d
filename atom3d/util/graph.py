@@ -58,12 +58,10 @@ def prot_df_to_graph(df, feat_col='element', allowable_feats=prot_atoms, edge_di
 
 def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=4.5):
     """
-    Converts molecule to a graph compatible with Pytorch-Geometric
+    Converts molecule in dataframe to a graph compatible with Pytorch-Geometric
 
-    TODO: Change to operate on dataframe representation instead of Mol object
-
-    :param mol: Molecule structure in RDKit format
-    :type mol: rdkit.Chem.rdchem.Mol
+    :param df: Molecule structure in dataframe format
+    :type mol: pandas.DataFrame
     :param allowable_atoms: List containing allowable atom types
     :type allowable_atoms: list[str], optional
 

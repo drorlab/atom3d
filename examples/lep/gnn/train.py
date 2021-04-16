@@ -17,6 +17,7 @@ from atom3d.datasets import LMDBDataset
 from scipy.stats import spearmanr
 from sklearn.metrics import roc_auc_score, average_precision_score
 
+
 def train_loop(epoch, gcn_model, ff_model, loader, criterion, optimizer, device):
     gcn_model.train()
     ff_model.train()

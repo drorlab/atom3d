@@ -31,7 +31,7 @@ def main(lmdb_list, output_lmdb, append):
     with env.begin(write=True) as txn:
         id_to_idx = {}
         i = max_i + 1
-        for db_idx, db in enumerate(lmdb_list[16:]):
+        for db_idx, db in enumerate(lmdb_list):
             logger.info(f'on database {db_idx + 1} of {len(lmdb_list)}')
             
             dataset = LMDBDataset(db)
