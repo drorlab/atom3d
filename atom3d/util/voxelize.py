@@ -55,7 +55,6 @@ def intersperse(*sequences):
         yield x
 
 
-
 def rot_mats(config):
     # Generate the rotation matrices.
     if '_rot_mats' not in rot_mats.__dict__:

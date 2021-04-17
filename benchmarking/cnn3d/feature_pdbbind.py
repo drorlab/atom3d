@@ -49,7 +49,6 @@ def read_split(split_filename):
 
 
 def df_to_feature(struct_df, grid_config, random_seed=None):
-    pos = struct_df[['x', 'y', 'z']].astype(np.float32)
     # Use center of ligand for subgrid center
     ligand_pos = struct_df[struct_df.chain == 'LIG'][['x', 'y', 'z']].astype(
         np.float32)
