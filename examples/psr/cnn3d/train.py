@@ -4,7 +4,6 @@ import json
 import os
 import time
 import tqdm
-import gc
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -67,9 +66,6 @@ def train_loop(model, loader, optimizer, device):
             # stats
             t.set_description(progress_format.format(np.sqrt(loss_all/total)))
             t.update(1)
-        # Clean up garbage and empty CUDA memory
-        gc.collect()
-        torch.cuda.empty_cache()
 
     return np.sqrt(loss_all / total)
 

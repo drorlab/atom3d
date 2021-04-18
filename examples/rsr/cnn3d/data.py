@@ -26,7 +26,7 @@ class CNN3D_TransformRSR(object):
             # Radius of the grids to generate, in angstroms.
             'radius': 50.0,
             # Resolution of each voxel, in angstroms.
-            'resolution': 1.0,
+            'resolution': 1.5,
             # Number of directions to apply for data augmentation.
             'num_directions': 20,
             # Number of rolls to apply for data augmentation.
