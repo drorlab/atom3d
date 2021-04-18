@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class CNN3D_LBA(nn.Module):
     def __init__(self, in_channels, spatial_size,
-                 conv_drop_rate, fc_drop_rate, top_nn_drop_rate,
+                 conv_drop_rate, fc_drop_rate,
                  conv_filters, conv_kernel_size,
                  max_pool_positions, max_pool_sizes, max_pool_strides,
                  fc_units,
@@ -23,14 +23,12 @@ class CNN3D_LBA(nn.Module):
             )
 
         layers = []
-        self._add_fc_batch_norm_dropout(out_features, 1, batch_norm, dropout,
-                                        top_nn_drop_rate, layers)
-        if len(layers) > 0:
-            model = nn.Sequential(
-                model,
-                nn.Sequential(*layers)
+        self._add_fc_batch_norm_dropout(out_features, 1, False, dropout,
+                                        fc_drop_rate, layers, activation=None)
+        self.model = nn.Sequential(
+            model,
+            nn.Sequential(*layers)
             )
-        self.model = model
 
     def base_network(self, in_channels, spatial_size,
                      conv_drop_rate, fc_drop_rate,
@@ -63,7 +61,8 @@ class CNN3D_LBA(nn.Module):
         in_features = in_channels * (spatial_size**3)
         # FC layers.
         for units in fc_units:
-            self._add_fc_batch_norm_dropout(in_features, units, batch_norm, dropout, fc_drop_rate, layers)
+            self._add_fc_batch_norm_dropout(in_features, units, batch_norm, dropout,
+                                            fc_drop_rate, layers)
             in_features = units
 
         model = nn.Sequential(*layers)

@@ -34,7 +34,6 @@ def conv_model(in_channels, spatial_size, args):
         in_channels, spatial_size,
         args.conv_drop_rate,
         args.fc_drop_rate,
-        args.top_nn_drop_rate,
         conv_filters, conv_kernel_size,
         max_pool_positions,
         max_pool_sizes, max_pool_strides,
@@ -152,14 +151,16 @@ def train(args, device, test_mode=False):
         train_loss = train_loop(model, train_loader, optimizer, device)
         val_loss, r_p, r_s, val_df = test(model, val_loader, device)
         if val_loss < best_val_loss:
+            print(f"Save model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
+                  f"best_val_loss: {best_val_loss:.4f}")
             save_weights(model, os.path.join(args.output_dir, f'best_weights.pt'))
-            plot_corr(val_df['true'], val_df['pred'],
-                      os.path.join(args.output_dir, f'corr_val-epoch_{epoch:}.png'))
+            #plot_corr(val_df['true'], val_df['pred'],
+            #          os.path.join(args.output_dir, f'corr_val-epoch_{epoch:}.png'))
             best_val_loss = val_loss
             best_rp = r_p
             best_rs = r_s
         elapsed = (time.time() - start)
-        print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
+        print('Epoch {:03d} finished in : {:.3f} s'.format(epoch, elapsed))
         print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Pearson R: {:.7f}, Spearman R: {:.7f}'.format(
             train_loss, val_loss, r_p, r_s))
 
@@ -167,8 +168,8 @@ def train(args, device, test_mode=False):
         model.load_state_dict(torch.load(os.path.join(args.output_dir, f'best_weights.pt')))
         rmse, pearson, spearman, test_df = test(model, test_loader, device)
         test_df.to_pickle(os.path.join(args.output_dir, 'test_results.pkl'))
-        plot_corr(test_df['true'], test_df['pred'],
-                  os.path.join(args.output_dir, f'corr_test.png'))
+        #plot_corr(test_df['true'], test_df['pred'],
+        #          os.path.join(args.output_dir, f'corr_test.png'))
         print('Test RMSE: {:.7f}, Pearson R: {:.7f}, Spearman R: {:.7f}'.format(
             rmse, pearson, spearman))
         test_file = os.path.join(args.output_dir, f'test_results.txt')
@@ -190,7 +191,6 @@ if __name__=="__main__":
     parser.add_argument('--learning_rate', type=float, default=1e-4)
     parser.add_argument('--conv_drop_rate', type=float, default=0.1)
     parser.add_argument('--fc_drop_rate', type=float, default=0.25)
-    parser.add_argument('--top_nn_drop_rate', type=float, default=0.5)
     parser.add_argument('--num_epochs', type=int, default=50)
 
     parser.add_argument('--num_conv', type=int, default=4)
