@@ -20,6 +20,47 @@ from model import CNN3D_RSR
 from data import CNN3D_TransformRSR
 
 
+def compute_correlations(results):
+    per_target = []
+    for key, val in results.groupby(['target']):
+        # Ignore target with 2 decoys only since the correlations are
+        # not really meaningful.
+        if val.shape[0] < 3:
+            continue
+        true = val['true'].astype(float)
+        pred = val['pred'].astype(float)
+        pearson = true.corr(pred, method='pearson')
+        kendall = true.corr(pred, method='kendall')
+        spearman = true.corr(pred, method='spearman')
+        per_target.append((key, pearson, kendall, spearman))
+    per_target = pd.DataFrame(
+        data=per_target,
+        columns=['target', 'pearson', 'kendall', 'spearman'])
+
+    res = {}
+    all_true = results['true'].astype(float)
+    all_pred = results['pred'].astype(float)
+    res['all_pearson'] = all_true.corr(all_pred, method='pearson')
+    res['all_kendall'] = all_true.corr(all_pred, method='kendall')
+    res['all_spearman'] = all_true.corr(all_pred, method='spearman')
+
+    res['per_target_pearson'] = per_target['pearson'].mean()
+    res['per_target_kendall'] = per_target['kendall'].mean()
+    res['per_target_spearman'] = per_target['spearman'].mean()
+
+    print(
+        '\nCorrelations (Pearson, Kendall, Spearman)\n'
+        '    per-target: ({:.3f}, {:.3f}, {:.3f})\n'
+        '    global    : ({:.3f}, {:.3f}, {:.3f})'.format(
+        float(res["per_target_pearson"]),
+        float(res["per_target_kendall"]),
+        float(res["per_target_spearman"]),
+        float(res["all_pearson"]),
+        float(res["all_kendall"]),
+        float(res["all_spearman"])))
+    return res
+
+
 # Construct model
 def conv_model(in_channels, spatial_size, args):
     num_conv = args.num_conv
@@ -76,7 +117,8 @@ def test(model, loader, device):
 
     losses = []
 
-    ids = []
+    targets = []
+    decoys = []
     y_true = []
     y_pred = []
 
@@ -86,18 +128,18 @@ def test(model, loader, device):
         output = model(feature)
         batch_losses = F.mse_loss(output, label, reduction='none')
         losses.extend(batch_losses.tolist())
-        ids.extend(data['id'])
+        targets.extend(data['target'])
+        decoys.extend(data['decoy'])
         y_true.extend(label.tolist())
         y_pred.extend(output.tolist())
 
     results_df = pd.DataFrame(
-        np.array([ids, y_true, y_pred]).T,
-        columns=['structure', 'true', 'pred'],
+        np.array([targets, decoys, y_true, y_pred]).T,
+        columns=['target', 'decoy', 'true', 'pred'],
         )
-    r_p = np.corrcoef(y_true, y_pred)[0,1]
-    r_s = spearmanr(y_true, y_pred)[0]
 
-    return np.sqrt(np.mean(losses)), r_p, r_s, results_df
+    corrs = compute_correlations(results_df)
+    return np.sqrt(np.mean(losses)), corrs, results_df
 
 
 def plot_corr(y_true, y_pred, plot_dir):
@@ -141,15 +183,14 @@ def train(args, device, test_mode=False):
     model.to(device)
 
     best_val_loss = np.Inf
-    best_rp = 0
-    best_rs = 0
+    best_corrs = None
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     for epoch in range(1, args.num_epochs+1):
         start = time.time()
         train_loss = train_loop(model, train_loader, optimizer, device)
-        val_loss, r_p, r_s, val_df = test(model, val_loader, device)
+        val_loss, corrs, val_df = test(model, val_loader, device)
         if val_loss < best_val_loss:
             print(f"Save model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
                   f"best_val_loss: {best_val_loss:.4f}")
@@ -157,27 +198,26 @@ def train(args, device, test_mode=False):
             #plot_corr(val_df['true'], val_df['pred'],
             #          os.path.join(args.output_dir, f'corr_val-epoch_{epoch:}.png'))
             best_val_loss = val_loss
-            best_rp = r_p
-            best_rs = r_s
+            best_corrs = corrs
         elapsed = (time.time() - start)
         print('Epoch {:03d} finished in : {:.3f} s'.format(epoch, elapsed))
-        print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Pearson R: {:.7f}, Spearman R: {:.7f}'.format(
-            train_loss, val_loss, r_p, r_s))
+        print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
+            train_loss, val_loss, corrs['per_target_spearman'], corrs['all_spearman']))
 
     if test_mode:
         model.load_state_dict(torch.load(os.path.join(args.output_dir, f'best_weights.pt')))
-        rmse, pearson, spearman, test_df = test(model, test_loader, device)
+        rmse, corrs, test_df = test(model, test_loader, device)
         test_df.to_pickle(os.path.join(args.output_dir, 'test_results.pkl'))
         #plot_corr(test_df['true'], test_df['pred'],
         #          os.path.join(args.output_dir, f'corr_test.png'))
-        print('Test RMSE: {:.7f}, Pearson R: {:.7f}, Spearman R: {:.7f}'.format(
-            rmse, pearson, spearman))
+        print('Test RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
+            rmse, corrs['per_target_spearman'], corrs['all_spearman']))
         test_file = os.path.join(args.output_dir, f'test_results.txt')
         with open(test_file, 'a+') as out:
             out.write('{}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(
-                args.random_seed, rmse, pearson, spearman))
+                args.random_seed, rmse, corrs['per_target_spearman'], corrs['all_spearman']))
 
-    return best_val_loss, best_rp, best_rs
+    return best_val_loss, best_corrs['per_target_spearman'], best_corrs['all_spearman']
 
 
 if __name__=="__main__":
@@ -205,7 +245,7 @@ if __name__=="__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set up output dir
-    args.output_dir = os.path.join(args.output_dir, 'lba')
+    args.output_dir = os.path.join(args.output_dir, 'rsr')
     assert args.output_dir != None
     if args.unobserved:
         args.output_dir = os.path.join(args.output_dir, 'None')

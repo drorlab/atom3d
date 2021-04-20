@@ -188,7 +188,7 @@ if __name__=="__main__":
     parser.add_argument('--output_dir', type=str, default=os.environ['LOG_DIR'])
     parser.add_argument('--unobserved', action='store_true', default=False)
 
-    parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--conv_drop_rate', type=float, default=0.1)
     parser.add_argument('--fc_drop_rate', type=float, default=0.25)
     parser.add_argument('--num_epochs', type=int, default=50)
