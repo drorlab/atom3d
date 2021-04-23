@@ -433,7 +433,7 @@ def make_lmdb_dataset(dataset, output_lmdb,
 
     logger.info(f'{num_examples} examples')
 
-    env = lmdb.open(str(output_lmdb), map_size=int(1e12))
+    env = lmdb.open(str(output_lmdb), map_size=int(1e13))
 
     with env.begin(write=True) as txn:
         try:

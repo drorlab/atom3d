@@ -89,7 +89,7 @@ def test(model, loader, device):
         # total += data.num_graphs
         y_true.extend([x.item() for x in data.y])
         y_pred.extend(output.tolist())
-        structs.extend(f'{data.target}/{data.decoy}.pdb')
+        structs.extend([f'{t}/{d}.pdb' for t,d in zip(data.target, data.decoy)])
         if it % print_frequency == 0:
             print(f'iter {it}, loss {np.mean(losses)}')
 

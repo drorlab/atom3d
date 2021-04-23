@@ -12,7 +12,7 @@ class GNNTransformRSR(object):
     def __call__(self, item):
         item = prot_graph_transform(item, ['atoms'], 'scores')
         graph = item['atoms']
-        graph.y = torch.FloatTensor([graph.y['score']])
+        graph.y = torch.FloatTensor([graph.y['rms']])
         return graph
     
 
