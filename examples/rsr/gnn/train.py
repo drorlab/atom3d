@@ -134,7 +134,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     model.to(device)
 
     best_val_loss = 999
-    best_rs = None
+    best_rs = 0
 
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
