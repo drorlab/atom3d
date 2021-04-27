@@ -153,16 +153,16 @@ def train(args, device, log_dir, seed=None, test_mode=False):
         start = time.time()
         train_loss = train_loop(model, train_loader, optimizer, device)
         print('validating...')
-        val_loss, res, test_df = test(model, val_loader, device)
+        val_loss, corrs, test_df = test(model, val_loader, device)
         scheduler.step(val_loss)
-        if res['all_spearman'] > best_rs:
+        if corrs['all_spearman'] > best_rs:
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': train_loss,
                 }, os.path.join(log_dir, f'best_weights.pt'))
-            best_rs = res['all_spearman']
+            best_rs = corrs['all_spearman']
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
         print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
@@ -171,12 +171,11 @@ def train(args, device, log_dir, seed=None, test_mode=False):
     if test_mode:
         test_file = os.path.join(log_dir, f'test_results.txt')
         model.load_state_dict(torch.load(os.path.join(log_dir, f'best_weights.pt')))
-        val_loss, res, test_df = test(model, val_loader, device)
+        test_loss, corrs, test_df = test(model, val_loader, device)
         print('Test RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
-            rmse, corrs['per_target_spearman'], corrs['all_spearman']))
+            test_loss, corrs['per_target_spearman'], corrs['all_spearman']))
         test_df.to_csv(test_file)
 
-    return best_val_loss, best_rp, best_rs
 
 
 if __name__=="__main__":

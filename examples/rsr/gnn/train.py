@@ -134,7 +134,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     model.to(device)
 
     best_val_loss = 999
-    best_corrs = None
+    best_rs = None
 
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
@@ -143,11 +143,14 @@ def train(args, device, log_dir, rep=None, test_mode=False):
         start = time.time()
         train_loss = train_loop(model, train_loader, optimizer, device)
         val_loss, corrs, results_df = test(model, val_loader, device)
-        if val_loss < best_val_loss:
-            save_weights(model, os.path.join(log_dir, f'best_weights.pt'))
-            # plot_corr(y_true, y_pred, os.path.join(log_dir, f'corr_{split}.png'))
-            best_val_loss = val_loss
-            best_corrs = corrs
+        if corrs['all_spearman'] > best_rs:
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': train_loss,
+                }, os.path.join(log_dir, f'best_weights.pt'))
+            best_rs = corrs['all_spearman']
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
         print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
