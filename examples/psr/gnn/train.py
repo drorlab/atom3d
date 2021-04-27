@@ -16,7 +16,7 @@ from data import GNNTransformPSR
 from atom3d.datasets import LMDBDataset
 import atom3d.datasets.psr.util as psr_util
 
-def compute_global_correlations(results):
+def compute_correlations(results):
     per_target = []
     for key, val in results.groupby(['target']):
         # Ignore target with 2 decoys only since the correlations are
@@ -33,7 +33,6 @@ def compute_global_correlations(results):
         data=per_target,
         columns=['target', 'pearson', 'kendall', 'spearman'])
 
-    # Save metrics.
     res = {}
     all_true = results['true'].astype(float)
     all_pred = results['pred'].astype(float)
@@ -41,13 +40,20 @@ def compute_global_correlations(results):
     res['all_kendall'] = all_true.corr(all_pred, method='kendall')
     res['all_spearman'] = all_true.corr(all_pred, method='spearman')
 
-    res['per_target_mean_pearson'] = per_target['pearson'].mean()
-    res['per_target_mean_kendall'] = per_target['kendall'].mean()
-    res['per_target_mean_spearman'] = per_target['spearman'].mean()
+    res['per_target_pearson'] = per_target['pearson'].mean()
+    res['per_target_kendall'] = per_target['kendall'].mean()
+    res['per_target_spearman'] = per_target['spearman'].mean()
 
-    res['per_target_median_pearson'] = per_target['pearson'].median()
-    res['per_target_median_kendall'] = per_target['kendall'].median()
-    res['per_target_median_spearman'] = per_target['spearman'].median()
+    print(
+        '\nCorrelations (Pearson, Kendall, Spearman)\n'
+        '    per-target: ({:.3f}, {:.3f}, {:.3f})\n'
+        '    global    : ({:.3f}, {:.3f}, {:.3f})'.format(
+        float(res["per_target_pearson"]),
+        float(res["per_target_kendall"]),
+        float(res["per_target_spearman"]),
+        float(res["all_pearson"]),
+        float(res["all_kendall"]),
+        float(res["all_spearman"])))
     return res
 
 def train_loop(model, loader, optimizer, device):
@@ -76,7 +82,8 @@ def test(model, loader, device):
 
     y_true = []
     y_pred = []
-    structs = []
+    targets = []
+    decoys = []
 
     print_frequency = 10
 
@@ -89,18 +96,17 @@ def test(model, loader, device):
         # total += data.num_graphs
         y_true.extend([x.item() for x in data.y])
         y_pred.extend(output.tolist())
-        structs.extend([f'{t}/{d}.pdb' for t,d in zip(data.target, data.decoy)])
+        targets.extend(data.target)
+        decoys.extend(data.decoy)
         if it % print_frequency == 0:
             print(f'iter {it}, loss {np.mean(losses)}')
 
     test_df = pd.DataFrame(
-        np.array([structs, y_true, y_pred]).T,
-        columns=['structure', 'true', 'pred'],
+        np.array([targets, decoys, y_true, y_pred]).T,
+        columns=['target', 'decoy', 'true', 'pred'],
         )
-    test_df['target'] = test_df.structure.apply(
-        lambda x: psr_util.get_target_name(x))
     
-    res = compute_global_correlations(test_df)
+    res = compute_correlations(test_df)
 
     return np.mean(losses), res, test_df
 
@@ -159,39 +165,15 @@ def train(args, device, log_dir, seed=None, test_mode=False):
             best_rs = res['all_spearman']
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
-        print(
-            '\nVal Correlations (Pearson, Kendall, Spearman)\n'
-            '    per-target averaged median: ({:.3f}, {:.3f}, {:.3f})\n'
-            '    per-target averaged mean: ({:.3f}, {:.3f}, {:.3f})\n'
-            '    all averaged: ({:.3f}, {:.3f}, {:.3f})'.format(
-            float(res["per_target_median_pearson"]),
-            float(res["per_target_median_kendall"]),
-            float(res["per_target_median_spearman"]),
-            float(res["per_target_mean_pearson"]),
-            float(res["per_target_mean_kendall"]),
-            float(res["per_target_mean_spearman"]),
-            float(res["all_pearson"]),
-            float(res["all_kendall"]),
-            float(res["all_spearman"])))
+        print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
+            train_loss, val_loss, corrs['per_target_spearman'], corrs['all_spearman']))
 
     if test_mode:
         test_file = os.path.join(log_dir, f'test_results.txt')
         model.load_state_dict(torch.load(os.path.join(log_dir, f'best_weights.pt')))
         val_loss, res, test_df = test(model, val_loader, device)
-        print(
-            '\nTest Correlations (Pearson, Kendall, Spearman)\n'
-            '    per-target averaged median: ({:.3f}, {:.3f}, {:.3f})\n'
-            '    per-target averaged mean: ({:.3f}, {:.3f}, {:.3f})\n'
-            '    all averaged: ({:.3f}, {:.3f}, {:.3f})'.format(
-            float(res["per_target_median_pearson"]),
-            float(res["per_target_median_kendall"]),
-            float(res["per_target_median_spearman"]),
-            float(res["per_target_mean_pearson"]),
-            float(res["per_target_mean_kendall"]),
-            float(res["per_target_mean_spearman"]),
-            float(res["all_pearson"]),
-            float(res["all_kendall"]),
-            float(res["all_spearman"])))
+        print('Test RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
+            rmse, corrs['per_target_spearman'], corrs['all_spearman']))
         test_df.to_csv(test_file)
 
     return best_val_loss, best_rp, best_rs
