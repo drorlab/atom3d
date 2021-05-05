@@ -175,7 +175,9 @@ def _recognized(x, dict):
 
 
 def num_channels(config):
-    return num_element_types(config)
+    # Multiple elements may be mapped to the same encoding, so we 
+    # need to take the max + 1 (assume encoding starts from 0)
+    return max(config.element_mapping.values()) + 1
 
 
 def num_element_types(config):
