@@ -5,59 +5,45 @@ import os
 import time
 import tqdm
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
+import sklearn.metrics as sm
+
 import torch
-import torch.nn.functional as F
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from atom3d.datasets import LMDBDataset
 from scipy.stats import spearmanr
 
 from model import CNN3D_LEP
-from data import CNN3D_TransformLEP
+from data import CNN3D_TransformLEP, create_balanced_sampler
 
 
-def compute_correlations(results):
-    per_target = []
-    for key, val in results.groupby(['target']):
-        # Ignore target with 2 decoys only since the correlations are
-        # not really meaningful.
-        if val.shape[0] < 3:
-            continue
-        true = val['true'].astype(float)
-        pred = val['pred'].astype(float)
-        pearson = true.corr(pred, method='pearson')
-        kendall = true.corr(pred, method='kendall')
-        spearman = true.corr(pred, method='spearman')
-        per_target.append((key, pearson, kendall, spearman))
-    per_target = pd.DataFrame(
-        data=per_target,
-        columns=['target', 'pearson', 'kendall', 'spearman'])
+def major_vote(results):
+    data = []
+    for ensemble, df in results.groupby('id'):
+        true = int(df['true'].unique()[0])
+        num_zeros = np.sum(df['pred'] == 0)
+        num_ones = np.sum(df['pred'] == 1)
+        majority_pred = int(df['pred'].mode().values[0])
+        avg_prob = df['prob'].astype(np.float).mean()
+        data.append([ensemble, true, majority_pred, avg_prob, num_zeros, num_ones])
+    vote_df = pd.DataFrame(data, columns=['id', 'true', 'pred', 'avg_prob',
+                                          'num_pred_zeros', 'num_pred_ones'])
+    return vote_df
 
+
+def compute_stats(df):
+    results = major_vote(df)
     res = {}
-    all_true = results['true'].astype(float)
-    all_pred = results['pred'].astype(float)
-    res['all_pearson'] = all_true.corr(all_pred, method='pearson')
-    res['all_kendall'] = all_true.corr(all_pred, method='kendall')
-    res['all_spearman'] = all_true.corr(all_pred, method='spearman')
-
-    res['per_target_pearson'] = per_target['pearson'].mean()
-    res['per_target_kendall'] = per_target['kendall'].mean()
-    res['per_target_spearman'] = per_target['spearman'].mean()
-
-    print(
-        '\nCorrelations (Pearson, Kendall, Spearman)\n'
-        '    per-target: ({:.3f}, {:.3f}, {:.3f})\n'
-        '    global    : ({:.3f}, {:.3f}, {:.3f})'.format(
-        float(res["per_target_pearson"]),
-        float(res["per_target_kendall"]),
-        float(res["per_target_spearman"]),
-        float(res["all_pearson"]),
-        float(res["all_kendall"]),
-        float(res["all_spearman"])))
+    all_true = results['true'].astype(np.int8)
+    all_pred = results['pred'].astype(np.int8)
+    res['auroc'] = sm.roc_auc_score(all_true, all_pred)
+    res['auprc'] = sm.average_precision_score(all_true, all_pred)
+    res['acc'] = sm.accuracy_score(all_true, all_pred.round())
+    res['bal_acc'] = \
+        sm.balanced_accuracy_score(all_true, all_pred.round())
     return res
 
 
@@ -70,84 +56,88 @@ def conv_model(in_channels, spatial_size, args):
     max_pool_sizes = [2]*num_conv
     max_pool_strides = [2]*num_conv
     fc_units = [512]
+    top_fc_units = [512]*args.num_final_fc_layers
 
     model = CNN3D_LEP(
         in_channels, spatial_size,
         args.conv_drop_rate,
         args.fc_drop_rate,
+        args.top_nn_drop_rate,
         conv_filters, conv_kernel_size,
         max_pool_positions,
         max_pool_sizes, max_pool_strides,
         fc_units,
+        top_fc_units,
         batch_norm=args.batch_norm,
         dropout=not args.no_dropout)
     return model
 
 
-def train_loop(model, loader, optimizer, device):
+def train_loop(model, loader, repeat_gen, criterion, optimizer, device):
     model.train()
 
     loss_all = 0
     total = 0
-    epoch_loss = 0
     progress_format = 'train loss: {:6.6f}'
-    with tqdm.tqdm(total=len(loader), desc=progress_format.format(0)) as t:
-        for i, data in enumerate(loader):
-            feature = data['feature'].to(device).to(torch.float32)
-            label = data['label'].to(device).to(torch.float32)
-            # zero the parameter gradients
-            optimizer.zero_grad()
-            # forward + backward + optimize
-            output = model(feature)
-            loss = F.mse_loss(output, label)
-            loss.backward()
-            loss_all += loss.item() * len(label)
-            total += len(label)
-            optimizer.step()
-            # stats
-            t.set_description(progress_format.format(np.sqrt(loss_all/total)))
-            t.update(1)
+    with tqdm.tqdm(total=repeat_gen*len(loader), desc=progress_format.format(0)) as t:
+        for _ in range(repeat_gen):
+            for i, data in enumerate(loader):
+                feature_inactive = data['feature_inactive'].to(device).to(torch.float32)
+                feature_active = data['feature_active'].to(device).to(torch.float32)
+                labels = data['label'].to(device).to(torch.float32)
+                # zero the parameter gradients
+                optimizer.zero_grad()
+                # forward + backward + optimize
+                output = model(feature_inactive, feature_active)
+                loss = criterion(output, labels)
+                loss.backward()
+                loss_all += loss.item() * len(labels)
+                total += len(labels)
+                optimizer.step()
+                # stats
+                t.set_description(progress_format.format(np.sqrt(loss_all/total)))
+                t.update(1)
 
     return np.sqrt(loss_all / total)
 
 
 @torch.no_grad()
-def test(model, loader, device):
+def test(model, loader, repeat_gen, criterion, device):
     model.eval()
 
-    losses = []
+    loss_all = 0
+    total = 0
 
-    targets = []
-    decoys = []
+    ids = []
     y_true = []
+    y_probs = []
     y_pred = []
 
-    for data in loader:
-        feature = data['feature'].to(device).to(torch.float32)
-        label = data['label'].to(device).to(torch.float32)
-        output = model(feature)
-        batch_losses = F.mse_loss(output, label, reduction='none')
-        losses.extend(batch_losses.tolist())
-        targets.extend(data['target'])
-        decoys.extend(data['decoy'])
-        y_true.extend(label.tolist())
-        y_pred.extend(output.tolist())
+    for _ in range(repeat_gen):
+        for data in loader:
+            feature_inactive = data['feature_inactive'].to(device).to(torch.float32)
+            feature_active = data['feature_active'].to(device).to(torch.float32)
+            labels = data['label'].to(device).to(torch.float32)
+            output = model(feature_inactive, feature_active)
+
+            loss = criterion(output, labels)
+            loss_all += loss.item() * len(labels)
+            total += len(labels)
+
+            ids.extend(data['id'])
+            y_true.extend(labels.int().tolist())
+            y_probs.extend(output.tolist())
+
+            preds = torch.round(output).int()
+            y_pred.extend(preds.tolist())
 
     results_df = pd.DataFrame(
-        np.array([targets, decoys, y_true, y_pred]).T,
-        columns=['target', 'decoy', 'true', 'pred'],
+        np.array([ids, y_true, y_probs, y_pred]).T,
+        columns=['id', 'true', 'prob', 'pred'],
         )
 
-    corrs = compute_correlations(results_df)
-    return np.sqrt(np.mean(losses)), corrs, results_df
-
-
-def plot_corr(y_true, y_pred, plot_dir):
-    plt.clf()
-    sns.scatterplot(y_true, y_pred)
-    plt.xlabel('Actual -log(K)')
-    plt.ylabel('Predicted -log(K)')
-    plt.savefig(plot_dir)
+    stats = compute_stats(results_df)
+    return np.sqrt(loss_all / total), stats, results_df
 
 
 def save_weights(model, weight_dir):
@@ -169,12 +159,14 @@ def train(args, device, test_mode=False):
     val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'), transform=CNN3D_TransformLEP())
     test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'), transform=CNN3D_TransformLEP())
 
-    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, args.batch_size,
+                              sampler=create_balanced_sampler(train_dataset))
+    val_loader = DataLoader(val_dataset, args.batch_size,
+                            sampler=create_balanced_sampler(val_dataset))
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False)
 
     for data in train_loader:
-        in_channels, spatial_size = data['feature'].size()[1:3]
+        in_channels, spatial_size = data['feature_inactive'].size()[1:3]
         print('num channels: {:}, spatial size: {:}'.format(in_channels, spatial_size))
         break
 
@@ -182,42 +174,49 @@ def train(args, device, test_mode=False):
     print(model)
     model.to(device)
 
+    prev_val_loss = np.Inf
     best_val_loss = np.Inf
-    best_corrs = None
+    best_val_auroc = 0
+    best_stats = None
 
+    criterion = nn.BCELoss()
+    criterion.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     for epoch in range(1, args.num_epochs+1):
         start = time.time()
-        train_loss = train_loop(model, train_loader, optimizer, device)
-        val_loss, corrs, val_df = test(model, val_loader, device)
+        train_loss = train_loop(model, train_loader, args.repeat_gen, criterion,
+                                optimizer, device)
+        val_loss, stats, val_df = test(model, val_loader, args.repeat_gen,
+                                       criterion, device)
+        elapsed = (time.time() - start)
+        print(f'Epoch {epoch:03d} finished in : {elapsed:.3f} s')
+        print(f"\tTrain loss {train_loss:.4f}, Val loss: {val_loss:.4f}, "
+              f"Val AUROC: {stats['auroc']:.4f}, Val AUPRC: {stats['auroc']:.4f}")
+        #if stats['auroc'] > best_val_auroc:
         if val_loss < best_val_loss:
             print(f"Save model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
-                  f"best_val_loss: {best_val_loss:.4f}")
+                  f"auroc: {stats['auroc']:.4f}, auprc: {stats['auroc']:.4f}")
             save_weights(model, os.path.join(args.output_dir, f'best_weights.pt'))
-            #plot_corr(val_df['true'], val_df['pred'],
-            #          os.path.join(args.output_dir, f'corr_val-epoch_{epoch:}.png'))
             best_val_loss = val_loss
-            best_corrs = corrs
-        elapsed = (time.time() - start)
-        print('Epoch {:03d} finished in : {:.3f} s'.format(epoch, elapsed))
-        print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
-            train_loss, val_loss, corrs['per_target_spearman'], corrs['all_spearman']))
+            best_val_auroc = stats['auroc']
+            best_stats = stats
+        if args.early_stopping and val_loss >= prev_val_loss:
+            print(f"Validation loss stopped decreasing, stopping at epoch {epoch:03d}...")
+            break
+        prev_val_loss = val_loss
 
     if test_mode:
         model.load_state_dict(torch.load(os.path.join(args.output_dir, f'best_weights.pt')))
-        rmse, corrs, test_df = test(model, test_loader, device)
+        test_loss, stats, test_df = test(model, test_loader, args.repeat_gen,
+                                         criterion, device)
         test_df.to_pickle(os.path.join(args.output_dir, 'test_results.pkl'))
-        #plot_corr(test_df['true'], test_df['pred'],
-        #          os.path.join(args.output_dir, f'corr_test.png'))
-        print('Test RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
-            rmse, corrs['per_target_spearman'], corrs['all_spearman']))
+        print(f"Test loss: {test_loss:.4f}, Test AUROC: {stats['auroc']:.4f}, "
+              f"Test AUPRC: {stats['auprc']:.4f}")
         test_file = os.path.join(args.output_dir, f'test_results.txt')
-        with open(test_file, 'a+') as out:
-            out.write('{}\t{:.7f}\t{:.7f}\t{:.7f}\n'.format(
-                args.random_seed, rmse, corrs['per_target_spearman'], corrs['all_spearman']))
-
-    return best_val_loss, best_corrs['per_target_spearman'], best_corrs['all_spearman']
+        with open(test_file, 'w') as f:
+            f.write(f"test_loss\tAUROC\tAUPRC\n")
+            f.write(f"{test_loss:}\t{stats['auroc']:}\t{stats['auprc']:}\n")
 
 
 if __name__=="__main__":
@@ -228,16 +227,20 @@ if __name__=="__main__":
     parser.add_argument('--output_dir', type=str, default=os.environ['LOG_DIR'])
     parser.add_argument('--unobserved', action='store_true', default=False)
 
-    parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--learning_rate', type=float, default=0.00001)
     parser.add_argument('--conv_drop_rate', type=float, default=0.1)
     parser.add_argument('--fc_drop_rate', type=float, default=0.25)
+    parser.add_argument('--top_nn_drop_rate', type=float, default=0.25)
     parser.add_argument('--num_epochs', type=int, default=30)
+    parser.add_argument('--repeat_gen', type=int, default=35)
 
     parser.add_argument('--num_conv', type=int, default=4)
+    parser.add_argument('--num_final_fc_layers', type=int, default=2)
     parser.add_argument('--batch_norm', action='store_true', default=False)
     parser.add_argument('--no_dropout', action='store_true', default=False)
 
     parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--early_stopping', action='store_true', default=False)
     parser.add_argument('--random_seed', type=int, default=int(np.random.randint(1, 10e6)))
 
     args = parser.parse_args()

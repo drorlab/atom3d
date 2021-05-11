@@ -13,7 +13,7 @@ de.load_dotenv(de.find_dotenv(usecwd=True))
 
 
 class CNN3D_TransformSMP(object):
-    def __init__(self, label_name='A', random_seed=None, **kwargs):
+    def __init__(self, label_name, random_seed=None, **kwargs):
         self.label_name = label_name
         self.random_seed = random_seed
         self.grid_config =  dotdict({
@@ -73,7 +73,9 @@ class CNN3D_TransformSMP(object):
 
 if __name__=="__main__":
     dataset_path = os.path.join(os.environ['SMP_DATA'], 'val')
-    dataset = LMDBDataset(dataset_path, transform=CNN3D_TransformSMP(radius=10.0))
+    dataset = LMDBDataset(
+        dataset_path,
+        transform=CNN3D_TransformSMP(label_name='alpha', radius=10.0))
     dataloader = DataLoader(dataset, batch_size=8, shuffle=False)
 
     for item in dataloader:

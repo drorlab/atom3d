@@ -5,10 +5,8 @@ import os
 import time
 import tqdm
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
@@ -89,7 +87,6 @@ def train_loop(model, loader, optimizer, device):
 
     loss_all = 0
     total = 0
-    epoch_loss = 0
     progress_format = 'train loss: {:6.6f}'
     with tqdm.tqdm(total=len(loader), desc=progress_format.format(0)) as t:
         for i, data in enumerate(loader):
@@ -142,14 +139,6 @@ def test(model, loader, device):
     return np.sqrt(np.mean(losses)), corrs, results_df
 
 
-def plot_corr(y_true, y_pred, plot_dir):
-    plt.clf()
-    sns.scatterplot(y_true, y_pred)
-    plt.xlabel('Actual -log(K)')
-    plt.ylabel('Predicted -log(K)')
-    plt.savefig(plot_dir)
-
-
 def save_weights(model, weight_dir):
     torch.save(model.state_dict(), weight_dir)
 
@@ -195,8 +184,6 @@ def train(args, device, test_mode=False):
             print(f"Save model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
                   f"best_val_loss: {best_val_loss:.4f}")
             save_weights(model, os.path.join(args.output_dir, f'best_weights.pt'))
-            #plot_corr(val_df['true'], val_df['pred'],
-            #          os.path.join(args.output_dir, f'corr_val-epoch_{epoch:}.png'))
             best_val_loss = val_loss
             best_corrs = corrs
         elapsed = (time.time() - start)
@@ -208,8 +195,6 @@ def train(args, device, test_mode=False):
         model.load_state_dict(torch.load(os.path.join(args.output_dir, f'best_weights.pt')))
         rmse, corrs, test_df = test(model, test_loader, device)
         test_df.to_pickle(os.path.join(args.output_dir, 'test_results.pkl'))
-        #plot_corr(test_df['true'], test_df['pred'],
-        #          os.path.join(args.output_dir, f'corr_test.png'))
         print('Test RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
             rmse, corrs['per_target_spearman'], corrs['all_spearman']))
         test_file = os.path.join(args.output_dir, f'test_results.txt')

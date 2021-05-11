@@ -1,18 +1,20 @@
 import numpy as np
+import torch
 import torch.nn as nn
 
 
 class CNN3D_LEP(nn.Module):
     def __init__(self, in_channels, spatial_size,
-                 conv_drop_rate, fc_drop_rate,
+                 conv_drop_rate, fc_drop_rate, top_nn_drop_rate,
                  conv_filters, conv_kernel_size,
                  max_pool_positions, max_pool_sizes, max_pool_strides,
                  fc_units,
-                 batch_norm=True,
-                 dropout=False):
+                 top_fc_units,
+                 batch_norm,
+                 dropout):
         super(CNN3D_LEP, self).__init__()
 
-        model, out_features = self.base_network(
+        self.base_net, base_features = self.base_network(
             in_channels, spatial_size,
             conv_drop_rate, fc_drop_rate,
             conv_filters, conv_kernel_size,
@@ -22,73 +24,75 @@ class CNN3D_LEP(nn.Module):
             dropout
             )
 
+        in_features = 2*base_features
         layers = []
-        self._add_fc_batch_norm_dropout(out_features, 1, False, dropout,
-                                        fc_drop_rate, layers, activation=None)
-        self.model = nn.Sequential(
-            model,
-            nn.Sequential(*layers)
-            )
+        # Top FCs
+        for units in top_fc_units:
+            layers.extend([
+                nn.Linear(in_features, units),
+                nn.ReLU()
+                ])
+            if batch_norm:
+                layers.append(nn.BatchNorm3d(units))
+            if dropout:
+                layers.append(nn.Dropout(top_nn_drop_rate))
+            in_features = units
+
+        # Final FC layer
+        layers.append(nn.Linear(in_features, 1))
+        if dropout:
+            layers.append(nn.Dropout(fc_drop_rate))
+        self.top_net = nn.Sequential(*layers)
 
     def base_network(self, in_channels, spatial_size,
                      conv_drop_rate, fc_drop_rate,
                      conv_filters, conv_kernel_size,
                      max_pool_positions, max_pool_sizes, max_pool_strides,
                      fc_units,
-                     batch_norm=True,
-                     dropout=False):
+                     batch_norm,
+                     dropout):
         layers = []
-
         if batch_norm:
             layers.append(nn.BatchNorm3d(in_channels))
-        # Convs.
-        for i in range(len(conv_filters)):
-            layers.append(
-                nn.Sequential(
-                    nn.Conv3d(in_channels, conv_filters[i], kernel_size=conv_kernel_size, bias=True),
-                    nn.ReLU(inplace=True)
-                    )
-                )
-            in_channels = conv_filters[i]
-            spatial_size -= (conv_kernel_size - 1)
 
+        # Convs
+        for i in range(len(conv_filters)):
+            layers.extend([
+                nn.Conv3d(in_channels, conv_filters[i],
+                          kernel_size=conv_kernel_size,
+                          bias=True),
+                nn.ReLU()
+                ])
+            spatial_size -= (conv_kernel_size - 1)
             if max_pool_positions[i]:
                 layers.append(nn.MaxPool3d(max_pool_sizes[i], max_pool_strides[i]))
                 spatial_size = int(np.floor((spatial_size - (max_pool_sizes[i]-1) - 1)/max_pool_strides[i] + 1))
-            self._add_batch_norm_dropout(in_channels, batch_norm, dropout, conv_drop_rate, layers)
+            if batch_norm:
+                layers.append(nn.BatchNorm3d(conv_filters[i]))
+            if dropout:
+                layers.append(nn.Dropout(conv_drop_rate))
+            in_channels = conv_filters[i]
 
         layers.append(nn.Flatten())
         in_features = in_channels * (spatial_size**3)
-        # FC layers.
+        # FC layers
         for units in fc_units:
-            self._add_fc_batch_norm_dropout(in_features, units, batch_norm, dropout,
-                                            fc_drop_rate, layers)
+            layers.extend([
+                nn.Linear(in_features, units),
+                nn.ReLU()
+                ])
+            if batch_norm:
+                layers.append(nn.BatchNorm3d(units))
+            if dropout:
+                layers.append(nn.Dropout(fc_drop_rate))
             in_features = units
 
         model = nn.Sequential(*layers)
         return model, in_features
 
-
-    def _add_batch_norm_dropout(self, in_channels, batch_norm, dropout, drop_rate,
-                                layers):
-        if batch_norm:
-            layers.append(nn.BatchNorm3d(in_channels))
-        if dropout:
-            layers.append(nn.Dropout(drop_rate))
-
-    def _add_fc_batch_norm_dropout(self, in_features, out_features,
-                                   batch_norm, dropout, drop_rate,
-                                   layers, activation='relu'):
-        if activation == 'relu':
-            layers.append(
-                nn.Sequential(
-                    nn.Linear(in_features, out_features),
-                    nn.ReLU(inplace=True)
-                    )
-                )
-        else:
-            layers.append(nn.Linear(in_features, out_features))
-        self._add_batch_norm_dropout(out_features, batch_norm, dropout, drop_rate, layers)
-
-    def forward(self, x):
-        return self.model(x).view(-1)
+    def forward(self, x_inactive, x_active):
+        processed_inactive = self.base_net(x_inactive)
+        processed_active = self.base_net(x_active)
+        x = torch.cat([processed_inactive, processed_active], 1)
+        x = self.top_net(x)
+        return torch.sigmoid(x).view(-1)
