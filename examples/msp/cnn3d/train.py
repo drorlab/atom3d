@@ -82,13 +82,13 @@ def train_loop(model, loader, repeat_gen, criterion, optimizer, device):
     with tqdm.tqdm(total=repeat_gen*len(loader), desc=progress_format.format(0)) as t:
         for _ in range(repeat_gen):
             for i, data in enumerate(loader):
-                feature_inactive = data['feature_inactive'].to(device).to(torch.float32)
-                feature_active = data['feature_active'].to(device).to(torch.float32)
+                feature_original = data['feature_original'].to(device).to(torch.float32)
+                feature_mutated = data['feature_mutated'].to(device).to(torch.float32)
                 labels = data['label'].to(device).to(torch.float32)
                 # zero the parameter gradients
                 optimizer.zero_grad()
                 # forward + backward + optimize
-                output = model(feature_inactive, feature_active)
+                output = model(feature_original, feature_mutated)
                 loss = criterion(output, labels)
                 loss.backward()
                 loss_all += loss.item() * len(labels)
@@ -115,10 +115,10 @@ def test(model, loader, repeat_gen, criterion, device):
 
     for _ in range(repeat_gen):
         for data in loader:
-            feature_inactive = data['feature_inactive'].to(device).to(torch.float32)
-            feature_active = data['feature_active'].to(device).to(torch.float32)
+            feature_original = data['feature_original'].to(device).to(torch.float32)
+            feature_mutated = data['feature_mutated'].to(device).to(torch.float32)
             labels = data['label'].to(device).to(torch.float32)
-            output = model(feature_inactive, feature_active)
+            output = model(feature_original, feature_mutated)
 
             loss = criterion(output, labels)
             loss_all += loss.item() * len(labels)
@@ -166,7 +166,7 @@ def train(args, device, test_mode=False):
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False)
 
     for data in train_loader:
-        in_channels, spatial_size = data['feature_inactive'].size()[1:3]
+        in_channels, spatial_size = data['feature_original'].size()[1:3]
         print('num channels: {:}, spatial size: {:}'.format(in_channels, spatial_size))
         break
 

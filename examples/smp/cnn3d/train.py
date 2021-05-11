@@ -155,7 +155,7 @@ def train(args, device, test_mode=False):
         with open(test_file, 'a+') as out:
             out.write('{}\t{:.7f}\n'.format(args.random_seed, rmse))
 
-    return best_val_loss, best_rp, best_rs
+    return best_val_loss
 
 
 if __name__=="__main__":
