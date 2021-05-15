@@ -12,7 +12,7 @@ for label in labels:
     cf = conversion[label]
     rloader = res.ResultsENN('smp-'+label, reps=[1,2,3])
     results = rloader.get_all_predictions()
-    summary = met.evaluate_average(results, metric = met.mae, verbose = False)
+    summary = met.evaluate_average(results, metric = met.mae, verbose = True)
     summary = [(cf*s[0],cf*s[1]) for s in summary]
     print('%9s: %6.3f \pm %6.3f'%(label, *summary[2]))
 
