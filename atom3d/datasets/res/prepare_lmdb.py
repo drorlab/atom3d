@@ -15,6 +15,7 @@ import atom3d.datasets.datasets as da
 import atom3d.splits.splits as spl
 import atom3d.util.file as fi
 import atom3d.util.formats as fo
+import util as res_util
 
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,8 @@ class ResTransform(object):
         #remove Hets and non-allowable atoms
         df = df[df['element'].isin(allowed_atoms)]
         df = df[df['hetero'].str.strip()=='']
+        
+        labels = []
 
         for chain_res, res_df in df.groupby(['chain', 'residue', 'resname']):
             # chain_res = res_df.index.values[0]
@@ -82,7 +85,10 @@ class ResTransform(object):
 
             sub_df = subunit_df.loc[subunit_pt_idx]
             tmp = sub_df.copy()
-            tmp['subunit'] = '_'.join([str(x) for x in chain_res])
+            sub_name = '_'.join([str(x) for x in chain_res])
+            tmp['subunit'] = sub_name
+            label_row = [sub_name, res_util.res_label_dict[res_name], CB_pos[0], CB_pos[1], CB_pos[2]]
+            labels.append(label_row)
 
             subunits.append(tmp)
         if len(subunits) == 0:
@@ -90,6 +96,7 @@ class ResTransform(object):
         else:
             subunits = pd.concat(subunits).reset_index(drop=True)
         x['atoms'] = subunits
+        x['labels'] = pd.DataFrame(labels, columns=['subunit', 'label', 'x', 'y', 'z'])
         return x
 
 
