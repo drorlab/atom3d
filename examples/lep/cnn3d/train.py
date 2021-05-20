@@ -155,9 +155,15 @@ def train(args, device, test_mode=False):
     np.random.seed(args.random_seed)
     torch.manual_seed(args.random_seed)
 
-    train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=CNN3D_TransformLEP())
-    val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'), transform=CNN3D_TransformLEP())
-    test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'), transform=CNN3D_TransformLEP())
+    train_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'train'),
+        transform=CNN3D_TransformLEP(args.add_flag, random_seed=args.random_seed))
+    val_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'val'),
+        transform=CNN3D_TransformLEP(args.add_flag, random_seed=args.random_seed))
+    test_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'test'),
+        transform=CNN3D_TransformLEP(args.add_flag, random_seed=args.random_seed))
 
     train_loader = DataLoader(train_dataset, args.batch_size,
                               sampler=create_balanced_sampler(train_dataset))
@@ -193,9 +199,9 @@ def train(args, device, test_mode=False):
         print(f'Epoch {epoch:03d} finished in : {elapsed:.3f} s')
         print(f"\tTrain loss {train_loss:.4f}, Val loss: {val_loss:.4f}, "
               f"Val AUROC: {stats['auroc']:.4f}, Val AUPRC: {stats['auroc']:.4f}")
-        #if stats['auroc'] > best_val_auroc:
-        if val_loss < best_val_loss:
-            print(f"Save model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
+        if ((args.val_metric == 'loss') and (val_loss < best_val_loss)) or \
+            ((args.val_metric == 'auroc') and (stats['auroc'] > best_val_auroc)):
+            print(f"\nSave model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
                   f"auroc: {stats['auroc']:.4f}, auprc: {stats['auroc']:.4f}")
             save_weights(model, os.path.join(args.output_dir, f'best_weights.pt'))
             best_val_loss = val_loss
@@ -233,6 +239,10 @@ if __name__=="__main__":
     parser.add_argument('--top_nn_drop_rate', type=float, default=0.25)
     parser.add_argument('--num_epochs', type=int, default=30)
     parser.add_argument('--repeat_gen', type=int, default=35)
+    parser.add_argument('--add_flag', action='store_true', default=False)
+
+    parser.add_argument('--val_metric', type=str, default='loss',
+                        choices=['loss', 'auroc'])
 
     parser.add_argument('--num_conv', type=int, default=4)
     parser.add_argument('--num_final_fc_layers', type=int, default=2)

@@ -50,8 +50,6 @@ class CNN3D_PSR(nn.Module):
 
         # Final FC layer
         layers.append(nn.Linear(in_features, 1))
-        if dropout:
-            layers.append(nn.Dropout(fc_drop_rate))
 
         self.model = nn.Sequential(*layers)
 

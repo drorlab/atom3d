@@ -154,9 +154,12 @@ def train(args, device, test_mode=False):
     np.random.seed(args.random_seed)
     torch.manual_seed(args.random_seed)
 
-    train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=CNN3D_TransformPSR())
-    val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'), transform=CNN3D_TransformPSR())
-    test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'), transform=CNN3D_TransformPSR())
+    train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'),
+                                transform=CNN3D_TransformPSR(random_seed=args.random_seed))
+    val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'),
+                              transform=CNN3D_TransformPSR(random_seed=args.random_seed))
+    test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'),
+                               transform=CNN3D_TransformPSR(random_seed=args.random_seed))
 
     train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False)
@@ -181,8 +184,7 @@ def train(args, device, test_mode=False):
         train_loss = train_loop(model, train_loader, optimizer, device)
         val_loss, corrs, val_df = test(model, val_loader, device)
         if val_loss < best_val_loss:
-            print(f"Save model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
-                  f"best_val_loss: {best_val_loss:.4f}")
+            print(f"\nSave model at epoch {epoch:03d}, val_loss: {val_loss:.4f}")
             save_weights(model, os.path.join(args.output_dir, f'best_weights.pt'))
             best_val_loss = val_loss
             best_corrs = corrs

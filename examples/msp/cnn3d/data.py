@@ -14,7 +14,7 @@ de.load_dotenv(de.find_dotenv(usecwd=True))
 
 
 class CNN3D_TransformMSP(object):
-    def __init__(self, add_flag=False, center_at_mut=False, random_seed=None, **kwargs):
+    def __init__(self, add_flag, center_at_mut, random_seed=None, **kwargs):
         self.add_flag = add_flag
         self.center_at_mut = center_at_mut
         self.random_seed = random_seed
@@ -35,10 +35,6 @@ class CNN3D_TransformMSP(object):
             'num_directions': 20,
             # Number of rolls to apply for data augmentation.
             'num_rolls': 20,
-            # Number of negatives to sample per positive example. -1 means all.
-            'neg_to_pos_ratio': 1.0,
-            # Max number of positive regions to take from a structure. -1 means all.
-            'max_pos_per_shard': 200,
         })
         # Update grid configs as necessary
         self.grid_config.update(kwargs)

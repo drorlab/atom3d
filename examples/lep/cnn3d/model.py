@@ -40,8 +40,6 @@ class CNN3D_LEP(nn.Module):
 
         # Final FC layer
         layers.append(nn.Linear(in_features, 1))
-        if dropout:
-            layers.append(nn.Dropout(fc_drop_rate))
         self.top_net = nn.Sequential(*layers)
 
     def base_network(self, in_channels, spatial_size,

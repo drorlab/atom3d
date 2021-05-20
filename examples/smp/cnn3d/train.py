@@ -109,12 +109,15 @@ def train(args, device, test_mode=False):
     np.random.seed(args.random_seed)
     torch.manual_seed(args.random_seed)
 
-    train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'),
-                                transform=CNN3D_TransformSMP(args.label_name))
-    val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'),
-                              transform=CNN3D_TransformSMP(args.label_name))
-    test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'),
-                               transform=CNN3D_TransformSMP(args.label_name))
+    train_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'train'),
+        transform=CNN3D_TransformSMP(args.label_name, random_seed=args.random_seed))
+    val_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'val'),
+        transform=CNN3D_TransformSMP(args.label_name, random_seed=args.random_seed))
+    test_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'test'),
+        transform=CNN3D_TransformSMP(args.label_name, random_seed=args.random_seed))
 
     train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False)
@@ -138,12 +141,11 @@ def train(args, device, test_mode=False):
         train_loss = train_loop(model, train_loader, optimizer, device)
         val_loss, val_df = test(model, val_loader, device)
         if val_loss < best_val_loss:
-            print(f"Save model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
-                  f"best_val_loss: {best_val_loss:.4f}")
-            save_weights(model, os.path.join(args.output_dir, f'best_weights.pt'))
             best_val_loss = val_loss
+            print(f"\nSave model at epoch {epoch:03d}, val_loss: {val_loss:.4f}")
+            save_weights(model, os.path.join(args.output_dir, f'best_weights.pt'))
         elapsed = (time.time() - start)
-        print('Epoch {:03d} finished in : {:.3f} s'.format(epoch, elapsed))
+        print('\nEpoch {:03d} finished in : {:.3f} s'.format(epoch, elapsed))
         print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}'.format(train_loss, val_loss))
 
     if test_mode:
@@ -169,7 +171,7 @@ if __name__=="__main__":
     parser.add_argument('--label_name', type=str, default='alpha',
                         help="Label to use, e.g. alpha, u298_atom, etc.")
 
-    parser.add_argument('--learning_rate', '-lr', type=float, default=0.001)
+    parser.add_argument('--learning_rate', '-lr', type=float, default=0.0005)
     parser.add_argument('--conv_drop_rate', type=float, default=0.1)
     parser.add_argument('--fc_drop_rate', type=float, default=0.25)
     parser.add_argument('--num_epochs', type=int, default=50)

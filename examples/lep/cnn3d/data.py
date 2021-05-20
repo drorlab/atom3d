@@ -14,7 +14,7 @@ de.load_dotenv(de.find_dotenv(usecwd=True))
 
 
 class CNN3D_TransformLEP(object):
-    def __init__(self, add_flag=False, random_seed=None, **kwargs):
+    def __init__(self, add_flag, random_seed=None, **kwargs):
         self.add_flag = add_flag
         self.random_seed = random_seed
         self.grid_config =  dotdict({

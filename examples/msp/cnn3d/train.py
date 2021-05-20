@@ -155,9 +155,15 @@ def train(args, device, test_mode=False):
     np.random.seed(args.random_seed)
     torch.manual_seed(args.random_seed)
 
-    train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=CNN3D_TransformMSP())
-    val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'), transform=CNN3D_TransformMSP())
-    test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'), transform=CNN3D_TransformMSP())
+    train_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'train'),
+        transform=CNN3D_TransformMSP(args.add_flag, args.center_at_mut, random_seed=args.random_seed))
+    val_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'val'),
+        transform=CNN3D_TransformMSP(args.add_flag, args.center_at_mut, random_seed=args.random_seed))
+    test_dataset = LMDBDataset(
+        os.path.join(args.data_dir, 'test'),
+        transform=CNN3D_TransformMSP(args.add_flag, args.center_at_mut, random_seed=args.random_seed))
 
     train_loader = DataLoader(train_dataset, args.batch_size,
                               sampler=create_balanced_sampler(train_dataset))
@@ -195,7 +201,7 @@ def train(args, device, test_mode=False):
               f"Val AUROC: {stats['auroc']:.4f}, Val AUPRC: {stats['auroc']:.4f}")
         #if stats['auroc'] > best_val_auroc:
         if val_loss < best_val_loss:
-            print(f"Save model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
+            print(f"\nSave model at epoch {epoch:03d}, val_loss: {val_loss:.4f}, "
                   f"auroc: {stats['auroc']:.4f}, auprc: {stats['auroc']:.4f}")
             save_weights(model, os.path.join(args.output_dir, f'best_weights.pt'))
             best_val_loss = val_loss
@@ -233,6 +239,9 @@ if __name__=="__main__":
     parser.add_argument('--top_nn_drop_rate', type=float, default=0.25)
     parser.add_argument('--num_epochs', type=int, default=30)
     parser.add_argument('--repeat_gen', type=int, default=35)
+
+    parser.add_argument('--add_flag', action='store_true', default=False)
+    parser.add_argument('--center_at_mut', action='store_true', default=False)
 
     parser.add_argument('--num_conv', type=int, default=4)
     parser.add_argument('--num_final_fc_layers', type=int, default=2)
