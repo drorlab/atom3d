@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import datetime
+import wandb
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -72,11 +73,12 @@ def train_loop(model, loader, optimizer, device):
         loss_all += loss.item() * data.num_graphs
         total += data.num_graphs
         optimizer.step()
+        wandb.log({'train_loss': loss})
     return np.sqrt(loss_all / total)
 
 
 @torch.no_grad()
-def test(model, loader, device):
+def test(model, loader, device, log=True):
     model.eval()
 
     losses = []
@@ -101,8 +103,11 @@ def test(model, loader, device):
         columns=['target', 'decoy', 'true', 'pred'],
         )
 
-    corrs = compute_correlations(results_df)
-    return np.sqrt(np.mean(losses)), corrs, results_df
+    res = compute_correlations(results_df)
+    if log:
+        wandb.log({'val_loss': np.mean(losses), 'pearson': res['all_pearson'], 'kendall': res['all_kendall'], 'spearman': res['all_spearman']})
+
+    return np.sqrt(np.mean(losses)), res, results_df
 
 def plot_corr(y_true, y_pred, plot_dir):
     plt.clf()
@@ -159,7 +164,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     if test_mode:
         test_file = os.path.join(log_dir, f'rsr_rep{rep}.csv')
         model.load_state_dict(torch.load(os.path.join(log_dir, f'best_weights.pt')))
-        val_loss, corrs, results_df = test(model, test_loader, device)
+        val_loss, corrs, results_df = test(model, test_loader, device, log=False)
         # plot_corr(y_true, y_pred, os.path.join(log_dir, f'corr_{split}_test.png'))
         print('\tTest RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
             train_loss, val_loss, corrs['per_target_spearman'], corrs['all_spearman']))
@@ -181,6 +186,8 @@ if __name__=="__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     log_dir = args.log_dir
 
+    wandb.init(project="atom3d", name='RSR', config=vars(args)
+    )
 
     if args.mode == 'train':
         if log_dir is None:

@@ -6,6 +6,7 @@ import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import torch
 import torch.nn as nn
@@ -83,7 +84,7 @@ def test(gcn_model, ff_model, loader, criterion, device):
     auroc = roc_auc_score(y_true, y_pred)
     auprc = average_precision_score(y_true, y_pred)
 
-    return np.mean(losses), auroc, auprc
+    return np.mean(losses), auroc, auprc, y_true, y_pred
 
 def plot_corr(y_true, y_pred, plot_dir):
     plt.clf()
@@ -95,7 +96,7 @@ def plot_corr(y_true, y_pred, plot_dir):
 def save_weights(model, weight_dir):
     torch.save(model.state_dict(), weight_dir)
 
-def train(args, device, log_dir, seed=None, test_mode=False):
+def train(args, device, log_dir, rep=None, test_mode=False):
     # logger = logging.getLogger('lba')
     # logger.basicConfig(filename=os.path.join(log_dir, f'train_{split}_cv{fold}.log'),level=logging.INFO)
     transform = PairedGraphTransform('atoms_active', 'atoms_inactive', label_key='label')
@@ -129,7 +130,7 @@ def train(args, device, log_dir, seed=None, test_mode=False):
         start = time.time()
         train_loss = train_loop(epoch, gcn_model, ff_model, train_loader, criterion, optimizer, device)
         print('validating...')
-        val_loss, auroc, auprc = test(gcn_model, ff_model, val_loader, criterion, device)
+        val_loss, auroc, auprc, _, _ = test(gcn_model, ff_model, val_loader, criterion, device)
         if auroc > best_val_auroc:
             torch.save({
                 'epoch': epoch,
@@ -144,15 +145,15 @@ def train(args, device, log_dir, seed=None, test_mode=False):
         print(f'\tTrain loss {train_loss}, Val loss {val_loss}, Val AUROC {auroc}, Val auprc {auprc}')
 
     if test_mode:
-        test_file = os.path.join(log_dir, f'test_results.txt')
+        test_file = os.path.join(log_dir, f'lep_rep{rep}.csv')
         cpt = torch.load(os.path.join(log_dir, f'best_weights.pt'))
         gcn_model.load_state_dict(cpt['gcn_state_dict'])
         ff_model.load_state_dict(cpt['ff_state_dict'])
-        test_loss, auroc, auprc = test(gcn_model, ff_model, test_loader, criterion, device)
+        test_loss, auroc, auprc, y_true, y_pred = test(gcn_model, ff_model, test_loader, criterion, device)
         print(f'\tTest loss {test_loss}, Test AUROC {auroc}, Test auprc {auprc}')
-        with open(test_file, 'w') as f:
-            f.write(f'test_loss\tAUROC\n')
-            f.write(f'{test_loss}\t{auroc}\n')
+        res_df = pd.DataFrame(y_true, y_pred, columns=['true', 'pred'])
+        res_df.to_csv(test_file, index=False)
+            
         return test_loss, auroc, auprc
 
 
@@ -166,7 +167,7 @@ if __name__=="__main__":
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--hidden_dim', type=int, default=64)
-    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--num_epochs', type=int, default=50)
     parser.add_argument('--learning_rate', type=float, default=1e-4)
     parser.add_argument('--log_dir', type=str, default=None)
     args = parser.parse_args()
@@ -186,9 +187,9 @@ if __name__=="__main__":
         train(args, device, log_dir)
         
     elif args.mode == 'test':
-        for seed in np.random.randint(0, 1000, size=3):
+        for rep, seed in enumerate(np.random.randint(0, 1000, size=3)):
             print('seed:', seed)
-            log_dir = os.path.join('logs', f'test_{seed}')
+            log_dir = os.path.join('logs', f'test_rep{rep}')
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)
             np.random.seed(seed)
