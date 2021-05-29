@@ -43,7 +43,7 @@ def accuracy(targets, predict):
     return ac
     
     
-def evaluate_average(results, metric=r2, verbose=True):
+def evaluate_average(results, metric=r2, verbose=True, select=None):
     """
     Calculate metric for training, validation and test data, averaged over all replicates.
     """
@@ -63,6 +63,16 @@ def evaluate_average(results, metric=r2, verbose=True):
         metric_va[r] = metric(targets_va, predict_va)
         metric_te[r] = metric(targets_te, predict_te)
         if verbose: print(' - %s  -  Training: %7.3f  -  Validation: %7.3f  -  Test: %7.3f'%(rep, metric_tr[r], metric_va[r], metric_te[r]))
+    # Optionally select training runs with lowest/highest validation metrics
+    if select is not None:
+        order = np.argsort(metric_va)
+        if select<0: 
+            order = order[select:]
+        else:
+            order = order[:select]
+        metric_tr = metric_tr[order]
+        metric_va = metric_va[order]
+        metric_te = metric_te[order]
     # Mean and corresponding standard deviations
     summary_tr = (np.mean(metric_tr), np.std(metric_tr))
     summary_va = (np.mean(metric_va), np.std(metric_va))
@@ -73,4 +83,3 @@ def evaluate_average(results, metric=r2, verbose=True):
         print(' Validation: %7.3f +/- %7.3f'%summary_va)
         print(' Test:       %7.3f +/- %7.3f'%summary_te)
     return summary_tr, summary_va, summary_te
-
