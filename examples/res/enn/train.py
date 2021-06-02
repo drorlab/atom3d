@@ -29,11 +29,11 @@ def main():
     # Initialize device and data type
     device, dtype = init_cuda(args)
     # Initialize dataloader
-    args, datasets, num_species, charge_scale = initialize_datasets(args, args.datadir, 'res', args.ddir_suffix) 
+    args, datasets, num_species, charge_scale = initialize_res_data(args, args.datadir, 'res', args.ddir_suffix) 
     # Construct PyTorch dataloaders from datasets
     dataloaders = {split: DataLoader(dataset, batch_size=args.batch_size,
                                      shuffle=args.shuffle if (split == 'train') else False,
-                                     num_workers=args.num_workers, collate_fn=collate_fn)
+                                     num_workers=args.num_workers, collate_fn=collate_res)
                    for split, dataset in datasets.items()}
     # Initialize model
     model = ENN_RES(args.maxl, args.max_sh, args.num_cg_levels, args.num_channels, num_species,
