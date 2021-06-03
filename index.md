@@ -2,7 +2,7 @@
 
 ATOM3D is a unified collection of datasets concerning the three-dimensional structure of biomolecules, including proteins, small molecules, and nucleic acids. These datasets are specifically designed to provide a benchmark for machine learning methods which operate on 3D molecular structure, and represent a variety of important structural, functional, and engineering tasks. All datasets are provided in a standardized format along with a Python package containing processing code, utilities, models, and dataloaders for common machine learning frameworks such as PyTorch. ATOM3D is designed to be a living database, where datasets are updated and tasks are added as the field progresses.
 
-- **Repository**: All dataset processing code and installation instructions can be found at [https://github.com/drorlab/atom3d](https://github.com/drorlab/atom3d)
+- **Repository and Python Package**: All code for dataset processing, training, and benchmarking can be found at [https://github.com/drorlab/atom3d](https://github.com/drorlab/atom3d). Our Python package can be installed from source using the Github repository or using Pip: `pip install atom3d`.
 
 - **Documentation**: Documentation for our Python package, including loading, creating, and interacting with ATOM3D datasets, is available at [atom3d.readthedocs.io](https://atom3d.readthedocs.io/en/latest/getting_started.html).
 

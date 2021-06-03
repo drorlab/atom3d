@@ -25,3 +25,6 @@ Wang, R., Fang, X., Lu, Y., & Wang, S. (2004). Journal of Medicinal Chemistry, 4
 
 Liu, Z., Li, Y., et al. (2015).  Bioinformatics, 31(3), 405–412.
 
+### License
+
+This dataset is licensed under a Creative Commons NonCommercial-NoDerivs (CC-BY-NC-ND) [license](./LICENSE_ND).

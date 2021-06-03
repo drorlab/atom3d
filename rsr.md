@@ -19,3 +19,7 @@ layout: default
 Cruz, J. A., Blanchet, M. F., et al. (2012). RNA, 18(4), 610–625.
 
 Watkins, A. M., Rangan, R., & Das, R. (2020). Structure, 28(8), 963-976.e6. 
+
+### License
+
+This dataset is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported (CC-SA) [license](./LICENSE_SA).

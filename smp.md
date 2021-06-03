@@ -19,3 +19,7 @@ layout: default
 Ramakrishnan, R., Dral, P. O., et al. (2014). Scientific Data, 1:1-7.
 
 Ruddigkeit, L., Van Deursen, R., et al. (2012). Journal of Chemical Information and Modeling, 52(11), 2864–2875. 
+
+### License
+
+This dataset is licensed under a Creative Commons CC-BY [license](./LICENSE).

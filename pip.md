@@ -19,3 +19,7 @@ layout: default
 Townshend, R. J. L., Bedi, R., et al. (2019).  Advances in Neural Information Processing Systems (Vol. 32, pp. 15616–15625).
 
 Vreven, T., Moal, I. H., et al. (2015). Journal of Molecular Biology, 427(19), 3031–3041.
+
+### License
+
+This dataset is licensed under a Creative Commons CC-BY [license](./LICENSE).

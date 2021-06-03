@@ -14,3 +14,6 @@ layout: default
       [[datasets]](https://drive.google.com/uc?export=download&id=1rJEAyyoFN0Y6pgnLJyG0Fy5FKqAopOqC)
       [[indices]](https://drive.google.com/uc?export=download&id=1xOX7HNuDvJib3-wHxh0JFq0LMLLYQu-6)
 
+### License
+
+This dataset is licensed under a Creative Commons CC-BY [license](./LICENSE).

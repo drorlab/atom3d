@@ -17,3 +17,7 @@ layout: default
 ### References
 
 Jankauskaite, J., Jiménez-García, B., et al. (2019). Bioinformatics, 35(3), 462–469.
+
+### License
+
+This dataset is licensed under a Creative Commons CC-BY [license](./LICENSE).

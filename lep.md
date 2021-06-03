@@ -17,3 +17,7 @@ layout: default
 ### References
 
 Friesner, R. A., Banks, J. L., et al. (2004). Journal of Medicinal Chemistry, 47(7), 1739–1749.
+
+### License
+
+This dataset is licensed under a Creative Commons CC-BY [license](./LICENSE). 
