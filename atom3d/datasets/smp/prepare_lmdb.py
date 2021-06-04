@@ -3,6 +3,11 @@ import logging
 import os
 import re
 import sys
+from rdkit import Chem
+from rdkit import rdBase
+from rdkit.Chem.rdchem import HybridizationType
+from rdkit import RDConfig
+from rdkit.Chem import ChemicalFeatures
 
 import click
 import numpy as np
@@ -13,9 +18,51 @@ import atom3d.splits.splits as spl
 import atom3d.util.file as fi
 import atom3d.util.formats as fo
 
-
 logger = logging.getLogger(__name__)
+fdef_name = os.path.join(RDConfig.RDDataDir, 'BaseFeatures.fdef')
+factory = ChemicalFeatures.BuildFeatureFactory(fdef_name)
 
+def _get_rdkit_data(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    mol = Chem.AddHs(mol)
+    bonds_df = fo.get_bonds_list_from_mol(mol)
+    type_mapping = {'H': 0, 'C': 1, 'N': 2, 'O': 3, 'F': 4}
+    
+    type_idx = []
+    atomic_number = []
+    acceptor = []
+    donor = []
+    aromatic = []
+    sp = []
+    sp2 = []
+    sp3 = []
+    num_hs = []
+    for atom in mol.GetAtoms():
+        type_idx.append(type_mapping[atom.GetSymbol()])
+        atomic_number.append(atom.GetAtomicNum())
+        donor.append(0)
+        acceptor.append(0)
+        aromatic.append(1 if atom.GetIsAromatic() else 0)
+        hybridization = atom.GetHybridization()
+        sp.append(1 if hybridization == HybridizationType.SP else 0)
+        sp2.append(1 if hybridization == HybridizationType.SP2 else 0)
+        sp3.append(1 if hybridization == HybridizationType.SP3 else 0)
+        num_hs.append(atom.GetTotalNumHs(includeNeighbors=True))
+
+    feats = factory.GetFeaturesForMol(mol)
+    for j in range(0, len(feats)):
+        if feats[j].GetFamily() == 'Donor':
+            node_list = feats[j].GetAtomIds()
+            for k in node_list:
+                donor[k] = 1
+        elif feats[j].GetFamily() == 'Acceptor':
+            node_list = feats[j].GetAtomIds()
+            for k in node_list:
+                acceptor[k] = 1
+    atom_feats = [atomic_number, acceptor, donor, aromatic, sp, sp2, sp3, num_hs]
+    
+    return bonds_df, atom_feats
+    
 
 def _add_data_with_subtracted_thermochem_energy(x):
     """
@@ -40,6 +87,7 @@ def _add_data_with_subtracted_thermochem_energy(x):
     cv_atom = data[14] - np.sum([c * thchem_en[el][4] for el, c in counts.items()])  # Cv
     # Append new data
     x['labels'] += [u0_atom, u_atom, h_atom, g_atom, cv_atom]
+    x['bonds'], x['atom_feats'] = _get_rdkit_data(x['smiles'])
     # Delete the file path
     del x['file_path']
     return x
@@ -56,6 +104,10 @@ def _write_split_indices(split_txt, lmdb_ds, output_txt):
         f.write(str('\n'.join([str(i) for i in split_indices])))
     return split_indices
 
+def bond_filter(item):
+    if len(item['bonds']) == 0:
+        return True
+    return False
 
 @click.command(help='Prepare SMP dataset')
 @click.argument('input_file_path', type=click.Path())
@@ -78,7 +130,7 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
     lmdb_path = os.path.join(output_root, 'all')
     logger.info(f'Creating lmdb dataset into {lmdb_path:}...')
     dataset = da.load_dataset(file_list, filetype, transform=_add_data_with_subtracted_thermochem_energy)
-    da.make_lmdb_dataset(dataset, lmdb_path)
+    da.make_lmdb_dataset(dataset, lmdb_path, filter_fn=bond_filter)
     # Only continue if we want to write split datasets
     if not split:
         return
@@ -91,9 +143,9 @@ def prepare(input_file_path, output_root, split, train_txt, val_txt, test_txt):
     indices_test = _write_split_indices(test_txt, lmdb_ds, os.path.join(output_root, 'test_indices.txt'))
     # Write the split datasets
     train_dataset, val_dataset, test_dataset = spl.split(lmdb_ds, indices_train, indices_val, indices_test)
-    da.make_lmdb_dataset(train_dataset, os.path.join(output_root, 'train'))
-    da.make_lmdb_dataset(val_dataset, os.path.join(output_root, 'val'))
-    da.make_lmdb_dataset(test_dataset, os.path.join(output_root, 'test'))
+    da.make_lmdb_dataset(train_dataset, os.path.join(output_root, 'train'), filter_fn=bond_filter)
+    da.make_lmdb_dataset(val_dataset, os.path.join(output_root, 'val'), filter_fn=bond_filter)
+    da.make_lmdb_dataset(test_dataset, os.path.join(output_root, 'test'), filter_fn=bond_filter)
 
 
 if __name__ == "__main__":

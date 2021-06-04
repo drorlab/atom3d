@@ -3,7 +3,6 @@ import logging
 import os
 import time
 import datetime
-import wandb
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,7 +13,7 @@ import torch.nn.functional as F
 from torch_geometric.data import DataLoader
 from model import GNN_RSR
 from data import GNNTransformRSR
-from atom3d.datasets import LMDBDataset
+from atom3d.datasets import LMDBDataset, PTGDataset
 from scipy.stats import spearmanr
 
 
@@ -73,12 +72,11 @@ def train_loop(model, loader, optimizer, device):
         loss_all += loss.item() * data.num_graphs
         total += data.num_graphs
         optimizer.step()
-        wandb.log({'train_loss': loss})
     return np.sqrt(loss_all / total)
 
 
 @torch.no_grad()
-def test(model, loader, device, log=True):
+def test(model, loader, device):
     model.eval()
 
     losses = []
@@ -104,8 +102,6 @@ def test(model, loader, device, log=True):
         )
 
     res = compute_correlations(results_df)
-    if log:
-        wandb.log({'val_loss': np.mean(losses), 'pearson': res['all_pearson'], 'kendall': res['all_kendall'], 'spearman': res['all_spearman']})
 
     return np.sqrt(np.mean(losses)), res, results_df
 
@@ -122,10 +118,16 @@ def save_weights(model, weight_dir):
 def train(args, device, log_dir, rep=None, test_mode=False):
     # logger = logging.getLogger('lba')
     # logger.basicConfig(filename=os.path.join(log_dir, f'train_{split}_cv{fold}.log'),level=logging.INFO)
+    
+    if args.precomputed:
+        train_dataset = PTGDataset(os.path.join(args.data_dir, 'train'))
+        val_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
+        test_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
 
-    train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=GNNTransformRSR())
-    val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'), transform=GNNTransformRSR())
-    test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'), transform=GNNTransformRSR())
+    else:
+        train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=GNNTransformRSR())
+        val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'), transform=GNNTransformRSR())
+        test_dataset = LMDBDataset(os.path.join(args.data_dir, 'test'), transform=GNNTransformRSR())
     
     train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False, num_workers=4)
@@ -154,7 +156,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': train_loss,
-                }, os.path.join(log_dir, f'best_weights.pt'))
+                }, os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
             best_rs = corrs['all_spearman']
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
@@ -162,13 +164,19 @@ def train(args, device, log_dir, rep=None, test_mode=False):
             train_loss, val_loss, corrs['per_target_spearman'], corrs['all_spearman']))
 
     if test_mode:
-        test_file = os.path.join(log_dir, f'rsr_rep{rep}.csv')
-        model.load_state_dict(torch.load(os.path.join(log_dir, f'best_weights.pt')))
-        val_loss, corrs, results_df = test(model, test_loader, device, log=False)
-        # plot_corr(y_true, y_pred, os.path.join(log_dir, f'corr_{split}_test.png'))
-        print('\tTest RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
-            train_loss, val_loss, corrs['per_target_spearman'], corrs['all_spearman']))
-        pd.to_csv(results_df, test_file, index=False)
+        cpt = torch.load(os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
+        model.load_state_dict(cpt['model_state_dict'])
+        train_file = os.path.join(log_dir, f'rsr-rep{rep}.best.train.pt')
+        val_file = os.path.join(log_dir, f'rsr-rep{rep}.best.val.pt')
+        test_file = os.path.join(log_dir, f'rsr-rep{rep}.best.test.pt')
+        cpt = torch.load(os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
+        model.load_state_dict(cpt['model_state_dict'])
+        _, corrs, results_train = test(model, train_loader, device)
+        torch.save(results_train.to_dict('list'), train_file)
+        _, corrs, results_val = test(model, val_loader, device)
+        torch.save(results_val.to_dict('list'), val_file)
+        _, corrs, results_test = test(model, test_loader, device)
+        torch.save(results_test.to_dict('list'), test_file)
 
 
 
@@ -181,13 +189,12 @@ if __name__=="__main__":
     parser.add_argument('--num_epochs', type=int, default=20)
     parser.add_argument('--learning_rate', type=float, default=1e-4)
     parser.add_argument('--log_dir', type=str, default=None)
+    parser.add_argument('--precomputed', action='store_true')
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     log_dir = args.log_dir
 
-    wandb.init(project="atom3d", name='RSR', config=vars(args)
-    )
 
     if args.mode == 'train':
         if log_dir is None:
@@ -202,9 +209,9 @@ if __name__=="__main__":
     elif args.mode == 'test':
         for rep, seed in enumerate(np.random.randint(0, 1000, size=3)):
             print('seed:', seed)
-            log_dir = os.path.join('logs', f'test_rep{rep}')
+            log_dir = os.path.join('logs', f'rsr_test')
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)
             np.random.seed(seed)
             torch.manual_seed(seed)
-            train(args, device, log_dir, seed, test_mode=True)
+            train(args, device, log_dir, rep, test_mode=True)

@@ -1,5 +1,8 @@
 import numpy as np
 import os
+import sys
+from tqdm import tqdm
+import torch
 from atom3d.util.transforms import prot_graph_transform, mol_graph_transform
 from atom3d.datasets import LMDBDataset
 from torch_geometric.data import Data, Dataset, DataLoader
@@ -17,7 +20,7 @@ class GNNTransformLBA(object):
         else:
             item = prot_graph_transform(item, atom_keys=['atoms_protein', 'atoms_pocket'], label_key='scores')
         # transform ligand into PTG graph
-        item = mol_graph_transform(item, 'atoms_ligand', 'scores', use_bonds=True)
+        item = mol_graph_transform(item, 'atoms_ligand', 'scores', use_bonds=True, onehot_edges=False)
         node_feats, edges, edge_feats, node_pos = gr.combine_graphs(item['atoms_pocket'], item['atoms_ligand'])
         combined_graph = Data(node_feats, edges, edge_feats, y=item['scores']['neglog_aff'], pos=node_pos)
         return combined_graph
@@ -25,10 +28,24 @@ class GNNTransformLBA(object):
 
         
 if __name__=="__main__":
-    dataset = LMDBDataset('/scratch/users/aderry/lmdb/atom3d/lba_lmdb/splits/split-by-sequence-identity-30/data/train', transform=GNNTransformLBA())
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
-    # for item in dataset[0]:
-    #     print(item, type(dataset[0][item]))
-    for item in dataloader:
-        print(item)
-        break
+    seqid = sys.argv[1]
+    save_dir = '/scratch/users/aderry/atom3d/lba_' + str(seqid)
+    data_dir = f'/scratch/users/raphtown/atom3d_mirror/lmdb/LBA/splits/split-by-sequence-identity-{seqid}/data'
+    os.makedirs(os.path.join(save_dir, 'train'), exist_ok=True)
+    os.makedirs(os.path.join(save_dir, 'val'), exist_ok=True)
+    os.makedirs(os.path.join(save_dir, 'test'), exist_ok=True)
+    train_dataset = LMDBDataset(os.path.join(data_dir, 'train'), transform=GNNTransformLBA())
+    val_dataset = LMDBDataset(os.path.join(data_dir, 'val'), transform=GNNTransformLBA())
+    test_dataset = LMDBDataset(os.path.join(data_dir, 'test'), transform=GNNTransformLBA())
+    
+    print('processing train dataset...')
+    for i, item in enumerate(tqdm(train_dataset)):
+        torch.save(item, os.path.join(save_dir, 'train', f'data_{i}.pt'))
+    
+    print('processing validation dataset...')
+    for i, item in enumerate(tqdm(val_dataset)):
+        torch.save(item, os.path.join(save_dir, 'val', f'data_{i}.pt'))
+    
+    print('processing test dataset...')
+    for i, item in enumerate(tqdm(test_dataset)):
+        torch.save(item, os.path.join(save_dir, 'test', f'data_{i}.pt'))

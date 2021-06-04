@@ -17,6 +17,8 @@ import lmdb
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, IterableDataset
+import torch_geometric.data as ptg
+import torch
 
 import atom3d.util.rosetta as ar
 import atom3d.util.file as fi
@@ -261,6 +263,7 @@ class XYZDataset(Dataset):
         if self._gdb:
             item['labels'] = data
             item['freq'] = freq
+            item['smiles'] = smiles
         if self._transform:
             item = self._transform(item)
         return item
@@ -313,6 +316,26 @@ class SDFDataset(Dataset):
             item = self._transform(item)
         return item
 
+class PTGDataset(ptg.Dataset):
+    def __init__(self, root, transform=None, pre_transform=None):
+        super(PTGDataset, self).__init__(root, transform, pre_transform)
+
+
+    @property
+    def processed_dir(self):
+        return self.root
+
+    @property
+    def processed_file_names(self):
+        return ['data_1.pt']
+        
+
+    def len(self):
+        return len(os.listdir(self.processed_dir))
+
+    def get(self, idx):
+        data = torch.load(os.path.join(self.processed_dir, 'data_{}.pt'.format(idx)))
+        return data
 
 def serialize(x, serialization_format):
     """

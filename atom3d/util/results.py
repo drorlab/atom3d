@@ -2,6 +2,7 @@ import os, sys
 import pickle
 import torch
 import numpy as np
+import pandas as pd
 import scipy as sp
 import scipy.stats as stats
 
@@ -44,27 +45,55 @@ class ResultsGNN():
 
     def get_prediction(self, prediction_fn):
         """
-        Reads targets and prediction.
-        
-        TODO: Implement this!
-        
+        Reads targets and prediction
         """
-        targets, predict = None, None
+        pr_data = torch.load(prediction_fn)
+        targets = np.array( pr_data['targets'] )
+        predict = np.array( pr_data['predictions'] )
         return targets, predict
 
     def get_all_predictions(self):
         results = {}
         for r, rep in enumerate(self.reps):
             prediction_fn = self.name + '-rep'+str(int(rep))+'.best'
-            # Load the Cormorant predictions
             targets_tr, predict_tr = self.get_prediction(prediction_fn+'.train.pt')
-            targets_va, predict_va = self.get_prediction(prediction_fn+'.valid.pt')
+            targets_va, predict_va = self.get_prediction(prediction_fn+'.val.pt')
             targets_te, predict_te = self.get_prediction(prediction_fn+'.test.pt')
             targets = {'train':targets_tr, 'valid':targets_va, 'test':targets_te}
             predict = {'train':predict_tr, 'valid':predict_va, 'test':predict_te}
             results['rep'+str(int(rep))] = {'targets':targets, 'predict':predict}
         return results
-
+    
+    def get_predictions_by_target(self, prediction_fn):
+        results_df = pd.DataFrame(torch.load(prediction_fn))
+        per_target = []
+        for key, val in results_df.groupby(['target']):
+            # Ignore target with 2 decoys only since the correlations are
+            # not really meaningful.
+            if val.shape[0] < 3:
+                continue
+            true = val['true'].astype(float).to_numpy()
+            pred = val['pred'].astype(float).to_numpy()
+            per_target.append((true, pred))
+        global_true = results_df['true'].astype(float).to_numpy()
+        global_pred = results_df['pred'].astype(float).to_numpy()
+        return global_true, global_pred, per_target
+    
+    def get_target_specific_predictions(self):
+        """For use with PSR/RSR. Here `target` refers to the protein target, not the prediction target."""
+        results = {'global':{}, 'per_target':{}}
+        for r, rep in enumerate(self.reps):
+            prediction_fn = self.name + '-rep'+str(int(rep))+'.best'
+            targets_tr, predict_tr, per_target_tr = self.get_predictions_by_target(prediction_fn+'.train.pt')
+            targets_va, predict_va, per_target_va = self.get_predictions_by_target(prediction_fn+'.val.pt')
+            targets_te, predict_te, per_target_te = self.get_predictions_by_target(prediction_fn+'.test.pt')
+            targets = {'train':targets_tr, 'valid':targets_va, 'test':targets_te}
+            predict = {'train':predict_tr, 'valid':predict_va, 'test':predict_te}
+            per_target = {'train': per_target_tr, 'valid':per_target_va, 'test':per_target_te}
+            results['global']['rep'+str(int(rep))] = {'targets':targets, 'predict':predict}
+            results['per_target']['rep'+str(int(rep))] = per_target
+        return results
+            
 
 class ResultsENN():
 

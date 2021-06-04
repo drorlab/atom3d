@@ -2,12 +2,12 @@
 
 #SBATCH --time=24:00:00
 #SBATCH --mem=20G
-#SBATCH --partition=rondror
-#SBATCH --qos=high_p
+#SBATCH --partition=rbaltman,owners
+# # SBATCH --qos=high_p
 
 
 # Directory definitions
-OUT_DIR=/oak/stanford/groups/rondror/projects/atom3d/lmdb/small_molecule_properties
+OUT_DIR=/scratch/users/aderry/lmdb/atom3d/small_molecule_properties
 XYZ_DIR=$SCRATCH/dsgdb9nsd
 START_DIR=$(pwd)
 
@@ -36,6 +36,6 @@ python prepare_lmdb.py $XYZ_DIR $OUT_DIR --split \
 	--val_txt   splits/ids_validation.txt \
 	--test_txt  splits/ids_test.txt 
 # Remove the raw data  
-rm $SCRATCH/dsgdb9nsd.xyz.tar.bz2
-rm -r $XYZ_DIR
+# rm $SCRATCH/dsgdb9nsd.xyz.tar.bz2
+# rm -r $XYZ_DIR
 

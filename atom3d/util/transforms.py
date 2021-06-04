@@ -46,7 +46,7 @@ def prot_graph_transform(item, atom_keys=['atoms'], label_key='scores'):
 
     return item
 
-def mol_graph_transform(item, atom_key='atoms', label_key='scores', use_bonds=False):
+def mol_graph_transform(item, atom_key='atoms', label_key='scores', use_bonds=False, onehot_edges=False):
     """Transform for converting dataframes to Pytorch Geometric graphs, to be applied when defining a :mod:`Dataset <atom3d.datasets.datasets>`.
     Operates on Dataset items, assumes that the item contains all keys specified in ``keys`` and ``labels`` arguments.
 
@@ -67,7 +67,7 @@ def mol_graph_transform(item, atom_key='atoms', label_key='scores', use_bonds=Fa
         bonds = item['bonds']
     else:
         bonds = None
-    node_feats, edge_index, edge_feats, pos = gr.mol_df_to_graph(item[atom_key], bonds=bonds)
+    node_feats, edge_index, edge_feats, pos = gr.mol_df_to_graph(item[atom_key], bonds=bonds, onehot_edges=onehot_edges)
     item[atom_key] = Data(node_feats, edge_index, edge_feats, y=item[label_key], pos=pos)
 
     return item

@@ -1,7 +1,9 @@
 import numpy as np
 import scipy.spatial as ss
 import torch
+import torch.nn.functional as F
 from torch_geometric.utils import to_undirected
+from torch_sparse import coalesce
 
 import atom3d.util.formats as fo
 
@@ -58,7 +60,7 @@ def prot_df_to_graph(df, feat_col='element', allowable_feats=prot_atoms, edge_di
     return node_feats, edges, edge_weights, node_pos
 
 
-def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=4.5):
+def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=4.5, onehot_edges=True):
     """
     Converts molecule in dataframe to a graph compatible with Pytorch-Geometric
 
@@ -71,27 +73,33 @@ def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=
 
     :return: Tuple containing \n
         - node_feats (torch.FloatTensor): Features for each node, one-hot encoded by atom type in ``allowable_atoms``.
-        - edges (torch.LongTensor): Edges from chemical bond graph in COO format.
+        - edge_index (torch.LongTensor): Edges from chemical bond graph in COO format.
         - edge_feats (torch.FloatTensor): Edge features given by bond type. Single = 1.0, Double = 2.0, Triple = 3.0, Aromatic = 1.5.
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node.
     """
     node_pos = torch.FloatTensor(df[['x', 'y', 'z']].to_numpy())
+    N = df.shape[0]
+    bond_mapping = {1.0: 0, 2.0: 1, 3.0: 2, 1.5: 3}
     
     if bonds is not None:
         bond_data = torch.FloatTensor(bonds.to_numpy())
         edge_tuples = torch.cat((bond_data[:, :2], torch.flip(bond_data[:, :2], dims=(1,))), dim=0)
-        edges = edge_tuples.t().long().contiguous()
-        edge_feats = torch.cat((torch.FloatTensor(bond_data[:,-1]).view(-1), torch.FloatTensor(bond_data[:,-1]).view(-1)), dim=0)
+        edge_index = edge_tuples.t().long().contiguous()
+        if onehot_edges:
+            bond_idx = list(map(lambda x: bond_mapping[x], bond_data[:,-1].tolist())) + list(map(lambda x: bond_mapping[x], bond_data[:,-1].tolist()))
+            edge_attr = F.one_hot(torch.tensor(bond_idx), num_classes=4).to(torch.float)
+            edge_index, edge_attr = coalesce(edge_index, edge_attr, N, N)
+        else:
+            edge_attr = torch.cat((torch.FloatTensor(bond_data[:,-1]).view(-1), torch.FloatTensor(bond_data[:,-1]).view(-1)), dim=0)
     else:
         kd_tree = ss.KDTree(node_pos)
         edge_tuples = list(kd_tree.query_pairs(edge_dist_cutoff))
-        edges = torch.LongTensor(edge_tuples).t().contiguous()
-        edges = to_undirected(edges)
-        edge_feats = torch.FloatTensor([1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edges.t()]).view(-1)
-        
+        edge_index = torch.LongTensor(edge_tuples).t().contiguous()
+        edge_index = to_undirected(edge_index)
+        edge_attr = torch.FloatTensor([1.0 / (np.linalg.norm(node_pos[i] - node_pos[j]) + 1e-5) for i, j in edge_index.t()]).view(-1)
     node_feats = torch.FloatTensor([one_of_k_encoding_unk(e, allowable_atoms) for e in df['element']])
 
-    return node_feats, edges, edge_feats, node_pos
+    return node_feats, edge_index, edge_attr, node_pos
 
 
 def combine_graphs(graph1, graph2, edges_between=True, edges_between_dist=4.5):
@@ -158,7 +166,10 @@ def edges_between_graphs(pos1, pos2, dist=4.5):
             continue
         for j in contacts:
             edges.append((i, j + pos1.shape[0]))
-            edge_weights.append(np.linalg.norm(pos1[i] - pos2[j]))
+            edges.append((j + pos1.shape[0], i))
+            d = 1.0 / (np.linalg.norm(pos1[i] - pos2[j]) + 1e-5)
+            edge_weights.append(d)
+            edge_weights.append(d)
 
     edges = torch.LongTensor(edges).t().contiguous()
     edge_weights = torch.FloatTensor(edge_weights).view(-1)

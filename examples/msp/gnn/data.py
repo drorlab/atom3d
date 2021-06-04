@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import torch
+from tqdm import tqdm
 from atom3d.util.transforms import prot_graph_transform, PairedGraphTransform
 from atom3d.datasets import LMDBDataset
 from torch_geometric.data import Data, Dataset, Batch
@@ -68,18 +69,30 @@ class CollaterMSP(object):
         
 if __name__=="__main__":
     from tqdm import tqdm
-    # dataset = LMDBDataset(os.path.join('/scratch/users/raphtown/atom3d_mirror/lmdb/MSP/splits/split-by-sequence-identity-30/data', 'train'))
-    # dataloader = DataLoader(dataset, batch_size=3, shuffle=False, num_workers=4)
-    # for i, item in tqdm(enumerate(dataloader)):
-    #     if i < 578:
-    #         continue
-    #     print(item)
-        
+
+    save_dir = '/scratch/users/aderry/atom3d/msp'
+    data_dir = '/scratch/users/raphtown/atom3d_mirror/lmdb/MSP/splits/split-by-sequence-identity-30/data'
+    os.makedirs(os.path.join(save_dir, 'train'), exist_ok=True)
+    os.makedirs(os.path.join(save_dir, 'val'), exist_ok=True)
+    os.makedirs(os.path.join(save_dir, 'test'), exist_ok=True)
+    transform = GNNTransformMSP()
+    train_dataset = LMDBDataset(os.path.join(data_dir, 'train'), transform=transform)
+    val_dataset = LMDBDataset(os.path.join(data_dir, 'val'), transform=transform)
+    test_dataset = LMDBDataset(os.path.join(data_dir, 'test'), transform=transform)
     
-    dataset = LMDBDataset(os.path.join('/scratch/users/raphtown/atom3d_mirror/lmdb/MSP/splits/split-by-sequence-identity-30/data', 'train'), transform=GNNTransformMSP())
-    dataloader = DataLoader(dataset, batch_size=3, shuffle=False, collate_fn=CollaterMSP(batch_size=3), num_workers=4)
-    for original, mutated in tqdm(dataloader):
-        if mutated.mut_idx.max() > mutated.batch.shape[0]:
-            print(mutated.batch.shape)
-            print(mutated.mut_idx)
-            break
+    # train_loader = DataLoader(train_dataset, 1, shuffle=True, num_workers=4, collate_fn=CollaterMSP(batch_size=1))
+    # val_loader = DataLoader(val_dataset, 1, shuffle=False, num_workers=4, collate_fn=CollaterMSP(batch_size=1))
+    # test_loader = DataLoader(test_dataset, 1, shuffle=False, num_workers=4, collate_fn=CollaterMSP(batch_size=1))
+    # for item in dataset[0]:
+    #     print(item, type(dataset[0][item]))
+    
+    # for i, item in enumerate(tqdm(train_dataset)):
+    #     torch.save(item, os.path.join(save_dir, 'train', f'data_{i}.pt'))
+    
+    # print('processing validation dataset...')
+    # for i, item in enumerate(tqdm(val_dataset)):
+    #     torch.save(item, os.path.join(save_dir, 'val', f'data_{i}.pt'))
+    
+    print('processing test dataset...')
+    for i, item in enumerate(tqdm(test_dataset)):
+        torch.save(item, os.path.join(save_dir, 'test', f'data_{i}.pt'))
