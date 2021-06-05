@@ -74,7 +74,7 @@ class CNN3D_TransformMSP(object):
         transformed = {
             'feature_original': self._voxelize(item['original_atoms'], mut_chain, mut_res, False),
             'feature_mutated': self._voxelize(item['mutated_atoms'], mut_chain, mut_res, True),
-            'label': int(item['label'] == '0'), # Convert to 0 for original, 1 for mutated
+            'label': int(item['label']), # Convert to 0 for original, 1 for mutated
             'id': item['id']
         }
         return transformed

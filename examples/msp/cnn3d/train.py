@@ -37,13 +37,10 @@ def major_vote(results):
 def compute_stats(df):
     results = major_vote(df)
     res = {}
-    all_true = results['true'].astype(np.int8)
-    all_pred = results['pred'].astype(np.int8)
-    res['auroc'] = sm.roc_auc_score(all_true, all_pred)
-    res['auprc'] = sm.average_precision_score(all_true, all_pred)
-    res['acc'] = sm.accuracy_score(all_true, all_pred.round())
-    res['bal_acc'] = \
-        sm.balanced_accuracy_score(all_true, all_pred.round())
+    all_true = results['true']
+    all_prob = results['avg_prob'].astype(np.float)
+    res['auroc'] = sm.roc_auc_score(all_true, all_prob)
+    res['auprc'] = sm.average_precision_score(all_true, all_prob)
     return res
 
 
