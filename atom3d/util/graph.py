@@ -60,7 +60,7 @@ def prot_df_to_graph(df, feat_col='element', allowable_feats=prot_atoms, edge_di
     return node_feats, edges, edge_weights, node_pos
 
 
-def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=4.5, onehot_edges=True):
+def mol_df_to_graph(df, bonds=None, allowable_atoms=None, edge_dist_cutoff=4.5, onehot_edges=True):
     """
     Converts molecule in dataframe to a graph compatible with Pytorch-Geometric
 
@@ -77,6 +77,8 @@ def mol_df_to_graph(df, bonds=None, allowable_atoms=mol_atoms, edge_dist_cutoff=
         - edge_feats (torch.FloatTensor): Edge features given by bond type. Single = 1.0, Double = 2.0, Triple = 3.0, Aromatic = 1.5.
         - node_pos (torch.FloatTensor): x-y-z coordinates of each node.
     """
+    if allowable_atoms is None:
+        allowable_atoms = mol_atoms
     node_pos = torch.FloatTensor(df[['x', 'y', 'z']].to_numpy())
     N = df.shape[0]
     bond_mapping = {1.0: 0, 2.0: 1, 3.0: 2, 1.5: 3}

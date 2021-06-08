@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, global_add_pool
+from torch_geometric.nn import GCNConv, global_mean_pool
 
 class GNN_PSR(torch.nn.Module):
     def __init__(self, num_features, hidden_dim):
@@ -35,7 +35,7 @@ class GNN_PSR(torch.nn.Module):
         x = F.relu(x)
         x = self.conv5(x, edge_index, edge_weight)
         x = self.bn5(x)
-        x = global_add_pool(x, batch)
+        x = global_mean_pool(x, batch)
         x = F.relu(x)
         x = F.relu(self.fc1(x))
         x = F.dropout(x, p=0.25, training=self.training)
