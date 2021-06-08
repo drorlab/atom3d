@@ -17,3 +17,7 @@ layout: default
 ### References
 
 Kryshtafovych, A., Schwede, T., et al. (2019). Proteins: Structure, Function and Bioinformatics, 87(12), 1011-1020.
+
+### License
+
+This dataset is licensed under a Creative Commons CC-BY [license](./LICENSE).
