@@ -7,12 +7,7 @@ layout: default
   - **Dataset description:** We use the QM9 dataset (Ruddigkeit et al., 2012; Ramakrishnan et al., 2014), which contains structures and energetic, electronic, and thermodynamic properties for 134,000 stable small organic molecules, obtained from quantum-chemical calculations. 
   - **Task:** We predict all molecular properties from the ground-state structure.
   - **Splitting criteria:** We split molecules randomly.
-  - **Downloads:**
-
-    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1Qj67Y3cmTZoo9NCnjjI9CIs1KXnRY36O)
-    - Split randomly
-      [[datasets]](https://drive.google.com/uc?export=download&id=1MtqouZsV_7nEb3CZMoaJejAHrS1_bFMN)
-      [[indices]](https://drive.google.com/uc?export=download&id=1xhIM0z_wa3BYlAnG2o_OXSj9TbTXqIIB)
+  - **Downloads:** The full dataset, split data, and split indices are available for download via [Zenodo](https://zenodo.org/record/4911142) (doi:10.5281/zenodo.4911142)
 
 ### References
 

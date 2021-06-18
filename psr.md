@@ -7,12 +7,7 @@ layout: default
   - **Dataset description:** The Critical Assessment of Structure Prediction (CASP) (Kryshtafovych et al., 2019) is a blind international competition for predicting protein structure.
   - **Task:** We formulate this as a regression task, where we predict the global distance test (GDT_TS) from the true structure for each of the predicted structures submitted in the last 18 years of CASP.
   - **Splitting criteria:** We split structures temporally by competition year.
-  - **Downloads:**
-
-    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1IjcycmoXvxOSMppnbiLDiFauWVZlR6px)
-    - Split by year
-      [[datasets]](https://drive.google.com/uc?export=download&id=1lMVXf5Mmg6Oczq5iOBz7xyz5vGJB3CmG)
-      [[indices]](https://drive.google.com/uc?export=download&id=1brrSmzPSuz_6WPSQEO6UUKE-a3OtyMVq)
+  - **Downloads:** The full dataset, split data, and split indices are available for download via [Zenodo](https://zenodo.org/record/4915648) (doi:10.5281/zenodo.4915648)
 
 ### References
 

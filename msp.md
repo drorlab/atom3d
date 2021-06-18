@@ -7,12 +7,7 @@ layout: default
   - **Dataset description:** We derive a novel dataset by collecting single-point mutations from the SKEMPI database (Jankauskaitė et al., 2019) and model each mutation into the structure to produce mutated structures.
   - **Task:** We formulate this as a binary classification task where we predict whether the stability of the complex increases as a result of the mutation.
   - **Splitting criteria:** We split protein complexes by sequence identity at 30%.
-  - **Downloads:**
-
-    - Full dataset [[dataset]](https://drive.google.com/uc?export=download&id=1ACkgojNUKo_ck34F3VEvsjHtlqIs2ecx)
-    - 30% sequence identity split
-      [[datasets]](https://drive.google.com/uc?export=download&id=13aIU0JVD-PznEdrEzeCdL5ICEgWSS9Jj)
-      [[indices]](https://drive.google.com/uc?export=download&id=1duge3FQeEs1Oup0az2lZhdvJLDmbx6-H)
+  - **Downloads:** The full dataset, split data, and split indices are available for download via [Zenodo](https://zenodo.org/record/4962515) (doi:10.5281/zenodo.4962515)
 
 ### References
 
