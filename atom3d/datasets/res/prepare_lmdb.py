@@ -35,9 +35,7 @@ gly_CB_sigma = np.array([[1.63731114e-03, 2.40018381e-04, 6.38361679e-04],
 
 
 class ResTransform(object):
-    """
-    Track and lookup PSR score files.
-    """
+
     def __init__(self, balance=False):
         self.balance = balance
 
@@ -51,6 +49,7 @@ class ResTransform(object):
         #remove Hets and non-allowable atoms
         df = df[df['element'].isin(allowed_atoms)]
         df = df[df['hetero'].str.strip()=='']
+        df = df.reset_index(drop=True)
         
         labels = []
 
@@ -74,29 +73,23 @@ class ResTransform(object):
             CB_pos = CA_pos + (np.ones_like(CA_pos) * gly_CB_mu)
 
             # remove current residue from structure
-            subunit_df = df[(df.chain != chain) | (df.residue != res)]
-            # add backbone atoms back in
-            res_bb = res_df[res_df['name'].isin(bb_atoms)]
-            subunit_df = pd.concat([subunit_df, res_bb]).reset_index(drop=True)
-
+            subunit_df = df[(df.chain != chain) | (df.residue != res) | df['name'].isin(bb_atoms)]
+            
             # environment = all atoms within 10*sqrt(3) angstroms (to enable a 20A cube)
             kd_tree = scipy.spatial.KDTree(subunit_df[['x','y','z']].to_numpy())
             subunit_pt_idx = kd_tree.query_ball_point(CB_pos, r=10.0*np.sqrt(3), p=2.0)
-
-            sub_df = subunit_df.loc[subunit_pt_idx]
-            tmp = sub_df.copy()
+            
+            subunits.append(subunit_df.index[sorted(subunit_pt_idx)].to_list())
+    
             sub_name = '_'.join([str(x) for x in chain_res])
-            tmp['subunit'] = sub_name
             label_row = [sub_name, res_util.res_label_dict[res_name], CB_pos[0], CB_pos[1], CB_pos[2]]
             labels.append(label_row)
 
-            subunits.append(tmp)
-        if len(subunits) == 0:
-            subunits = pd.DataFrame(columns=df.columns)
-        else:
-            subunits = pd.concat(subunits).reset_index(drop=True)
-        x['atoms'] = subunits
+        assert len(labels) == len(subunits)
+        x['atoms'] = df
         x['labels'] = pd.DataFrame(labels, columns=['subunit', 'label', 'x', 'y', 'z'])
+        x['subunit_indices'] = subunits
+
         return x
 
 
@@ -128,29 +121,21 @@ def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, te
 
     file_list = fi.find_files(input_file_path, fo.patterns[filetype])
     
-    chunk_size = (len(file_list) // num_threads) + 1
-    chunks = [file_list[i:i + chunk_size] for i in range(0, len(file_list), chunk_size)]
-    assert len(chunks) == num_threads
-
     lmdb_path = os.path.join(output_root, 'all')
     if not os.path.exists(lmdb_path):
         os.makedirs(lmdb_path)
+        
+    # dataset = da.load_dataset(file_list, filetype, transform=ResTransform(balance=balance))
+    # da.make_lmdb_dataset(dataset, lmdb_path)
+    
+    chunk_size = (len(file_list) // num_threads) + 1
+    chunks = [file_list[i:i + chunk_size] for i in range(0, len(file_list), chunk_size)]
+    assert len(chunks) == num_threads
     
     for i in range(start,num_threads):
-        #print(chunks[i][2268:2273])
         logger.info(f'Processing chunk {i:}...')
         _process_chunk(chunks[i], 'pdb', f'{lmdb_path}_tmp_{i}', balance)
         
-    # inputs = [(chunks[i], filetype, f'{lmdb_path}_tmp_{i}', balance) for i in range(num_threads)]
-    # par.submit_jobs(_process_chunk, inputs, num_threads)
-    
-    # logger.info('Combining datasets...')
-    # dataset_list = [da.LMDBDataset(f'{lmdb_path}_tmp_{i}') for i in range(num_threads)]
-    # da.combine_datasets(dataset_list, lmdb_path)
-    
-    # for i in range(num_threads):
-    #     os.system(f'rm {lmdb_path}_tmp_{i}/data.mdb')
-    #     os.system(f'rm {lmdb_path}_tmp_{i}/lock.mdb')
 
     if not split:
         return

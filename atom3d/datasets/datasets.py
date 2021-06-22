@@ -17,8 +17,8 @@ import lmdb
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, IterableDataset
-import torch_geometric.data as ptg
 import torch
+import torch_geometric.data as ptg
 
 import atom3d.util.rosetta as ar
 import atom3d.util.file as fi
@@ -320,7 +320,6 @@ class PTGDataset(ptg.Dataset):
     def __init__(self, root, transform=None, pre_transform=None):
         super(PTGDataset, self).__init__(root, transform, pre_transform)
 
-
     @property
     def processed_dir(self):
         return self.root
@@ -598,43 +597,20 @@ def download_dataset(name, out_path, split=None):
     :type split: str
     """
 
-    def _hook(t):
-        """from https://github.com/tqdm/tqdm/blob/master/examples/tqdm_wget.py
-        """
-        last_b = [0]
-
-        def update_to(b=1, bsize=1, tsize=None):
-            """
-            b  : int, optional
-                Number of blocks transferred so far [default: 1].
-            bsize  : int, optional
-                Size of each block (in tqdm units) [default: 1].
-            tsize  : int, optional
-                Total size (in tqdm units). If [default: None] or -1,
-                remains unchanged.
-            """
-            if tsize not in (None, -1):
-                t.total = tsize
-            displayed = t.update((b - last_b[0]) * bsize)
-            last_b[0] = b
-            return displayed
-
-        return update_to
-
     name = name.lower()
     if name == 'smp':
         if split is None:
-            link = '1Qj67Y3cmTZoo9NCnjjI9CIs1KXnRY36O'
+            link = 'https://zenodo.org/record/4911142/files/SMP-raw.tar.gz?download=1'
         elif split == 'random':
-            link = '1MtqouZsV_7nEb3CZMoaJejAHrS1_bFMN'
+            link = 'https://zenodo.org/record/4911142/files/SMP-random.tar.gz?download=1'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "random".')
             return
     elif name == 'ppi':
         if split is None:
-            link = '1QYAXy71s9oStaSBnaVIL0i62jNSpiGQB'
+            link = 'https://zenodo.org/record/4911102/files/PPI-raw.tar.gz?download=1'
         elif split == 'DIPS':
-            link = '1ddUdYTr5aqXJv0Ncz1TWloqiLCLPLO_K'
+            link = 'https://zenodo.org/record/4911102/files/PPI-DIPS-split.tar.gz?download=1'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "DIPS".')
             return
@@ -648,57 +624,53 @@ def download_dataset(name, out_path, split=None):
             return
     elif name == 'msp':
         if split is None:
-            link = '1ACkgojNUKo_ck34F3VEvsjHtlqIs2ecx'
+            link = 'https://zenodo.org/record/4962515/files/MSP-raw.tar.gz?download=1'
         elif split == 'sequence-identity-30':
-            link = '1f2GUGRIxR82l5eb8r8OFX7QkST4zbuZ3'
+            link = 'https://zenodo.org/record/4962515/files/MSP-split-by-sequence-identity-30.tar.gz?download=1'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "sequence-identity-30".')
             return
     elif name == 'lba':
         if split is None:
-            link = '1tudH6z5_-LVTIS7k44QcdXO9nPhIgYeS'
+            link = 'https://zenodo.org/record/4914718/files/LBA-raw.tar.gz?download=1'
         elif split == 'sequence-identity-30':
-            link = '1P80r0Snq8EcTK36OyBQcZD5KYCaYuIBm'
+            link = 'https://zenodo.org/record/4914718/files/LBA-split-by-sequence-identity-30.tar.gz?download=1'
         elif split == 'sequence-identity-60':
-            link = '1IM_Fn5dvvqogwGaq0TD0BRWbv3iST-mN'
+            link = 'https://zenodo.org/record/4914718/files/LBA-split-by-sequence-identity-60.tar.gz?download=1'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "sequence-identity-30", "sequence-identity-60".')
             return
     elif name == 'lep':
         if split is None:
-            link = '1V0r_VutAKKfwHYdx_nPUZi84a_Ud-rri'
+            link = 'https://zenodo.org/record/4914734/files/LEP-raw.tar.gz?download=1-rri'
         elif split == 'protein':
-            link = '1tCHqotbAqcHmgtEeVidSld3pOyY2MUIh'
+            link = 'https://zenodo.org/record/4914734/files/LEP-split-by-protein.tar.gz?download=1'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "protein".')
             return
     elif name == 'psr':
         if split is None:
-            link = '1ahFkfqijbLSO9kelRrp6i8TcufXuSoVa'
+            link = 'https://zenodo.org/record/4915648/files/PSR-raw.tar.gz?download=1'
         elif split == 'year':
-            link = '1nmiqJLRZMTnbADzkcEUjfO7H9WwT13Ns'
+            link = 'https://zenodo.org/record/4915648/files/PSR-split-by-year.tar.gz?download=1'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "year".')
             return
     elif name == 'rsr':
         if split is None:
-            link = '1EQs3L9gU5tx4OAF5Gu-F8p9Vfmz68y1b'
+            link = 'https://zenodo.org/record/4961085/files/RSR-raw.tar.gz?download=1'
         elif split == 'year':
-            link = '14kv95QuTQueBEfVZ6Bo6y7g-sdG0B_Dw'
+            link = 'https://zenodo.org/record/4961085/files/RSR-candidates-split-by-time.tar.gz?download=1'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "year".')
             return
     else:
         print('Invalid dataset name specified. Possible values are {SMP, PIP, RES, MSP, LBA, LEP, PSR, RSR}')
 
-    # f_out = os.path.join(out_path, name + '.lmdb')
-    # with tqdm.tqdm(unit='B', unit_scale=True, unit_divisor=1024, miniters=1, desc=f_out) as t:  # all optional kwargs
-    #     urllib.request.urlretrieve(link, filename=f_out,
-    #                     reporthook=_hook(t), data=None)
 
     if not os.path.exists(out_path):
         os.makedirs(out_path)
-    cmd = f"wget --load-cookies /tmp/cookies.txt \"https://drive.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id={link}' -O- | sed -En 's/.*confirm=([0-9A-Za-z_]+).*/\\1\\n/p'  | tr -d \"n\")&id={link}\" -O {out_path}/{name}.tar.gz"
+    cmd = f"wget {link} -O {out_path}/{name}.tar.gz"
     subprocess.call(cmd, shell=True)
     cmd2 = f"tar xzvf {out_path}/{name}.tar.gz -C {out_path}"
     subprocess.call(cmd2, shell=True)
