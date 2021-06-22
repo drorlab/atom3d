@@ -6,12 +6,13 @@ All datasets in ATOM3D are provided in standardized LMDB format. LMDB allows for
 Downloading LMDB datasets
 **************************
 
-All datasets can be downloaded in LMDB format from `atom3d.ai <atom3d.ai>`_, or using the Python API:
+All datasets are hosted on Zenodo, and the links to download raw and split datasets in LMDB format can be found at `atom3d.ai <www.atom3d.ai>`_.
+Alternatively, you can use the Python API:
     
 .. code:: pycon
 
   >>> import atom3d.datasets as da
-  >>> da.download_dataset('lba', TARGET_PATH)
+  >>> da.download_dataset('lba', TARGET_PATH, split=SPLIT_NAME)
 
 See the ATOM3D website or the :ref:`FAQ <sec:datasets-faq>` for more information about the datasets available.
 
