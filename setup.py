@@ -53,6 +53,7 @@ setup(
         'msgpack',
         'numpy',
         'pandas',
+        'pyrr',
         'python-dotenv>=0.5.1',
         'scipy',
         'scikit-learn',
