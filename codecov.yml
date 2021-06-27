@@ -8,5 +8,6 @@ ignore:
   - "atom3d/datasets/rsr"
   - "atom3d/datasets/smp"
   - "atom3d/shard"
+  - "examples"
 coverage:
   range: 0..100
