@@ -66,7 +66,6 @@ class Scores(object):
     def __call__(self, x, error_if_missing=False):
         key, x['scores'] = self._lookup(x['file_path'])
         x['id'] = str(key)
-        del x['file_path']
         if x['scores'] is None and error_if_missing:
             raise RuntimeError(f'Unable to find scores for {x["file_path"]}')
         return x
