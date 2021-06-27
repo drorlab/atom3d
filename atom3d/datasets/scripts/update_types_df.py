@@ -8,7 +8,8 @@ class UpdateTypes():
     def __call__(self,x):
         if 'types' not in x.keys():
             for key in self.df_keys:
-                if key in x: x[key] = pd.DataFrame(**x[key])
+                if key in x and type(x[key]) != pd.DataFrame:
+                    x[key] = pd.DataFrame(**x[key])
         return x
 
 @click.command()
