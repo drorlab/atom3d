@@ -1,5 +1,18 @@
-atom3d.util 
+atom3d.util
 ===================
+
+.. automodule:: atom3d.util
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.util.ensemble
+---------------------------
+
+.. automodule:: atom3d.util.ensemble
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 atom3d.util.file
 -----------------------
@@ -25,18 +38,26 @@ atom3d.util.graph
    :undoc-members:
    :show-inheritance:
 
-atom3d.util.transforms
-------------------------
-
-.. automodule:: atom3d.util.transforms
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 atom3d.util.log
 ----------------------
 
 .. automodule:: atom3d.util.log
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.util.metrics
+--------------------------
+
+.. automodule:: atom3d.util.metrics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.util.results
+--------------------------
+
+.. automodule:: atom3d.util.results
    :members:
    :undoc-members:
    :show-inheritance:
@@ -49,11 +70,26 @@ atom3d.util.rosetta
    :undoc-members:
    :show-inheritance:
 
-..
-  Module contents
-  ---------------
-  
-  .. automodule:: atom3d.util
-     :members:
-     :undoc-members:
-     :show-inheritance:
+atom3d.util.transforms
+-----------------------------
+
+.. automodule:: atom3d.util.transforms
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.util.vectors
+--------------------------
+
+.. automodule:: atom3d.util.vectors
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.util.voxelize
+---------------------------
+
+.. automodule:: atom3d.util.voxelize
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,10 +1,15 @@
-atom3d.datasets.msp.models package
+atom3d.datasets.msp.models
 ==================================
 
-Module contents
----------------
-
 .. automodule:: atom3d.datasets.msp.models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.datasets.msp.models.enn\_msp
+------------------------------------------
+
+.. automodule:: atom3d.datasets.msp.models.enn_msp
    :members:
    :undoc-members:
    :show-inheritance:

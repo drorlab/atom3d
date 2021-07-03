@@ -1,8 +1,5 @@
-atom3d.datasets.ppi.models package
+atom3d.datasets.ppi.models
 ==================================
-
-Module contents
----------------
 
 .. automodule:: atom3d.datasets.ppi.models
    :members:

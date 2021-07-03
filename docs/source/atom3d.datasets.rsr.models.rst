@@ -1,8 +1,5 @@
-atom3d.datasets.rsr.models package
+atom3d.datasets.rsr.models
 ==================================
-
-Module contents
----------------
 
 .. automodule:: atom3d.datasets.rsr.models
    :members:

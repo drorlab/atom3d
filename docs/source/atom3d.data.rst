@@ -1,21 +1,15 @@
-atom3d.data package
+atom3d.data
 ===================
 
-Submodules
-----------
-
-atom3d.data.example module
---------------------------
-
-.. automodule:: atom3d.data.example
+.. automodule:: atom3d.data
    :members:
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+atom3d.data.example
+--------------------------
 
-.. automodule:: atom3d.data
+.. automodule:: atom3d.data.example
    :members:
    :undoc-members:
    :show-inheritance:

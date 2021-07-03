@@ -1,10 +1,12 @@
-atom3d.datasets.lba.models package
+atom3d.datasets.lba.models
 ==================================
 
-Submodules
-----------
+.. automodule:: atom3d.datasets.lba.models
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-atom3d.datasets.lba.models.enn\_lba module
+atom3d.datasets.lba.models.enn\_lba
 ------------------------------------------
 
 .. automodule:: atom3d.datasets.lba.models.enn_lba
@@ -12,11 +14,10 @@ atom3d.datasets.lba.models.enn\_lba module
    :undoc-members:
    :show-inheritance:
 
+atom3d.datasets.lba.models.enn\_lba\_siamese
+---------------------------------------------------
 
-Module contents
----------------
-
-.. automodule:: atom3d.datasets.lba.models
+.. automodule:: atom3d.datasets.lba.models.enn_lba_siamese
    :members:
    :undoc-members:
    :show-inheritance:

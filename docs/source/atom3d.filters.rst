@@ -1,6 +1,10 @@
 atom3d.filters
 ======================
 
+.. automodule:: atom3d.filters
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 atom3d.filters.filters
 -----------------------------
@@ -33,12 +37,3 @@ atom3d.filters.sequence
    :members:
    :undoc-members:
    :show-inheritance:
-
-..
-  Module contents
-  ---------------
-  
-  .. automodule:: atom3d.filters
-     :members:
-     :undoc-members:
-     :show-inheritance:

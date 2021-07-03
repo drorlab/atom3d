@@ -1,10 +1,15 @@
-atom3d.datasets.lep.models package
+atom3d.datasets.lep.models
 ==================================
 
-Module contents
----------------
-
 .. automodule:: atom3d.datasets.lep.models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.datasets.lep.models.enn\_lep
+------------------------------------------
+
+.. automodule:: atom3d.datasets.lep.models.enn_lep
    :members:
    :undoc-members:
    :show-inheritance:

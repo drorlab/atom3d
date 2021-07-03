@@ -1,7 +1,12 @@
 atom3d.models
 =====================
 
-Convolutional Networks (CNNs)
+.. automodule:: atom3d.models
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.models.cnn
 ------------------------
 
 .. automodule:: atom3d.models.cnn
@@ -9,7 +14,15 @@ Convolutional Networks (CNNs)
    :undoc-members:
    :show-inheritance:
 
-Graph Networks (GNNs)
+atom3d.models.enn
+------------------------
+
+.. automodule:: atom3d.models.enn
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+atom3d.models.gnn
 ------------------------
 
 .. automodule:: atom3d.models.gnn
@@ -17,20 +30,10 @@ Graph Networks (GNNs)
    :undoc-members:
    :show-inheritance:
 
-Equivariant Networks (ENNs)
------------------------------
+atom3d.models.mlp
+------------------------
 
-.. automodule:: atom3d.models.enn
+.. automodule:: atom3d.models.mlp
    :members:
    :undoc-members:
    :show-inheritance:
-
-Feed-Forward Networks
------------------------
-
-.. automodule:: atom3d.models.ff
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-

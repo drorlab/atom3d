@@ -1,6 +1,11 @@
 atom3d.splits
 =====================
 
+.. automodule:: atom3d.splits
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 atom3d.splits.sequence
 -----------------------------
 
@@ -16,12 +21,3 @@ atom3d.splits.splits
    :members:
    :undoc-members:
    :show-inheritance:
-
-..
-  Module contents
-  ---------------
-  
-  .. automodule:: atom3d.splits
-     :members:
-     :undoc-members:
-     :show-inheritance:

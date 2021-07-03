@@ -1,28 +1,13 @@
 atom3d.datasets
 =======================
 
-..
-  Module contents
-  ---------------
-  
-  .. automodule:: atom3d.datasets
-     :members:
-     :undoc-members:
-     :show-inheritance:
-
-atom3d.datasets.datasets
-------------------------
-
-.. automodule:: atom3d.datasets.datasets
+.. automodule:: atom3d.datasets
    :members:
    :undoc-members:
    :show-inheritance:
 
-Dataset-specific modules
--------------------------------
-
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 4
 
    atom3d.datasets.lba
    atom3d.datasets.lep
@@ -33,3 +18,10 @@ Dataset-specific modules
    atom3d.datasets.rsr
    atom3d.datasets.smp
 
+atom3d.datasets.datasets
+-------------------------------
+
+.. automodule:: atom3d.datasets.datasets
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,5 +1,15 @@
-atom3d.datasets.rsr 
+atom3d.datasets.rsr
 ===========================
+
+.. automodule:: atom3d.datasets.rsr
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. toctree::
+   :maxdepth: 4
+
+   atom3d.datasets.rsr.models
 
 atom3d.datasets.rsr.ensemble
 -----------------------------------
@@ -9,42 +19,10 @@ atom3d.datasets.rsr.ensemble
    :undoc-members:
    :show-inheritance:
 
-atom3d.datasets.rsr.label
---------------------------------
-
-.. automodule:: atom3d.datasets.rsr.label
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-atom3d.datasets.rsr.prepare
-----------------------------------
-
-.. automodule:: atom3d.datasets.rsr.prepare
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-atom3d.datasets.rsr.prepare\_lmdb
-----------------------------------------
-
-.. automodule:: atom3d.datasets.rsr.prepare_lmdb
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 atom3d.datasets.rsr.score
 --------------------------------
 
 .. automodule:: atom3d.datasets.rsr.score
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: atom3d.datasets.rsr
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,8 +1,5 @@
-atom3d.datasets.psr.models package
+atom3d.datasets.psr.models
 ==================================
-
-Module contents
----------------
 
 .. automodule:: atom3d.datasets.psr.models
    :members:
