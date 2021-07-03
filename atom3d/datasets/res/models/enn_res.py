@@ -119,15 +119,12 @@ class ENN_RES(CGModule):
     def forward(self, data, covariance_test=False):
         """
         Runs a forward pass of the network.
-
         :param data: Dictionary of data to pass to the network.
         :type data : :obj:`dict`
         :param covariance_test: If true, returns all of the atom-level representations twice.
         :type covariance_test: :obj:`bool`, optional
-            
         :return prediction: The output of the layer
         :rtype prediction: :obj:`torch.Tensor`
-            
         """
         # Get and prepare the data
         atom_scalars, atom_mask, edge_scalars, edge_mask, atom_positions = self.prepare_input(data)
