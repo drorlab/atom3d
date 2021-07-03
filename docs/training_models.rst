@@ -165,10 +165,10 @@ This example uses a simple feed-forward neural network with one hidden layer.
 
     # atom3d imports
     import atom3d.datasets.datasets as da
-    import atom3d.util.graph as gr 
+    import atom3d.util.graph as gr
     import atom3d.util.transforms as tr
     from atom3d.models.gnn import GCN
-    from atom3d.models.ff import FeedForward
+    from atom3d.models.mlp import MLP
 
     # define training hyperparameters
     learning_rate=1e-4
@@ -177,7 +177,7 @@ This example uses a simple feed-forward neural network with one hidden layer.
     out_dim = 1
 
     # Load dataset (with transform to convert dataframes to graphs) and initialize dataloader
-    dataset = da.load_dataset('data/test_lmdb', 'lmdb', transform=tr.graph_transform)
+    dataset = da.load_dataset('data/test_lmdb', 'lmdb', transform=tr.GraphTransform)
     dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
 
     # get number of input features from first graph
@@ -189,7 +189,7 @@ This example uses a simple feed-forward neural network with one hidden layer.
     # GCN feature extraction module
     feat_model = GCN(in_dim, feat_dim)
     # Feed-forward output module
-    out_model = FeedForward(feat_dim, [64], out_dim)
+    out_model = MLP(feat_dim, [64], out_dim)
 
     # define optimizer and criterion
     params = [x for x in feat_model.parameters()] + [x for x in out_model.parameters()]
