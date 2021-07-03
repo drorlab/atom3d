@@ -13,9 +13,10 @@ def test_load_dataset_lmdb():
     assert len(dataset) == 4
     for df in dataset:
         print(df)
-        assert df['atoms'].x.dtype == 'float'
-        assert df['atoms'].y.dtype == 'float'
-        assert df['atoms'].z.dtype == 'float'
+        print(df['atoms'].x.dtype)
+        assert df['atoms'].x.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].y.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].z.dtype in ['float', 'float32', 'float64']
 
 
 def test_load_dataset_list():
@@ -23,9 +24,10 @@ def test_load_dataset_list():
     assert len(dataset) == 4
     for df in dataset:
         print(df)
-        assert df['atoms'].x.dtype == 'float'
-        assert df['atoms'].y.dtype == 'float'
-        assert df['atoms'].z.dtype == 'float'
+        print(df['atoms'].x.dtype)
+        assert df['atoms'].x.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].y.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].z.dtype in ['float', 'float32', 'float64']
 
 def test_load_dataset_list_nonexistent():
     dataset = da.load_dataset('tests/test_data/list/nonexistent.txt', 'pdb')
@@ -43,9 +45,10 @@ def test_load_dataset_pdb():
     assert len(dataset) == 4
     for df in dataset:
         print(df)
-        assert df['atoms'].x.dtype == 'float'
-        assert df['atoms'].y.dtype == 'float'
-        assert df['atoms'].z.dtype == 'float'
+        print(df['atoms'].x.dtype)
+        assert df['atoms'].x.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].y.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].z.dtype in ['float', 'float32', 'float64']
 
 
 @pytest.mark.skipif(not importlib.util.find_spec("rdkit") is not None,
@@ -55,9 +58,10 @@ def test_load_dataset_sdf():
     assert len(dataset) == 4
     for df in dataset:
         print(df)
-        assert df['atoms'].x.dtype == 'float'
-        assert df['atoms'].y.dtype == 'float'
-        assert df['atoms'].z.dtype == 'float'
+        print(df['atoms'].x.dtype)
+        assert df['atoms'].x.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].y.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].z.dtype in ['float', 'float32', 'float64']
 
 
 @pytest.mark.skipif(not importlib.util.find_spec("rosetta") is not None,
@@ -74,9 +78,10 @@ def test_load_dataset_xyz():
     assert len(dataset) == 3
     for df in dataset:
         print(df)
-        assert df['atoms'].x.dtype == 'float'
-        assert df['atoms'].y.dtype == 'float'
-        assert df['atoms'].z.dtype == 'float'
+        print(df['atoms'].x.dtype)
+        assert df['atoms'].x.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].y.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].z.dtype in ['float', 'float32', 'float64']
 
 
 def test_load_dataset_xyzgdb():
@@ -87,9 +92,10 @@ def test_load_dataset_xyzgdb():
     assert len(dataset) == 3
     for df in dataset:
         print(df)
-        assert df['atoms'].x.dtype == 'float'
-        assert df['atoms'].y.dtype == 'float'
-        assert df['atoms'].z.dtype == 'float'
+        print(df['atoms'].x.dtype)
+        assert df['atoms'].x.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].y.dtype in ['float', 'float32', 'float64']
+        assert df['atoms'].z.dtype in ['float', 'float32', 'float64']
 
 
 # -- Creator for LMDB dataset
