@@ -114,15 +114,12 @@ class ENN_LBA(CGModule):
     def forward(self, data, covariance_test=False):
         """
         Runs a forward pass of the network.
-
         :param data: Dictionary of data to pass to the network.
         :type data : :obj:`dict`
         :param covariance_test: If true, returns all of the atom-level representations twice.
         :type covariance_test: :obj:`bool`, optional
-            
         :return prediction: The output of the layer
         :rtype prediction: :obj:`torch.Tensor`
-            
         """
         # Get and prepare the data
         atom_scalars, atom_mask, edge_scalars, edge_mask, atom_positions = self.prepare_input(data)
@@ -169,7 +166,7 @@ class ENN_LBA(CGModule):
         :rtype atom_positions: :obj:`torch.Tensor`
         :return edge_mask: Mask used for batching data.
         :rtype edge_mask: :obj:`torch.Tensor`
-            
+
         """
         charge_power, charge_scale, device, dtype = self.charge_power, self.charge_scale, self.device, self.dtype
 

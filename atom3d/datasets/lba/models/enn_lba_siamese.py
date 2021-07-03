@@ -116,15 +116,13 @@ class ENN_LBA_Siamese(CGModule):
     def forward_once(self, data):
         """
         Runs a single forward pass of the network.
-
         :param data: Dictionary of data to pass to the network.
         :type data : :obj:`dict`
         :param covariance_test: If true, returns all of the atom-level representations twice.
         :type covariance_test: :obj:`bool`, optional
-            
         :return prediction: The output of the layer
         :rtype prediction: :obj:`torch.Tensor`
-            
+
         """
         # Get and prepare the data
         atom_scalars, atom_mask, edge_scalars, edge_mask, atom_positions = self.prepare_input(data)
@@ -152,15 +150,13 @@ class ENN_LBA_Siamese(CGModule):
     def forward(self, data, covariance_test=False):
         """
         Runs a forward pass of the network.
-
         :param data: Dictionary of data to pass to the network.
         :type data : :obj:`dict`
         :param covariance_test: If true, returns all of the atom-level representations twice.
         :type covariance_test: :obj:`bool`, optional
-            
         :return prediction: The output of the first network.
         :rtype prediction: :obj:`torch.Tensor`
-            
+
         """
         # Split the data
         data1 = {'neglog_aff': data['neglog_aff']}
@@ -195,7 +191,7 @@ class ENN_LBA_Siamese(CGModule):
         :rtype atom_positions: :obj:`torch.Tensor`
         :return edge_mask: Mask used for batching data.
         :rtype edge_mask: :obj:`torch.Tensor`
-            
+
         """
         charge_power, charge_scale, device, dtype = self.charge_power, self.charge_scale, self.device, self.dtype
 
@@ -232,6 +228,7 @@ class OutputLinearOnce(nn.Module):
     atom feature vectors. This is performed in a permutation invariant way
     by using a (batch-masked) sum over all atoms, and then applying a
     linear mixing layer to predict a single output.
+    
     Parameters
     ----------
     num_scalars : :class:`int`
@@ -243,6 +240,7 @@ class OutputLinearOnce(nn.Module):
         Device to instantite the module to.
     dtype : :class:`torch.dtype`, optional
         Data type to instantite the module to.
+        
     """
     def __init__(self, num_scalars, bias=True, device=torch.device('cpu'), dtype=torch.float):
         super(OutputLinearOnce, self).__init__()
@@ -255,16 +253,19 @@ class OutputLinearOnce(nn.Module):
     def forward(self, atom_scalars, atom_mask):
         """
         Forward step for :class:`OutputLinear`
+        
         Parameters
         ----------
         atom_scalars : :class:`torch.Tensor`
             Scalar features for each atom used to predict the final learning target.
         atom_mask : :class:`torch.Tensor`
             Unused. Included only for pedagogical purposes.
+            
         Returns
         -------
         predict : :class:`torch.Tensor`
             Tensor used for predictions.
+            
         """
         s = atom_scalars.shape
         atom_scalars = atom_scalars.view((s[0], s[1], -1)).sum(1)  
@@ -281,6 +282,7 @@ class OutputSiamesePMLP(nn.Module):
     (1) A MLP is applied to each set of scalar atom-features.
     (2) The environments are summed up.
     (3) Another MLP is applied to the output to predict a single learning target.
+    
     Parameters
     ----------
     num_scalars : :class:`int`
@@ -292,6 +294,7 @@ class OutputSiamesePMLP(nn.Module):
         Device to instantite the module to.
     dtype : :class:`torch.dtype`, optional
         Data type to instantite the module to.
+        
     """
     def __init__(self, num_scalars, num_classes=1, num_mixed=64, activation='leakyrelu', device=torch.device('cpu'), dtype=torch.float):
         super(OutputSiamesePMLP, self).__init__()
@@ -304,14 +307,17 @@ class OutputSiamesePMLP(nn.Module):
     def forward(self, atom_scalars):
         """
         Forward step for :class:`OutputSiamesePMLP`
+        
         Parameters
         ----------
         atom_scalars : :class:`torch.Tensor`
             Scalar features for each atom used to predict the final learning target.
+            
         Returns
         -------
         predict : :class:`torch.Tensor`
             Tensor used for predictions.
+            
         """
         # Reshape scalars appropriately
         print('atom_scalars:', atom_scalars.shape)
