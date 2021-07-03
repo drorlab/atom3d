@@ -83,7 +83,7 @@ def voxel_transform(item, grid_config, rot_mat=None, center_fn=vox.get_center, r
          `radius`, radius of grid to generate in Angstroms (half of side length); 
          `resolution`, voxel size in Angstroms;
          `num_directions`, number of directions for data augmentation (required if ``rot_mat``=None);
-         `num_rolls`, number of rolls, or rotations, for data augmentation (required if ``rot_mat``=None)
+         `num_rolls`, number of rolls, or rotations, for data augmentation (required if ``rot_mat``=None);
     :type grid_config: :class:`dotdict <atom3d.util.voxelize.dotdict>`
     :param rot_mat: Rotation matrix (3x3) to apply to structure coordinates. If None (default), apply randomly sampled rotation according to parameters specified by ``grid_config.num_directions`` and ``grid_config.num_rolls``
     :type rot_mat: np.array

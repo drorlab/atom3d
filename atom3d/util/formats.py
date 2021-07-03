@@ -606,10 +606,10 @@ def get_bonds_matrix_from_mol(mol):
     """
     Calculates matrix of bond types from a molecule and returns as numpy array.
     Bond types are encoded as double:
-     single bond (1.0)
-     double bond (2.0)
-     triple bond (3.0)
-     aromatic bond (1.5).
+    single bond (1.0)
+    double bond (2.0)
+    triple bond (3.0)
+    aromatic bond (1.5).
 
     :param mol: Molecule in RDKit format.
     :type mol: rdkit.Chem.rdchem.Mol
@@ -638,10 +638,10 @@ def get_bonds_list_from_mol(mol):
     """
     Calculates all bonds and bond types from a molecule and returns as dataframe.
     Bond types are encoded as double:
-     single bond (1.0)
-     double bond (2.0)
-     triple bond (3.0)
-     aromatic bond (1.5).
+    single bond (1.0)
+    double bond (2.0)
+    triple bond (3.0)
+    aromatic bond (1.5).
 
     :param mol: Molecule in RDKit format.
     :type mol: rdkit.Chem.rdchem.Mol
