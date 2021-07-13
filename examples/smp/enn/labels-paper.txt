@@ -1,0 +1,12 @@
+mu
+alpha
+homo
+lumo
+gap
+r2
+zpve
+cv
+u0_atom
+u298_atom
+h298_atom
+g298_atom
