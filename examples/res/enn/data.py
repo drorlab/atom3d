@@ -104,7 +104,7 @@ def collate_lep(batch):
     return new_batch
 
 
-def initialize_lep_data(args, datadir, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
+def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
     """
     Initialize datasets.
 
@@ -128,7 +128,7 @@ def initialize_lep_data(args, datadir, splits = {'train':'train', 'valid':'val',
     # Define data files.
     datafiles = {split: os.path.join(datadir,splits[split]) for split in splits.keys()}
     # Load datasets
-    datasets = _load_lep_data(datafiles, args.radius, args.droph, args.maxnum)
+    datasets = _load_res_data(datafiles, args.radius, args.droph, args.maxnum)
     # Check the training/test/validation splits have the same set of keys.
     keys = [list(data.keys()) for data in datasets.values()]
     _msg = 'Datasets must have the same set of keys!'
@@ -136,7 +136,7 @@ def initialize_lep_data(args, datadir, splits = {'train':'train', 'valid':'val',
     # Get a list of all species across the entire dataset
     all_species = _get_species(datasets)
     # Now initialize the internal datasets based upon loaded data
-    datasets = {split: CormorantDatasetLEP(data, included_species=all_species) for split, data in datasets.items()}
+    datasets = {split: CormorantDatasetRES(data, included_species=all_species) for split, data in datasets.items()}
     # Check that all datasets have the same included species:
     _msg = 'All datasets must have the same included_species! {}'.format({key: data.included_species for key, data in datasets.items()})
     assert (len(set(tuple(data.included_species.tolist()) for data in datasets.values())) == 1), _msg
@@ -150,9 +150,9 @@ def initialize_lep_data(args, datadir, splits = {'train':'train', 'valid':'val',
     return args, datasets, num_species, max_charge
 
 
-def _load_lep_data(datafiles, radius, droph, maxnum):
+def _load_res_data(datafiles, radius, droph, maxnum):
     """
-    Load LEP datasets from LMDB format.
+    Load RES datasets from LMDB format.
 
     :param datafiles: Dictionary of LMDB dataset directories.
     :type datafiles: dict
