@@ -10,7 +10,7 @@ from atom3d.datasets import LMDBDataset, extract_coordinates_as_numpy_arrays
 from utils import batch_stack, drop_zeros
 
 
-class CormorantDatasetLEP(Dataset):
+class CormorantDatasetRES(Dataset):
     """
     Data structure for a Cormorant dataset. Extends PyTorch Dataset.
 

@@ -9,7 +9,7 @@ from cormorant.engine import init_optimizer, init_scheduler
 from cormorant.models.autotest import cormorant_tests
 # Functions that have been adapted from cormorant functions
 from utils import init_cormorant_argparse, init_cormorant_file_paths
-# SMP-specific model from ATOM3D
+# SMP-specific model 
 from model import ENN_SMP
 # Modules to load and handle SMP data
 from data import initialize_smp_data, collate_smp

@@ -10,7 +10,7 @@ from cormorant.engine import init_optimizer, init_scheduler
 from cormorant.models.autotest import cormorant_tests
 # Functions that have been adapted from cormorant functions
 from utils import init_cormorant_argparse, init_cormorant_file_paths
-# LBA-specific model in ATOM3D
+# LBA-specific model 
 from model import ENN_LBA, ENN_LBA_Siamese
 # Methods to load and handle LBA data
 from data import CormorantDatasetLBA, collate_lba, collate_lba_siamese, initialize_lba_data
