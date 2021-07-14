@@ -5,6 +5,7 @@ import scipy as sp
 import scipy.spatial
 import pandas as pd
 import torch
+import numpy.random
 from torch.utils.data import Dataset, DataLoader
 from atom3d.datasets import LMDBDataset
 import atom3d.util.formats as fo
@@ -92,14 +93,13 @@ def collate_res(batch):
     # Define the atom masks
     atom_mask = new_batch['charges'] > 0
     new_batch['atom_mask'] = atom_mask
-    new_batch['atom_mask'] = atom_mask
     # Define the edge masks
     edge_mask = atom_mask.unsqueeze(1) * atom_mask.unsqueeze(2)
     new_batch['edge_mask'] = edge_mask
     return new_batch   
 
 
-def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
+def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val', 'test':'test'}, keep=['C','N','O','P','S']):                        
     """
     Initialize datasets.
 
@@ -123,7 +123,7 @@ def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val',
     # Define data files.
     datafiles = {split: os.path.join(datadir,splits[split]) for split in splits.keys()}
     # Load datasets
-    datasets = _load_res_data(datafiles, args.radius, args.droph, args.maxnum)
+    datasets = _load_res_data(datafiles, args.maxnum, args.samples, keep=keep, seed=args.seed)
     # Check the training/test/validation splits have the same set of keys.
     keys = [list(data.keys()) for data in datasets.values()]
     _msg = 'Datasets must have the same set of keys!'
@@ -131,6 +131,7 @@ def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val',
     # Get a list of all species across the entire dataset
     all_species = _get_species(datasets)
     # Now initialize the internal datasets based upon loaded data
+    for split, data in datasets.items(): print("data keys:",data.keys())
     datasets = {split: CormorantDatasetRES(data, included_species=all_species) for split, data in datasets.items()}
     # Check that all datasets have the same included species:
     _msg = 'All datasets must have the same included_species! {}'.format({key: data.included_species for key, data in datasets.items()})
@@ -145,19 +146,16 @@ def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val',
     return args, datasets, num_species, max_charge
 
 
-def _load_res_data(datafiles, indices=[0,3,5]):#, radius, droph, maxnum):
+def _load_res_data(datafiles, maxnum, samples=42, keep=['C','N','O','P','S'], seed=1):
     """
     Load RES datasets from LMDB format.
 
     :param datafiles: Dictionary of LMDB dataset directories.
     :type datafiles: dict
-    :param radius: Radius of the selected region around the mutated residue.
-    :type radius: float
-    :param radius: Drop hydrogen atoms.
-    :type radius: bool
     :param radius: Maximum number of atoms to consider.
     :type radius: int
-
+    :param samples: Number of sample structures.
+    :type samples: int
     :return datasets: Dictionary of processed dataset objects.
     :rtype datasets: dict
 
@@ -166,20 +164,26 @@ def _load_res_data(datafiles, indices=[0,3,5]):#, radius, droph, maxnum):
     key_names = ['index', 'num_atoms', 'charges', 'positions']
     for split, datafile in datafiles.items():
         dataset = LMDBDataset(datafile)
+        # Randomly pick the samples.
+        numpy.random.seed(seed)
+        indices = np.random.choice(np.arange(len(dataset)), size=int(samples), replace=True)
         # Get labels 
         labels = np.concatenate([dataset[i]['labels']['label'] for i in indices])
-        print(labels)
+        print('Labels:', labels)
         # Load original atoms
-        dsdict = _extract_coordinates_as_numpy_arrays(dataset, indices=indices)
+        dsdict = _extract_coordinates_as_numpy_arrays(dataset, indices=indices, keep=keep)
         for k in key_names: dsdict[k] = dsdict.pop(k)
         # Add labels
         dsdict['label'] = np.array(labels, dtype=int)
+        print('Sizes:')
+        for key, val in dsdict.items():
+            print(key, len(val))
         # Convert everything to tensors
         datasets[split] = {key: torch.from_numpy(val) for key, val in dsdict.items()}
     return datasets
     
 
-def _extract_coordinates_as_numpy_arrays(dataset, indices=None, maxnumat=600):
+def _extract_coordinates_as_numpy_arrays(dataset, indices=None, maxnumat=600, keep=['C','N','O','P','S']):
     """Convert the molecules from a dataset to a dictionary of numpy arrays.
        Labels are not processed; they are handled differently for every dataset.
     :param dataset: LMDB dataset from which to extract coordinates.
@@ -210,7 +214,6 @@ def _extract_coordinates_as_numpy_arrays(dataset, indices=None, maxnumat=600):
 
     # All charges and position arrays have the same size
     arr_size  = np.minimum(maxnumat,np.max(num_atoms))
-    print('arr_size:', arr_size)
     charges   = np.zeros([num_subunits,arr_size])
     positions = np.zeros([num_subunits,arr_size,3])
     # For each structure ...
@@ -225,6 +228,7 @@ def _extract_coordinates_as_numpy_arrays(dataset, indices=None, maxnumat=600):
             centr_at = item['labels'].iloc[[i]]
             su_atoms = item['atoms'].iloc[su]
             atoms = pd.concat([centr_at, su_atoms], ignore_index=True)
+            atoms = _keep(atoms, keep=keep)
             atoms = _select_env_by_num(atoms, 'Center', maxnumat)
             # write per-atom data to arrays
             for ia in range(np.minimum(maxnumat,num_atoms[isu])):
@@ -236,7 +240,7 @@ def _extract_coordinates_as_numpy_arrays(dataset, indices=None, maxnumat=600):
             isu += 1
 
     # Create a dictionary with all the arrays
-    numpy_dict = {'index': indices, 'num_atoms': num_atoms,
+    numpy_dict = {'index': np.arange(isu), 'num_atoms': num_atoms,
                   'charges': charges, 'positions': positions}
 
     return numpy_dict
@@ -257,7 +261,10 @@ def _get_species(datasets, ignore_check=False):
 
     """
     # Find the unique list of species in each dataset.
-    split_species = {split: torch.cat([ds['charges_active'].unique(),ds['charges_inactive'].unique()]).unique() for split, ds in datasets.items()}
+    split_species = {split: ds['charges'].unique() for split, ds in datasets.items()}
+    print('Species:')
+    for k in split_species.keys():
+        print(k, split_species[k])
     # Get a list of all species in the dataset across all splits
     all_species = torch.cat( tuple(split_species.values()) ).unique()
     # If zero charges (padded, non-existent atoms) are included, remove them
@@ -275,11 +282,16 @@ def _get_species(datasets, ignore_check=False):
     
 def _drop_hydrogen(df):
     df_noh = df[df['element'] != 'H']
-    print('Number of atoms after dropping hydrogen:', len(df_noh))
+    #print('Number of atoms after dropping hydrogen:', len(df_noh))
     return df_noh
+    
+def _keep(df, keep=['C','N','O','P','S']):
+    df_new = df[df['element'].isin(keep)]
+    #print('Number of atoms after filtering elements:', len(df_new))
+    return df_new
 
 
-def _replace(df, keep=['H','C','N','O','S'], new='Cu'):
+def _replace(df, keep=['H','C','N','O','P','S'], new='Cu'):
     new_elements = []
     for i in range(len(df['element'])):
         if df['element'][i] in keep:
@@ -303,7 +315,7 @@ def _select_env_by_dist(df, chain, dist):
     key_pts = np.unique([k for l in key_pts for k in l])
     # Construct the new data frame
     new_df = pd.concat([ pocket.iloc[key_pts], ligand ], ignore_index=True)
-    print('Number of atoms after distance selection:', len(new_df))
+    #print('Number of atoms after distance selection:', len(new_df))
     return new_df
 
 
@@ -327,7 +339,7 @@ def _select_env_by_num(df, chain, maxnum):
     indices = np.sort(indices[:num])
     # Construct the new data frame
     new_df = pd.concat([ pocket.iloc[indices], ligand ], ignore_index=True)
-    print('Number of atoms after number selection:', len(new_df))
+    #print('Number of atoms after number selection:', len(new_df))
     return new_df
     
 

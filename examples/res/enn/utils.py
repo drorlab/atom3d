@@ -44,6 +44,10 @@ def init_cormorant_argparse(dataset):
     elif dataset == "res":
         parser.add_argument('--num_classes', type=int, default=20,
                             help='number of classes for the classification.')
+        parser.add_argument('--maxnum', type=float, default=400,
+                            help='maximum total number of atoms of the ligand + the region around it.')
+        parser.add_argument('--samples', type=float, default=100,
+                            help='maximum number of protein structures to use per split.')
     elif dataset == "lep":
         parser.add_argument('--num_classes', type=int, default=2,
                             help='number of classes for the classification.')
@@ -98,7 +102,7 @@ def init_cormorant_file_paths(args):
     elif args.dataset.lower().startswith('lba'):
         if not args.target: args.target = 'neglog_aff'
     elif args.dataset.lower().startswith('res'):
-        if not args.target: args.target = 'residue'
+        if not args.target: args.target = 'label'
     elif args.dataset.lower().startswith('msp'):
         if not args.target: args.target = 'label'
     elif args.dataset.lower().startswith('lep'):
