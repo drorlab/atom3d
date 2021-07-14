@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from atom3d.datasets import LMDBDataset
+import atom3d.util.formats as fo
 from utils import batch_stack, drop_zeros
 
 
@@ -95,7 +96,7 @@ def collate_res(batch):
     # Define the edge masks
     edge_mask = atom_mask.unsqueeze(1) * atom_mask.unsqueeze(2)
     new_batch['edge_mask'] = edge_mask
-    return new_batch       
+    return new_batch   
 
 
 def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
@@ -122,7 +123,7 @@ def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val',
     # Define data files.
     datafiles = {split: os.path.join(datadir,splits[split]) for split in splits.keys()}
     # Load datasets
-    datasets = _load_res_data(datafiles) #, args.radius, args.droph, args.maxnum)
+    datasets = _load_res_data(datafiles, args.radius, args.droph, args.maxnum)
     # Check the training/test/validation splits have the same set of keys.
     keys = [list(data.keys()) for data in datasets.values()]
     _msg = 'Datasets must have the same set of keys!'
@@ -144,7 +145,7 @@ def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val',
     return args, datasets, num_species, max_charge
 
 
-def _load_res_data(datafiles):#, radius, droph, maxnum):
+def _load_res_data(datafiles, indices=[0,3,5]):#, radius, droph, maxnum):
     """
     Load RES datasets from LMDB format.
 
@@ -166,18 +167,19 @@ def _load_res_data(datafiles):#, radius, droph, maxnum):
     for split, datafile in datafiles.items():
         dataset = LMDBDataset(datafile)
         # Get labels 
-        labels = np.concatenate([item['labels']['label'] for item in dataset])
+        labels = np.concatenate([dataset[i]['labels']['label'] for i in indices])
+        print(labels)
         # Load original atoms
-        dsdict = _extract_coordinates_as_numpy_arrays(dataset)
+        dsdict = _extract_coordinates_as_numpy_arrays(dataset, indices=indices)
         for k in key_names: dsdict[k] = dsdict.pop(k)
         # Add labels
         dsdict['label'] = np.array(labels, dtype=int)
         # Convert everything to tensors
         datasets[split] = {key: torch.from_numpy(val) for key, val in dsdict.items()}
     return datasets
+    
 
-
-def _extract_coordinates_as_numpy_arrays(dataset, indices=None):
+def _extract_coordinates_as_numpy_arrays(dataset, indices=None, maxnumat=600):
     """Convert the molecules from a dataset to a dictionary of numpy arrays.
        Labels are not processed; they are handled differently for every dataset.
     :param dataset: LMDB dataset from which to extract coordinates.
@@ -207,7 +209,8 @@ def _extract_coordinates_as_numpy_arrays(dataset, indices=None):
     num_atoms = np.array(num_atoms, dtype=int)
 
     # All charges and position arrays have the same size
-    arr_size  = np.max(num_atoms)
+    arr_size  = np.minimum(maxnumat,np.max(num_atoms))
+    print('arr_size:', arr_size)
     charges   = np.zeros([num_subunits,arr_size])
     positions = np.zeros([num_subunits,arr_size,3])
     # For each structure ...
@@ -215,14 +218,16 @@ def _extract_coordinates_as_numpy_arrays(dataset, indices=None):
     for j,idx in enumerate(indices):
         item = dataset[idx]
         item['labels']['element'] = 'C'
+        item['labels']['chain'] = 'Center'
         # .. and for each subunit ...
         for i,su in enumerate(item['subunit_indices']):
             # concatenate central atom and atoms from frame
             centr_at = item['labels'].iloc[[i]]
             su_atoms = item['atoms'].iloc[su]
             atoms = pd.concat([centr_at, su_atoms], ignore_index=True)
+            atoms = _select_env_by_num(atoms, 'Center', maxnumat)
             # write per-atom data to arrays
-            for ia in range(num_atoms[isu]):
+            for ia in range(np.minimum(maxnumat,num_atoms[isu])):
                 element = atoms['element'][ia].title()
                 charges[isu,ia] = fo.atomic_number[element]
                 positions[isu,ia,0] = atoms['x'][ia]
@@ -266,4 +271,64 @@ def _get_species(datasets, ignore_check=False):
         else: raise ValueError('Not all datasets have the same number of species!')
     # Finally, return a list of all species
     return all_species
+    
+    
+def _drop_hydrogen(df):
+    df_noh = df[df['element'] != 'H']
+    print('Number of atoms after dropping hydrogen:', len(df_noh))
+    return df_noh
+
+
+def _replace(df, keep=['H','C','N','O','S'], new='Cu'):
+    new_elements = []
+    for i in range(len(df['element'])):
+        if df['element'][i] in keep:
+            new_elements.append(df['element'][i])
+        else:
+            new_elements.append(new)
+    df['element'] = new_elements
+    return df
+
+
+def _select_env_by_dist(df, chain, dist):
+    # Separate pocket and ligand
+    ligand = df[df['chain']==chain]
+    pocket = df[df['chain']!=chain]
+    # Extract coordinates
+    ligand_coords = np.array([ligand.x, ligand.y, ligand.z]).T
+    pocket_coords = np.array([pocket.x, pocket.y, pocket.z]).T
+    # Select the environment around the mutated residue
+    kd_tree = sp.spatial.KDTree(pocket_coords)
+    key_pts = kd_tree.query_ball_point(ligand_coords, r=dist, p=2.0)
+    key_pts = np.unique([k for l in key_pts for k in l])
+    # Construct the new data frame
+    new_df = pd.concat([ pocket.iloc[key_pts], ligand ], ignore_index=True)
+    print('Number of atoms after distance selection:', len(new_df))
+    return new_df
+
+
+def _select_env_by_num(df, chain, maxnum):
+    # Separate pocket and ligand
+    ligand = df[df['chain']==chain]
+    pocket = df[df['chain']!=chain]
+    # Max. number of protein atoms
+    num = int(max([1, maxnum - len(ligand.x)]))
+    # Extract coordinates
+    ligand_coords = np.array([ligand.x, ligand.y, ligand.z]).T
+    pocket_coords = np.array([pocket.x, pocket.y, pocket.z]).T
+    # Select the environment around the mutated residue
+    kd_tree = sp.spatial.KDTree(pocket_coords)
+    dd, ii = kd_tree.query(ligand_coords, k=len(pocket.x), p=2.0)
+    # Get minimum distance to any lig atom for each protein atom
+    dist = [ min(dd[ii==j]) for j in range(len(pocket.x)) ]
+    # Sort indices by distance
+    indices = np.argsort(dist)
+    # Select the num closest atoms
+    indices = np.sort(indices[:num])
+    # Construct the new data frame
+    new_df = pd.concat([ pocket.iloc[indices], ligand ], ignore_index=True)
+    print('Number of atoms after number selection:', len(new_df))
+    return new_df
+    
+
 
