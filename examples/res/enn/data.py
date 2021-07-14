@@ -6,7 +6,7 @@ import scipy.spatial
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
-from atom3d.datasets import LMDBDataset, extract_coordinates_as_numpy_arrays
+from atom3d.datasets import LMDBDataset
 from utils import batch_stack, drop_zeros
 
 
@@ -31,13 +31,12 @@ class CormorantDatasetRES(Dataset):
         self.num_pts = ds_sizes[0]
         # If included species is not specified
         if included_species is None:
-            all_charges = np.concatenate(self.data['charges_active'], self.data['charges_inactive'])
+            all_charges = self.data['charges']
             self.included_species = torch.unique(all_charges, sorted=True)
         else:
             self.included_species = torch.unique(included_species, sorted=True)
         # Convert charges to one-hot representation
-        self.data['one_hot_active'] = self.data['charges_active'].unsqueeze(-1) == included_species.unsqueeze(0).unsqueeze(0)
-        self.data['one_hot_inactive'] = self.data['charges_inactive'].unsqueeze(-1) == included_species.unsqueeze(0).unsqueeze(0)
+        self.data['one_hot'] = self.data['charges'].unsqueeze(-1) == included_species.unsqueeze(0).unsqueeze(0)
         # Calculate parameters
         self.num_species = len(included_species)
         self.max_charge = max(included_species)
@@ -66,11 +65,11 @@ class CormorantDatasetRES(Dataset):
         if self.perm is not None:
             idx = self.perm[idx]
         return {key: val[idx] for key, val in self.data.items()}
-
-
-def collate_lep(batch):
+        
+        
+def collate_res(batch):
     """
-    Collates LEP datapoints into the batch format for Cormorant.
+    Collates RES datapoints into the batch format for Cormorant.
     
     :param batch: The data to be collated.
     :type batch: list of datapoints
@@ -81,27 +80,22 @@ def collate_lep(batch):
     """
     batch = {prop: batch_stack([mol[prop] for mol in batch]) for prop in batch[0].keys()}
     # Define which fields to keep 
-    to_keep1 = (batch['charges_active'].sum(0) > 0)
-    to_keep2 = (batch['charges_inactive'].sum(0) > 0)
+    to_keep = (batch['charges'].sum(0) > 0)
     # Start building the new batch
     new_batch = {}
     # Copy label data. 
     new_batch['label'] = batch['label']
     # Split structural data and drop zeros
     for key in ['charges','positions','one_hot']:
-        new_batch[key+'1'] = drop_zeros( batch[key+'_active'], key+'_active', to_keep1 )
-        new_batch[key+'2'] = drop_zeros( batch[key+'_inactive'], key+'_inactive', to_keep2 )
+        new_batch[key] = drop_zeros( batch[key], key, to_keep )
     # Define the atom masks
-    atom_mask1 = new_batch['charges1'] > 0
-    atom_mask2 = new_batch['charges2'] > 0
-    new_batch['atom_mask1'] = atom_mask1
-    new_batch['atom_mask2'] = atom_mask2
+    atom_mask = new_batch['charges'] > 0
+    new_batch['atom_mask'] = atom_mask
+    new_batch['atom_mask'] = atom_mask
     # Define the edge masks
-    edge_mask1 = atom_mask1.unsqueeze(1) * atom_mask1.unsqueeze(2)
-    edge_mask2 = atom_mask2.unsqueeze(1) * atom_mask2.unsqueeze(2)
-    new_batch['edge_mask1'] = edge_mask1
-    new_batch['edge_mask2'] = edge_mask2
-    return new_batch
+    edge_mask = atom_mask.unsqueeze(1) * atom_mask.unsqueeze(2)
+    new_batch['edge_mask'] = edge_mask
+    return new_batch       
 
 
 def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val', 'test':'test'}):                        
@@ -128,7 +122,7 @@ def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val',
     # Define data files.
     datafiles = {split: os.path.join(datadir,splits[split]) for split in splits.keys()}
     # Load datasets
-    datasets = _load_res_data(datafiles, args.radius, args.droph, args.maxnum)
+    datasets = _load_res_data(datafiles) #, args.radius, args.droph, args.maxnum)
     # Check the training/test/validation splits have the same set of keys.
     keys = [list(data.keys()) for data in datasets.values()]
     _msg = 'Datasets must have the same set of keys!'
@@ -150,7 +144,7 @@ def initialize_res_data(args, datadir, splits = {'train':'train', 'valid':'val',
     return args, datasets, num_species, max_charge
 
 
-def _load_res_data(datafiles, radius, droph, maxnum):
+def _load_res_data(datafiles):#, radius, droph, maxnum):
     """
     Load RES datasets from LMDB format.
 
@@ -170,23 +164,78 @@ def _load_res_data(datafiles, radius, droph, maxnum):
     datasets = {}
     key_names = ['index', 'num_atoms', 'charges', 'positions']
     for split, datafile in datafiles.items():
-        dataset = LMDBDataset(datafile, transform=EnvironmentSelection(radius, droph, maxnum))
+        dataset = LMDBDataset(datafile)
+        # Get labels 
+        labels = np.concatenate([item['labels']['label'] for item in dataset])
         # Load original atoms
-        act = extract_coordinates_as_numpy_arrays(dataset, atom_frames=['atoms_active'])
-        for k in key_names: act[k+'_active'] = act.pop(k)
-        # Load mutated atoms
-        ina = extract_coordinates_as_numpy_arrays(dataset, atom_frames=['atoms_inactive'])
-        for k in key_names: ina[k+'_inactive'] = ina.pop(k)
-        # Merge datasets with atoms
-        dsdict = {**act, **ina}
-        # Add labels (1 for active, 0 for inactive)
-        ldict = {'A':1, 'I':0}
-        labels = [ldict[dataset[i]['label']] for i in range(len(dataset))]
+        dsdict = _extract_coordinates_as_numpy_arrays(dataset)
+        for k in key_names: dsdict[k] = dsdict.pop(k)
+        # Add labels
         dsdict['label'] = np.array(labels, dtype=int)
         # Convert everything to tensors
         datasets[split] = {key: torch.from_numpy(val) for key, val in dsdict.items()}
     return datasets
 
+
+def _extract_coordinates_as_numpy_arrays(dataset, indices=None):
+    """Convert the molecules from a dataset to a dictionary of numpy arrays.
+       Labels are not processed; they are handled differently for every dataset.
+    :param dataset: LMDB dataset from which to extract coordinates.
+    :type dataset: torch.utils.data.Dataset
+    :param indices: Indices of the items for which to extract coordinates.
+    :type indices: numpy.array
+    :return: Dictionary of numpy arrays with number of atoms, charges, and positions
+    :rtype: dict
+    """
+    # Size of the dataset
+    if indices is None:
+        indices = np.arange(len(dataset), dtype=int)
+    else:
+        indices = np.array(indices, dtype=int)
+        assert len(dataset) > max(indices)
+    # Number of input items
+    num_items = len(indices)
+
+    # Calculate number of subunits and number of atoms for each subunit
+    num_subunits = 0
+    num_atoms = []
+    for idx in indices:
+        item = dataset[idx]
+        num_subunits += len(item['subunit_indices'])
+        for su in item['subunit_indices']:
+            num_atoms.append(len(su)+1) # +1 for central atom
+    num_atoms = np.array(num_atoms, dtype=int)
+
+    # All charges and position arrays have the same size
+    arr_size  = np.max(num_atoms)
+    charges   = np.zeros([num_subunits,arr_size])
+    positions = np.zeros([num_subunits,arr_size,3])
+    # For each structure ...
+    isu = 0
+    for j,idx in enumerate(indices):
+        item = dataset[idx]
+        item['labels']['element'] = 'C'
+        # .. and for each subunit ...
+        for i,su in enumerate(item['subunit_indices']):
+            # concatenate central atom and atoms from frame
+            centr_at = item['labels'].iloc[[i]]
+            su_atoms = item['atoms'].iloc[su]
+            atoms = pd.concat([centr_at, su_atoms], ignore_index=True)
+            # write per-atom data to arrays
+            for ia in range(num_atoms[isu]):
+                element = atoms['element'][ia].title()
+                charges[isu,ia] = fo.atomic_number[element]
+                positions[isu,ia,0] = atoms['x'][ia]
+                positions[isu,ia,1] = atoms['y'][ia]
+                positions[isu,ia,2] = atoms['z'][ia]
+            isu += 1
+
+    # Create a dictionary with all the arrays
+    numpy_dict = {'index': indices, 'num_atoms': num_atoms,
+                  'charges': charges, 'positions': positions}
+
+    return numpy_dict
+    
 
 def _get_species(datasets, ignore_check=False):
     """
@@ -217,94 +266,4 @@ def _get_species(datasets, ignore_check=False):
         else: raise ValueError('Not all datasets have the same number of species!')
     # Finally, return a list of all species
     return all_species
-
-
-class EnvironmentSelection(object):
-    """
-    Selects a region of protein coordinates within a certain distance from the alpha carbon of the mutated residue.
-
-    :param df: Atoms data
-    :type df: pandas.DataFrame
-    :param dist: Distance from the alpha carbon of the mutated residue
-    :type dist: float
-
-    :return new_df: Transformed atoms data
-    :rtype new_df: pandas.DataFrame
-
-    """
-    def __init__(self, dist, droph, maxnum):
-        self._dist = dist
-        self._droph = droph
-        self._maxnum = maxnum
-
-    def _drop_hydrogen(self, df):
-        df_noh = df[df['element'] != 'H']
-        print('Number of atoms after dropping hydrogen:', len(df_noh))
-        return df_noh
-
-    def _replace(self, df, keep=['H','C','N','O','S'], new='Cu'):
-        new_elements = []
-        for i in range(len(df['element'])):
-            if df['element'][i] in keep:
-                new_elements.append(df['element'][i])
-            else:
-                new_elements.append(new)
-        df['element'] = new_elements
-        return df
-
-    def _select_env_by_dist(self, df, chain):
-        # Separate pocket and ligand
-        ligand = df[df['chain']==chain]
-        pocket = df[df['chain']!=chain]
-        # Extract coordinates
-        ligand_coords = np.array([ligand.x, ligand.y, ligand.z]).T
-        pocket_coords = np.array([pocket.x, pocket.y, pocket.z]).T
-        # Select the environment around the mutated residue
-        kd_tree = sp.spatial.KDTree(pocket_coords)
-        key_pts = kd_tree.query_ball_point(ligand_coords, r=self._dist, p=2.0)
-        key_pts = np.unique([k for l in key_pts for k in l])
-        # Construct the new data frame
-        new_df = pd.concat([ pocket.iloc[key_pts], ligand ], ignore_index=True)
-        print('Number of atoms after distance selection:', len(new_df))
-        return new_df
-
-    def _select_env_by_num(self, df, chain):
-        # Separate pocket and ligand
-        ligand = df[df['chain']==chain]
-        pocket = df[df['chain']!=chain]
-        # Max. number of protein atoms
-        num = int(max([1, self._maxnum - len(ligand.x)]))
-        # Extract coordinates
-        ligand_coords = np.array([ligand.x, ligand.y, ligand.z]).T
-        pocket_coords = np.array([pocket.x, pocket.y, pocket.z]).T
-        # Select the environment around the mutated residue
-        kd_tree = sp.spatial.KDTree(pocket_coords)
-        dd, ii = kd_tree.query(ligand_coords, k=len(pocket.x), p=2.0)
-        # Get minimum distance to any lig atom for each protein atom
-        dist = [ min(dd[ii==j]) for j in range(len(pocket.x)) ]
-        # Sort indices by distance
-        indices = np.argsort(dist)
-        # Select the num closest atoms
-        indices = np.sort(indices[:num])
-        # Construct the new data frame
-        new_df = pd.concat([ pocket.iloc[indices], ligand ], ignore_index=True)
-        print('Number of atoms after number selection:', len(new_df))
-        return new_df
-
-    def __call__(self, x):
-        # Select the ligand! 
-        chain = 'L'
-        # Replace rare atoms
-        x['atoms_active'] = self._replace(x['atoms_active'])
-        x['atoms_inactive'] = self._replace(x['atoms_inactive'])
-        # Drop the hydrogen atoms
-        if self._droph:
-            x['atoms_active'] = self._drop_hydrogen(x['atoms_active'])
-            x['atoms_inactive'] = self._drop_hydrogen(x['atoms_inactive'])
-        # Select the environment
-        x['atoms_active'] = self._select_env_by_dist(x['atoms_active'], chain)
-        x['atoms_active'] = self._select_env_by_num(x['atoms_active'], chain)
-        x['atoms_inactive'] = self._select_env_by_dist(x['atoms_inactive'], chain)
-        x['atoms_inactive'] = self._select_env_by_num(x['atoms_inactive'], chain)
-        return x
 
