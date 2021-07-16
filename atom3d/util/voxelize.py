@@ -93,7 +93,6 @@ def get_grid(df, center, config, rot_mat=np.eye(3, 3)):
     size = grid_size(config)
     true_radius = size * config.resolution / 2.0
 
-    # Select valid atoms.
     at = df[['x', 'y', 'z']].values.astype(np.float32)
     elements = df['element'].values
 
@@ -108,53 +107,7 @@ def get_grid(df, center, config, rot_mat=np.eye(3, 3)):
     sel = np.all(at >= 0, axis=1) & np.all(at < size, axis=1) & (elements != '')
     at = at[sel]
 
-    # Form final grid.
-    labels = elements[sel]
-    lsel = np.nonzero([_recognized(x, config.element_mapping) for x in labels])
-    labels = labels[lsel]
-    labels = np.array([config.element_mapping[x] for x in labels], dtype=np.int8)
-
-    grid = np.zeros(grid_shape(config), dtype=np.float32)
-    grid[at[lsel, 0], at[lsel, 1], at[lsel, 2], labels] = 1
-
-    return grid
-
-
-def get_voxels(df, center, config, rot_mat=np.eye(3, 3)):
-    """
-    Generate the 3d grid from coordinate format.
-    Args:
-        df (pd.DataFrame):
-            region to generate grid for.
-        center (3x3 np.array):
-            center of the grid.
-        rot_mat (3x3 np.array):
-            rotation matrix to apply to region before putting in grid.
-    Returns:
-        4-d numpy array representing an occupancy grid where last dimension
-        is atom channel.  First 3 dimension are of size radius_ang * 2 + 1.
-    """
-    size = grid_size(config)
-    true_radius = size * config.resolution / 2.0
-
-    # Select valid atoms.
-    at = df[['x', 'y', 'z']].values.astype(np.float32)
-    elements = df['element'].values
-
-    # Center atoms.
-    at = at - center
-
-    # Apply rotation matrix.
-    at = np.dot(at, rot_mat)
-    # at = (np.around((at + true_radius) / config.resolution - 0.5)).astype(np.int16)
-    bins = np.linspace(-true_radius, true_radius, size+1)
-    at_bin_idx = np.digitize(at, bins)
-
-    # Prune out atoms outside of grid as well as non-existent atoms.
-    sel = np.all(at_bin_idx > 0, axis=1) & np.all(at_bin_idx < size+1, axis=1) & (elements != '')
-    at = at_bin_idx[sel] - 1
-
-    # Form final grid.
+    # Select valid atoms and form final grid.
     labels = elements[sel]
     lsel = np.nonzero([_recognized(x, config.element_mapping) for x in labels])
     labels = labels[lsel]
