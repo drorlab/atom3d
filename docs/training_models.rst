@@ -43,7 +43,7 @@ The base models provided are the following:
      
   * **ENN** (:class:`atom3d.models.enn.ENN`)
 
-    This network and all ENNs based on it are implemented using an adapted version of the `Cormorant <https://papers.nips.cc/paper/2019/file/03573b32b2746e6e8ca98b9123f2249b-Paper.pdf>`_ package. Make sure to install it from the Dror Lab fork; see the instructions `here <https://github.com/drorlab/atom3d/tree/master/benchmarking/cormorant/README.rst>`_. 
+    This network and all ENNs based on it are implemented using an adapted version of the `Cormorant <https://papers.nips.cc/paper/2019/file/03573b32b2746e6e8ca98b9123f2249b-Paper.pdf>`_ package. Make sure to install it from the `Dror Lab fork <https://github.com/drorlab/cormorant>`_. 
     
     
   * **FeedForward** (:class:`atom3d.models.ff.FeedForward`)
