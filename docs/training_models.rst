@@ -43,8 +43,7 @@ The base models provided are the following:
      
   * **ENN** (:class:`atom3d.models.enn.ENN`)
 
-    This network and all ENNs based on it are implemented using an adapted version of the `Cormorant <https://papers.nips.cc/paper/2019/file/03573b32b2746e6e8ca98b9123f2249b-Paper.pdf>`_ package. To install it, see the instructions `here <https://github.com/drorlab/atom3d/tree/master/benchmarking/cormorant/README.rst>`_.
-    To use Cormorant with ATOM3D datasets, you have to convert them from the LMDB format to Cormorant's custom input format based on compressed Numpy arrays. We provide dataset-specific code to do so: The sub-modules of those datasets for which ENNs are implemented contain a corresponding ``prepare_npz.py``. 
+    This network and all ENNs based on it are implemented using an adapted version of the `Cormorant <https://papers.nips.cc/paper/2019/file/03573b32b2746e6e8ca98b9123f2249b-Paper.pdf>`_ package. Make sure to install it from the Dror Lab fork; see the instructions `here <https://github.com/drorlab/atom3d/tree/master/benchmarking/cormorant/README.rst>`_. 
     
     
   * **FeedForward** (:class:`atom3d.models.ff.FeedForward`)
