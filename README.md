@@ -79,7 +79,7 @@ For support, please file an issue at https://github.com/drorlab/atom3d/issues.
 
 ## License
 
-The project is licensed under the MIT license.
+The project is licensed under the [MIT license](https://github.com/drorlab/atom3d/blob/master/LICENSE).
 
 ## Reference
 
