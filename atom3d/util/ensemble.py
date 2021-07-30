@@ -1,4 +1,4 @@
-"""Ensembling operations for shards."""
+"""Ensembling operations."""
 import pandas as pd
 
 import atom3d.datasets.msp.ensemble as mspe

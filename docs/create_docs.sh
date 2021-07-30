@@ -7,15 +7,7 @@
 rm -r source/* _build
 
 # Auto-generate API docs:
-sphinx-apidoc -M -o ./source ../atom3d \
-	../atom3d/datasets/???/prepare*.py \
-	../atom3d/datasets/???/process*.py \
-	../atom3d/datasets/???/filter*.py \
-	../atom3d/datasets/???/check*.py \
-	../atom3d/datasets/???/gen*.py \
-	../atom3d/datasets/???/get*.py \
-	../atom3d/datasets/???/pyro*.py \
-	../atom3d/datasets/???/bsa.py
+sphinx-apidoc -M -o ./source ../atom3d ../atom3d/datasets/???/*.py
 
 # Format the auto-generated API docs
 sed -i 's/ package//g' source/*.rst
@@ -28,4 +20,6 @@ sed -i -e '/Subpackages/,+2d' source/*.rst
 
 # Build the docs from the .rst files
 sphinx-build -b html . _build
+
+firefox _build/index.html  &
 
