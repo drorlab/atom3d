@@ -1,10 +1,7 @@
 """Ensembling operations."""
 import pandas as pd
 
-import atom3d.datasets.msp.ensemble as mspe
 import atom3d.datasets.ppi.db5 as db5
-import atom3d.datasets.psr.casp as casp
-import atom3d.datasets.rsr.ensemble as rsre
 import atom3d.util.formats as dt
 
 
@@ -22,9 +19,6 @@ def identity_ensembler(pdb_files):
 # DataFrame, and corresponds to the subunit specified by (e, s).
 ensemblers = {
     'db5': db5.db5_ensembler,
-    'casp': casp.casp_ensembler,
-    'rsr': rsre.rsr_ensembler,
-    'msp': mspe.msp_ensembler,
     'none': identity_ensembler,
 }
 

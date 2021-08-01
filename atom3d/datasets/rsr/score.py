@@ -3,7 +3,6 @@ import os
 
 import pandas as pd
 
-import atom3d.datasets.rsr.ensemble as en
 import atom3d.util.file as fi
 
 
@@ -30,11 +29,19 @@ def form_score_filter(score_dir):
     return filter_fn
 
 
+NUMBER_PATTERN = re.compile('_([0-9]{1,2})(_|$|\.)')
+
+
+def get_target_number(f):
+    """Extract integer target number from FARFAR2 file."""
+    return int(re.search(NUMBER_PATTERN, f).group(1))
+
+
 def get_target_name(f):
     """Extract string target name from FARFAR2 file."""
     name = os.path.basename(f)
 
-    target_number = en.get_target_number(name)
+    target_number = get_target_number(name)
     if target_number != 14:
         target_name = str(target_number)
     else:
