@@ -1,5 +1,6 @@
 """Code for loading rosetta score files."""
 import os
+import re
 
 import pandas as pd
 
