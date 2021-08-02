@@ -8,11 +8,10 @@ import sys
 import click
 
 import atom3d.datasets.datasets as da
-import atom3d.datasets.psr.util as util
 import atom3d.splits.splits as spl
 import atom3d.util.file as fi
 import atom3d.util.formats as fo
-
+import util
 
 logger = logging.getLogger(__name__)
 

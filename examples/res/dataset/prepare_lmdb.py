@@ -11,7 +11,6 @@ import click
 
 sys.path.insert(0, '../../..')
 import atom3d.datasets.datasets as da
-#import atom3d.datasets.res.util as util
 import atom3d.splits.splits as spl
 import atom3d.util.file as fi
 import atom3d.util.formats as fo

@@ -8,7 +8,7 @@ import scipy.spatial
 
 import atom3d.util.file as fi
 import atom3d.util.formats as ft
-import atom3d.datasets.lba.get_labels as lab
+import get_labels as lab
 
 from rdkit import Chem
 import Bio.PDB

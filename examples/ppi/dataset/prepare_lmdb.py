@@ -9,13 +9,12 @@ import pandas as pd
 from torch.utils.data import Dataset, IterableDataset
 
 import atom3d.datasets.datasets as da
-import atom3d.datasets.ppi.neighbors as nb
-import atom3d.datasets.ppi.pairs as pr
 import atom3d.splits.splits as spl
 import atom3d.util.ensemble as en
 import atom3d.util.file as fi
 import atom3d.util.formats as fo
-
+import neighbors as nb
+import pairs as pr
 
 logger = logging.getLogger(__name__)
 
