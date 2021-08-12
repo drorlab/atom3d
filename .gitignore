@@ -94,3 +94,7 @@ atom3d/data/__pycache__/
 
 # Submission files for training repetition
 *_rep?.sb
+
+# Model output
+examples/???/???/model/
+examples/???/???/predict/
