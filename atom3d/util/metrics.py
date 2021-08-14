@@ -7,45 +7,154 @@ import sklearn.metrics
 
     
 def pearson(targets, predict):
+    """
+    Calculate the Pearson correlation coefficient (R) between targets and prediction.
+
+    :param targets: The target values (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The predictions.
+    :type predict: numpy.ndarray
+    
+    :return: Pearson correlation coefficient.
+    :rtype: float
+
+    """
     r = stats.pearsonr(targets, predict)[0]
     return r
     
 def spearman(targets, predict):
+    """
+    Calculate the Spearman correlation coefficient (rho) between targets and prediction.
+
+    :param targets: The target values (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The predictions.
+    :type predict: numpy.ndarray
+    
+    :return: Spearman correlation coefficient.
+    :rtype: float
+
+    """
     rho = stats.spearmanr(targets, predict)[0]
     return rho
     
 def kendall(targets, predict):
+    """
+    Calculate the Kendall tau (a correlation measure for for ordinal data) between targets and prediction.
+
+    :param targets: The target values (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The predictions.
+    :type predict: numpy.ndarray
+    
+    :return: The tau statistic.
+    :rtype: float
+
+    """
     tau = stats.kendalltau(targets, predict)[0]
     return tau
 
 def r2(targets, predict):
+    """
+    Calculate R^2, the square of the Pearson correlation coefficient, between targets and prediction.
+
+    :param targets: The target values (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The predictions.
+    :type predict: numpy.ndarray
+    
+    :return: Square of the Pearson correlation coefficient.
+    :rtype: float
+
+    """
     r = pearson(targets, predict)
     return r**2
         
 def mae(targets, predict):
+    """
+    Calculate the mean absolute error between targets and prediction.
+
+    :param targets: The target values (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The predictions.
+    :type predict: numpy.ndarray
+    
+    :return: The mean absolute error.
+    :rtype: float
+
+    """
     abs_err = np.abs(targets - predict)
     return np.mean(abs_err)
 
 def rmse(targets, predict):
+    """
+    Calculate the root mean squared error between targets and prediction.
+
+    :param targets: The target values (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The predictions.
+    :type predict: numpy.ndarray
+    
+    :return: The root mean squared error.
+    :rtype: float
+
+    """
     sq_err = ((predict - targets) ** 2)
     return np.sqrt(np.mean(sq_err))
     
 def auroc(targets, predict):
+    """
+    Compute Area Under the Receiver Operating Characteristic Curve (ROC AUC) from prediction scores.
+    
+    :param targets: The target scores (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The prediction scores.
+    :type predict: numpy.ndarray
+    
+    :return: ROC AUC.
+    :rtype: float    
+    
+    """
     auc = sklearn.metrics.roc_auc_score(targets, predict)
     return auc
     
 def auprc(targets, predict):
+    """
+    Compute Area Under the Precision-Recall Curve (PRC AUC) from prediction scores.
+    This ia also called the average precision (AP).
+    
+    :param targets: The target scores (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The prediction scores.
+    :type predict: numpy.ndarray
+    
+    :return: The average precision.
+    :rtype: float    
+    
+    """
     ap = sklearn.metrics.average_precision_score(targets, predict)
     return ap
 
 def accuracy(targets, predict):
+    """
+    Compute the accuracy from prediction scores.
+    
+    :param targets: The target scores (ground truth).
+    :type targets: numpy.ndarray
+    :param predict: The prediction scores.
+    :type predict: numpy.ndarray
+    
+    :return: The accuracy.
+    :rtype: float    
+    
+    """
     ac = sklearn.metrics.accuracy_score(targets, predict)
     return ac
     
     
 def evaluate_average(results, metric=r2, verbose=True, select=None):
     """
-    Calculate metric for training, validation and test data, averaged over all replicates.
+    Calculate a metric for training, validation and test data, averaged over all replicates.
     """
     # Initialization
     reps = results.keys()
@@ -92,7 +201,7 @@ def _per_target_mean(res, metric):
 
 def evaluate_per_target_average(results, metric=r2, verbose=True):
     """
-    Calculate metric for training, validation and test data, averaged over all replicates.
+    Calculate a metric for training, validation and test data, averaged over all replicates.
     """
     # Initialization
     reps = results.keys()
