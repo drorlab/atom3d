@@ -19,13 +19,13 @@ Once the download has finished, extract the datasets from the zipped archive.
 Training
 --------
   
-To start training, you need to define the directories LBA_DATA, OUTPUT_DIR, and LOG_DIR in which the data are stored, the output is saved, and the log files are saved, respectively. For example: 
+To start training, you need to define the directories LBA_DATA, OUTPUT_DIR, and LOG_DIR in which the data are stored, the output is saved, and the log files are saved, respectively. For example::
 
     export LBA_DATA=~/atom3d-data/lba/split-by-sequence-identity-30/data/
     export OUTPUT_DIR=~/atom3d/examples/lba/cnn3d/out/
     export LOG_DIR=~/atom3d/examples/lba/cnn3d/log/
 
-The training script can then be invoked from the example folder:
+The training script can then be invoked from the example folder::
 
     cd atom3d/examples/lba/enn
     python train.py 
