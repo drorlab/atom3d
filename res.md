@@ -7,7 +7,7 @@ layout: default
   - **Dataset description:** We generate a novel dataset consisting of atomic environments extracted from nonredundant structures in the PDB.
   - **Task:** We formulate this as a classification task where we predict the identity of the amino acid in the center of the environment based on all other atoms.
   - **Splitting criteria:** We split residue environments by domain-level CATH protein topology class.
-  - **Downloads:** The full dataset, split data, and split indices are available for download via [Zenodo](htt    ps://zenodo.org/record/5026743) (doi:10.5281/zenodo.5026743)
+  - **Downloads:** The full dataset, split data, and split indices are available for download via [Zenodo](https://zenodo.org/record/5026743) (doi:10.5281/zenodo.5026743)
 
 ### License
 
