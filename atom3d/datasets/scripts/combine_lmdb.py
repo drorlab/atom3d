@@ -27,7 +27,7 @@ def main(lmdb_list, output_lmdb, append):
     if append:
         for key, value in env.cursor():
             max_i = max(max_i, key)
-
+    
     with env.begin(write=True) as txn:
         id_to_idx = {}
         i = max_i + 1

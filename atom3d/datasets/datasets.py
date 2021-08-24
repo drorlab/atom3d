@@ -623,9 +623,9 @@ def download_dataset(name, out_path, split=None):
             return
     elif name == 'res':
         if split is None:
-            link = '1nmSNqAyOKof9-76l4gYQvODsEHNZLxv7'
+            link = 'https://zenodo.org/record/5026743/files/RES-raw.tar.gz?download=1'
         elif split == 'cath-topology':
-            link = '1rJEAyyoFN0Y6pgnLJyG0Fy5FKqAopOqC'
+            link = 'https://zenodo.org/record/5026743/files/RES-split-by-cath-topology.tar.gz?download=1'
         else:
             logger.warning(f'specified split {split} not available. Possible values are "cath-topology".')
             return

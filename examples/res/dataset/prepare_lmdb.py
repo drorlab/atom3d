@@ -85,12 +85,44 @@ class ResTransform(object):
             labels.append(label_row)
 
         assert len(labels) == len(subunits)
+        print(len(labels))
         x['atoms'] = df
         x['labels'] = pd.DataFrame(labels, columns=['subunit', 'label', 'x', 'y', 'z'])
         x['subunit_indices'] = subunits
 
         return x
 
+def split_lmdb_dataset(lmdb_path, train_txt, val_txt, test_txt, split_dir):
+    logger.info(f'Splitting indices, load data from {lmdb_path:}...')
+    lmdb_ds = da.load_dataset(lmdb_path, 'lmdb')
+
+    def _write_split_indices(split_txt, lmdb_ds, output_txt):
+        with open(split_txt, 'r') as f:
+            split_set = set([x.strip() for x in f.readlines()])
+        # Check if the target in id is in the desired target split set
+        split_ids = list(filter(lambda id: id in split_set, lmdb_ds.ids()))
+        # Convert ids into lmdb numerical indices and write into txt file
+        split_indices = lmdb_ds.ids_to_indices(split_ids)
+        with open(output_txt, 'w') as f:
+            f.write(str('\n'.join([str(i) for i in split_indices])))
+        return split_indices
+
+    logger.info(f'Write results to {split_dir:}...')
+    os.makedirs(os.path.join(split_dir, 'indices'), exist_ok=True)
+    os.makedirs(os.path.join(split_dir, 'data'), exist_ok=True)
+
+    indices_train = _write_split_indices(
+        train_txt, lmdb_ds, os.path.join(split_dir, 'indices/train_indices.txt'))
+    indices_val = _write_split_indices(
+        val_txt, lmdb_ds, os.path.join(split_dir, 'indices/val_indices.txt'))
+    indices_test = _write_split_indices(
+        test_txt, lmdb_ds, os.path.join(split_dir, 'indices/test_indices.txt'))
+
+    train_dataset, val_dataset, test_dataset = spl.split(
+        lmdb_ds, indices_train, indices_val, indices_test)
+    da.make_lmdb_dataset(train_dataset, os.path.join(split_dir, 'data/train'))
+    da.make_lmdb_dataset(val_dataset, os.path.join(split_dir, 'data/val'))
+    da.make_lmdb_dataset(test_dataset, os.path.join(split_dir, 'data/test'))
 
 @click.command(help='Prepare RES dataset')
 @click.argument('input_file_path', type=click.Path())
@@ -120,13 +152,18 @@ def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, te
 
     file_list = fi.find_files(input_file_path, fo.patterns[filetype])
     
-    lmdb_path = os.path.join(output_root, 'all')
+    lmdb_path = os.path.join(output_root, 'raw/RES/data')
     if not os.path.exists(lmdb_path):
         os.makedirs(lmdb_path)
-        
-    # dataset = da.load_dataset(file_list, filetype, transform=ResTransform(balance=balance))
-    # da.make_lmdb_dataset(dataset, lmdb_path)
     
+    # Comment out below two lines to download by chunks
+    #######
+    dataset = da.load_dataset(file_list, filetype, transform=ResTransform(balance=balance))
+    da.make_lmdb_dataset(dataset, lmdb_path)
+    #######
+    
+    # Comment out below eight lines to download entire dataset (takes much longer)
+    #######
     chunk_size = (len(file_list) // num_threads) + 1
     chunks = [file_list[i:i + chunk_size] for i in range(0, len(file_list), chunk_size)]
     assert len(chunks) == num_threads
@@ -135,26 +172,13 @@ def prepare(input_file_path, output_root, split, balance, train_txt, val_txt, te
         logger.info(f'Processing chunk {i:}...')
         _process_chunk(chunks[i], 'pdb', f'{lmdb_path}_tmp_{i}', balance)
         
-
-    if not split:
-        return
-
-    logger.info(f'Splitting indices...')
-    lmdb_ds = da.load_dataset(lmdb_path, 'lmdb')
-
-    def _write_split_indices(split_txt, lmdb_ds, output_txt):
-        with open(split_txt, 'r') as f:
-            split_set = set([x.strip() for x in f.readlines()])
-        # Check if the target in id is in the desired target split set
-        split_ids = list(filter(lambda id: id in split_set, lmdb_ds.ids()))
-        # Convert ids into lmdb numerical indices and write into txt file
-        split_indices = lmdb_ds.ids_to_indices(split_ids)
-        with open(output_txt, 'w') as f:
-            f.write(str('\n'.join([str(i) for i in split_indices])))
-
-    _write_split_indices(train_txt, lmdb_ds, os.path.join(output_root, 'train_indices.txt'))
-    _write_split_indices(val_txt, lmdb_ds, os.path.join(output_root, 'val_indices.txt'))
-    _write_split_indices(test_txt, lmdb_ds, os.path.join(output_root, 'test_indices.txt'))
+    cmd = f'python combine_lmdb.py {lmdb_path}_tmp_* {lmdb_path}'
+    os.system(cmd, shell=True)
+    #######
+        
+    if split:
+        output_root = os.path.join(output_root, 'splits/split-by-topology')
+        split_lmdb_dataset(lmdb_path, train_txt, val_txt, test_txt, output_root)
 
 
 if __name__ == "__main__":
