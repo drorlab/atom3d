@@ -1,15 +1,15 @@
 import atom3d.util.voxelize as vox
 
 class GraphTransform(object):
-    def __init__(self, atom_keys, label_key):
-        self.atom_keys = atom_keys
+    def __init__(self, atom_key, label_key):
+        self.atom_key = atom_key
         self.label_key = label_key
     
     def __call__(self, item):
         # transform protein and/or pocket to PTG graphs
-        item = prot_graph_transform(item, atom_keys=self.atom_keys, label_key=self.label_key)
+        item = prot_graph_transform(item, atom_keys=[self.atom_key], label_key=self.label_key)
         
-        return item
+        return item[self.atom_key]
     
 class PairedGraphTransform(object):
     def __init__(self, key_1, key_2, label_key):
