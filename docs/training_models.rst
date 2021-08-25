@@ -161,49 +161,46 @@ This example uses a simple feed-forward neural network with one hidden layer.
     import torch
     import torch.nn as nn
     from torch_geometric.data import Data, DataLoader
-
+    
     # atom3d imports
     import atom3d.datasets.datasets as da
     import atom3d.util.graph as gr
     import atom3d.util.transforms as tr
     from atom3d.models.gnn import GCN
     from atom3d.models.mlp import MLP
-
+    
     # define training hyperparameters
     learning_rate=1e-4
     epochs = 5
     feat_dim = 128
     out_dim = 1
-
+    
     # Load dataset (with transform to convert dataframes to graphs) and initialize dataloader
-    dataset = da.load_dataset('data/test_lmdb', 'lmdb', transform=tr.GraphTransform)
+    dataset = da.load_dataset('data/test_lmdb', 'lmdb', transform=tr.GraphTransform(atom_key='atoms', label_key='label'))
     dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
-
+    
     # get number of input features from first graph
     for batch in dataloader:
-        graph = batch['atoms']
-        in_dim = graph.num_features
+        in_dim = batch.num_features
         break
-
+    
     # GCN feature extraction module
     feat_model = GCN(in_dim, feat_dim)
     # Feed-forward output module
     out_model = MLP(feat_dim, [64], out_dim)
-
+    
     # define optimizer and criterion
     params = [x for x in feat_model.parameters()] + [x for x in out_model.parameters()]
     optimizer = torch.optim.Adam(params, lr=1e-4)
     criterion = nn.BCEWithLogitsLoss()
-
+    
     # Training loop
     for epoch in range(epochs):
         for batch in dataloader:
-            # labels need to be float for BCE loss 
-            labels = batch['label'].float()
-            # graphs for batch are stored under 'atoms' 
-            graph = batch['atoms']
+            # labels need to be float for BCE loss
+            labels = batch.y.float()
             # calculate 128-dim features
-            feats = feat_model(graph.x, graph.edge_index, graph.edge_attr, graph.batch)
+            feats = feat_model(batch.x, batch.edge_index, batch.edge_attr, batch.batch)
             # calculate predictions
             out = out_model(feats)
             # compute loss and backprop
