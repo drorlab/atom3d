@@ -40,5 +40,10 @@ To see further options for training, use::
 Analysis
 --------
 
-We will make standardized model evaluation code available soon.
+To load and evaluate the results, run::
+
+    python evaluate.py
+
+You can adapt this script to evaluate models you trained yourself.
+Please refer to the documentation for `results <https://atom3d.readthedocs.io/en/latest/source/atom3d.util.html#module-atom3d.util.results>`_ and `metrics <https://atom3d.readthedocs.io/en/latest/source/atom3d.util.html#module-atom3d.util.metrics>`_.
 
