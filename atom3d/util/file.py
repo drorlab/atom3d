@@ -14,13 +14,13 @@ def find_files(path, suffix, relative=None):
     :type suffix: str
     :param relative: Flag to indicate whether to return absolute or relative path.
 
-    :return: list of paths to all files with suffix.
+    :return: list of paths to all files with suffix sorted by their names.
     :rtype: list[Path]
     """
     if not relative:
-        find_cmd = r"find {:} -regex '.*\.{:}'".format(path, suffix)
+        find_cmd = r"find {:} -regex '.*\.{:}' | sort".format(path, suffix)
     else:
-        find_cmd = r"cd {:}; find . -regex '.*\.{:}' | cut -d '/' -f 2-" \
+        find_cmd = r"cd {:}; find . -regex '.*\.{:}' | cut -d '/' -f 2- | sort" \
             .format(path, suffix)
     out = subprocess.Popen(
         find_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -34,7 +34,7 @@ def find_files(path, suffix, relative=None):
 def get_pdb_code(path):
     """
     Extract 4-character PDB ID code from full path.
-    
+
     :param path: Path to PDB file.
     :type path: str
 
