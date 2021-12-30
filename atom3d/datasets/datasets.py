@@ -343,6 +343,7 @@ if ptg is not None:
 else:
     PTGDataset = None
 
+    
 def serialize(x, serialization_format):
     """
     Serializes dataset `x` in format given by `serialization_format` (pkl, json, msgpack).
@@ -490,7 +491,31 @@ def make_lmdb_dataset(dataset, output_lmdb,
             txn.put(b'serialization_format', serialization_format.encode())
             txn.put(b'id_to_idx', serialize(id_to_idx, serialization_format))
 
-
+            
+def write_lmdb_as_pdb(lmdb_dir, output_dir): 
+    """
+    Write structures from an LMDB dataset to PDB files.
+    
+    :param lmdb_dir: Path of the directory with the LMDB dataset.
+    :type lmdb_dir: str
+    :param output_dir: Path of the directory to save the PDB files.
+    :type output_dir: str
+    
+    """
+    data = LMDBDataset(lmdb_dir)
+    for d in data:
+        # Read structure info
+        structure = fmt.df_to_bp(d['atoms'])
+        # Define the output name
+        output = d['id']
+        if output[-4:] != '.pdb':
+            output += '.pdb'
+        # Create the output directory
+        os.makedirs(output_dir, exist_ok=True)
+        # Write the structure to a PDB file
+        fmt.write_pdb(output_dir+'/'+output, structure)
+        
+        
 def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['atoms'], drop_elements=[]):
     """Convert the molecules from a dataset to a dictionary of numpy arrays.
        Labels are not processed; they are handled differently for every dataset.
@@ -546,6 +571,7 @@ def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['ato
                   'charges': charges, 'positions': positions}
 
     return numpy_dict
+
 
 def combine_datasets(dataset_list, output_lmdb, filter_fn=None, serialization_format='json'):
     """
