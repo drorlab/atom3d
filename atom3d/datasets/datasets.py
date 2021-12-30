@@ -505,7 +505,7 @@ def write_lmdb_as_pdb(lmdb_dir, output_dir):
     data = LMDBDataset(lmdb_dir)
     for d in data:
         # Read structure info
-        structure = fmt.df_to_bp(d['atoms'])
+        structure = fo.df_to_bp(d['atoms'])
         # Define the output name
         output = d['id']
         if output[-4:] != '.pdb':
@@ -513,7 +513,7 @@ def write_lmdb_as_pdb(lmdb_dir, output_dir):
         # Create the output directory
         os.makedirs(output_dir, exist_ok=True)
         # Write the structure to a PDB file
-        fmt.write_pdb(output_dir+'/'+output, structure)
+        fo.write_pdb(output_dir+'/'+output, structure)
         
         
 def extract_coordinates_as_numpy_arrays(dataset, indices=None, atom_frames=['atoms'], drop_elements=[]):
