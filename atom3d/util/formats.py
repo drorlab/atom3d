@@ -332,11 +332,14 @@ def read_sdf_to_mol(sdf_file, sanitize=False, add_hs=False, remove_hs=False):
     molecules = [mol for mol in suppl]
 
     if add_hs:
+        out_molecules = []
         for mol in molecules:
             if mol is not None:
                 mol = Chem.AddHs(mol, addCoords=True)
-
-    return molecules
+                out_molecules.append(mol)
+        return out_molecules
+    else:
+        return molecules
 
 
 def mol_to_df(mol, add_hs=False, structure=None, model=None, ensemble=None, residue=999):

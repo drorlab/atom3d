@@ -14,7 +14,10 @@ from torch_geometric.data import DataLoader
 from model import GNN_PSR
 from data import GNNTransformPSR
 from atom3d.datasets import LMDBDataset, PTGDataset
-import atom3d.datasets.psr.util as psr_util
+
+import sys
+sys.path.append('..')
+from dataset import util as psr_util
 
 def compute_correlations(results):
     per_target = []
@@ -127,7 +130,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     if args.precomputed:
         train_dataset = PTGDataset(os.path.join(args.data_dir, 'train'))
         val_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
-        test_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
+        test_dataset = PTGDataset(os.path.join(args.data_dir, 'test'))
 
     else:
         train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=GNNTransformPSR())
@@ -159,14 +162,14 @@ def train(args, device, log_dir, rep=None, test_mode=False):
         start = time.time()
         train_loss = train_loop(model, train_loader, optimizer, device)
         val_loss, corrs, results_df = test(model, val_loader, device)
-        if corrs['all_spearman'] > best_rs:
+        if val_loss < best_val_loss:
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': train_loss,
                 }, os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-            best_rs = corrs['all_spearman']
+            best_val_loss = val_loss
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
         print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
@@ -178,8 +181,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
         train_file = os.path.join(log_dir, f'psr-rep{rep}.best.train.pt')
         val_file = os.path.join(log_dir, f'psr-rep{rep}.best.val.pt')
         test_file = os.path.join(log_dir, f'psr-rep{rep}.best.test.pt')
-        cpt = torch.load(os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-        model.load_state_dict(cpt['model_state_dict'])
+        
         _, corrs, results_train = test(model, train_loader, device)
         torch.save(results_train.to_dict('list'), train_file)
         _, corrs, results_val = test(model, val_loader, device)

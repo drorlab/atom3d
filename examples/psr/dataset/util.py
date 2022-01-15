@@ -43,9 +43,16 @@ def read_labels(labels_dir, ext='dat'):
     files = fi.find_files(labels_dir, ext)
     frames = []
     for filename in files:
+        if 'Description' in os.path.basename(filename):
+            continue
         target_name = get_target_name(filename)
-        df = pd.read_csv(filename, delimiter='\s*', engine='python',
-                         index_col=[0, 1]).dropna()
+        # df = pd.read_csv(filename, delimiter='\s*', engine='python',
+        #                  index_col=[0, 1]).dropna()
+        df = pd.read_csv(filename, delimiter='\s+', engine='python').dropna()
+        df['target'] = df['decoy_path'].apply(get_target_name)
+        df['decoy'] = df['decoy_path'].apply(get_decoy_name)
+        df = df.set_index(['target', 'decoy'], drop=True)
+        df = df.drop('decoy_path', axis=1)
         frames.append(df)
     all_df = pd.concat(frames, sort=False)
     return all_df

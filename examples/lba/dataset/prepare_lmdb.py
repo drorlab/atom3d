@@ -105,7 +105,7 @@ class LBADataset(Dataset):
                                                 transform=SequenceReader(input_file_path))
         self._pocket_dataset = da.load_dataset(pocket_list, 'pdb',
                                                transform=None)
-        self._ligand_dataset = da.load_dataset(ligand_list, 'sdf', include_bonds=True,
+        self._ligand_dataset = da.load_dataset(ligand_list, 'sdf', include_bonds=True, add_Hs=False,
                                                transform=SmilesReader())
 
     def __len__(self) -> int:

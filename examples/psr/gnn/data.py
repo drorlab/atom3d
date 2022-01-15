@@ -14,9 +14,9 @@ class GNNTransformPSR(object):
         item = prot_graph_transform(item, ['atoms'], 'scores')
         graph = item['atoms']
         graph.y = torch.FloatTensor([graph.y['gdt_ts']])
-        split = item['id'].split("'") 
-        graph.target = split[1]
-        graph.decoy = split[3]
+        split = eval(item['id'])
+        graph.target = split[0]
+        graph.decoy = split[1]
         return graph
     
 
@@ -31,19 +31,18 @@ if __name__=="__main__":
     val_dataset = LMDBDataset(os.path.join(data_dir, 'val'), transform=GNNTransformPSR())
     test_dataset = LMDBDataset(os.path.join(data_dir, 'test'), transform=GNNTransformPSR())
     
-    # train_loader = DataLoader(train_dataset, 1, shuffle=True, num_workers=4)
-    # val_loader = DataLoader(val_dataset, 1, shuffle=False, num_workers=4)
-    # test_loader = DataLoader(test_dataset, 1, shuffle=False, num_workers=4)
-    # for item in dataset[0]:
-    #     print(item, type(dataset[0][item]))
+    train_loader = DataLoader(train_dataset, 1, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, 1, shuffle=False, num_workers=4)
+    test_loader = DataLoader(test_dataset, 1, shuffle=False, num_workers=4)
+
     
-    # print('processing train dataset...')
-    # for i, item in enumerate(tqdm(train_dataset)):
-    #     torch.save(item, os.path.join(save_dir, 'train', f'data_{i}.pt'))
+    print('processing train dataset...')
+    for i, item in enumerate(tqdm(train_dataset)):
+        torch.save(item, os.path.join(save_dir, 'train', f'data_{i}.pt'))
     
-    # print('processing validation dataset...')
-    # for i, item in enumerate(tqdm(val_dataset)):
-    #     torch.save(item, os.path.join(save_dir, 'val', f'data_{i}.pt'))
+    print('processing validation dataset...')
+    for i, item in enumerate(tqdm(val_dataset)):
+        torch.save(item, os.path.join(save_dir, 'val', f'data_{i}.pt'))
     
     print('processing test dataset...')
     for i, item in enumerate(tqdm(test_dataset)):

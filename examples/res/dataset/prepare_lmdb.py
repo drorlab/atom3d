@@ -79,6 +79,7 @@ class ResTransform(object):
             subunit_pt_idx = kd_tree.query_ball_point(CB_pos, r=10.0*np.sqrt(3), p=2.0)
             
             subunits.append(subunit_df.index[sorted(subunit_pt_idx)].to_list())
+            print(len(subunit_pt_idx))
     
             sub_name = '_'.join([str(x) for x in chain_res])
             label_row = [sub_name, res_util.res_label_dict[res_name], CB_pos[0], CB_pos[1], CB_pos[2]]

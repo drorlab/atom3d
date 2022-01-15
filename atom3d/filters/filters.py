@@ -31,6 +31,28 @@ def standard_residue_filter(df):
         ['structure', 'model', 'chain', 'residue', 'resname']).index]
     return df[to_keep.values]
 
+def heteroatom_filter(df):
+    """
+    Filter out all hetatm records.
+
+    :param df: dataframe to filter against.
+    :type df: atoms dataframe.
+
+    :return: same dataframe, but with only with atoms corresponding to non-hetatms left.
+    :rtype: atoms dataframe.
+    """
+    residues = df[['structure', 'model', 'chain', 'residue', 'resname']] \
+        .drop_duplicates()
+    sel = residues['resname'].apply(
+        lambda x: Poly.is_aa(x, standard=True))
+
+    residues['to_keep'] = sel
+    residues_to_keep = residues.set_index(
+        ['structure', 'model', 'chain', 'residue', 'resname'])['to_keep']
+    to_keep = residues_to_keep.loc[df.set_index(
+        ['structure', 'model', 'chain', 'residue', 'resname']).index]
+    return df[to_keep.values]
+
 
 def first_model_filter(df):
     """

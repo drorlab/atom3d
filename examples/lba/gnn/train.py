@@ -6,7 +6,6 @@ import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 import torch
 import torch.nn.functional as F
 from torch_geometric.data import DataLoader
@@ -73,7 +72,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     if args.precomputed:
         train_dataset = PTGDataset(os.path.join(args.data_dir, 'train'))
         val_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
-        test_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
+        test_dataset = PTGDataset(os.path.join(args.data_dir, 'test'))
     else:
         transform=GNNTransformLBA()
         train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=transform)
@@ -132,8 +131,6 @@ def train(args, device, log_dir, rep=None, test_mode=False):
         print(f'\tTest RMSE {rmse}, Test Pearson {pearson}, Test Spearman {spearman}')
         torch.save({'targets':y_true_test, 'predictions':y_pred_test}, test_file)
 
-
-
     return best_val_loss, best_rp, best_rs
 
 
@@ -167,7 +164,7 @@ if __name__=="__main__":
     elif args.mode == 'test':
         for rep, seed in enumerate(np.random.randint(0, 1000, size=3)):
             print('seed:', seed)
-            log_dir = os.path.join('logs', f'lba_test_{args.seqid}')
+            log_dir = os.path.join('logs', f'lba_test_withH_{args.seqid}')
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)
             np.random.seed(seed)

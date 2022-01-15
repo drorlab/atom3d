@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, global_add_pool
+from torch_geometric.nn import GCNConv, global_add_pool, global_mean_pool
 
 class GNN_LBA(torch.nn.Module):
     def __init__(self, num_features, hidden_dim):

@@ -7,7 +7,6 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import torch
 import torch.nn.functional as F
 from torch_geometric.data import DataLoader
@@ -85,8 +84,10 @@ def test(model, loader, device):
     decoys = []
     y_true = []
     y_pred = []
+    
+    print_frequency = 10
 
-    for data in loader:
+    for it, data in enumerate(loader):
         data = data.to(device)
         output = model(data.x, data.edge_index, data.edge_attr.view(-1), data.batch)
         batch_losses = F.mse_loss(output, data.y, reduction='none')
@@ -96,10 +97,14 @@ def test(model, loader, device):
         y_true.extend(data.y.tolist())
         y_pred.extend(output.tolist())
 
+        if it % print_frequency == 0:
+            print(f'iter {it}, loss {np.mean(losses)}')
+
     results_df = pd.DataFrame(
         np.array([targets, decoys, y_true, y_pred]).T,
         columns=['target', 'decoy', 'true', 'pred'],
         )
+    results_df.to_csv('logs/results_df.csv')
 
     res = compute_correlations(results_df)
 
@@ -122,7 +127,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     if args.precomputed:
         train_dataset = PTGDataset(os.path.join(args.data_dir, 'train'))
         val_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
-        test_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
+        test_dataset = PTGDataset(os.path.join(args.data_dir, 'test'))
 
     else:
         train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=GNNTransformRSR())
@@ -131,9 +136,9 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     
     train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False, num_workers=4)
-    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4)
+    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=True, num_workers=4)
 
-    for data in train_loader:
+    for data in test_loader:
         num_features = data.num_features
         break
 
@@ -150,14 +155,14 @@ def train(args, device, log_dir, rep=None, test_mode=False):
         start = time.time()
         train_loss = train_loop(model, train_loader, optimizer, device)
         val_loss, corrs, results_df = test(model, val_loader, device)
-        if corrs['all_spearman'] > best_rs:
+        if val_loss < best_val_loss:
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': train_loss,
                 }, os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-            best_rs = corrs['all_spearman']
+            best_val_loss = val_loss
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
         print('\tTrain RMSE: {:.7f}, Val RMSE: {:.7f}, Per-target Spearman R: {:.7f}, Global Spearman R: {:.7f}'.format(
@@ -169,8 +174,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
         train_file = os.path.join(log_dir, f'rsr-rep{rep}.best.train.pt')
         val_file = os.path.join(log_dir, f'rsr-rep{rep}.best.val.pt')
         test_file = os.path.join(log_dir, f'rsr-rep{rep}.best.test.pt')
-        cpt = torch.load(os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-        model.load_state_dict(cpt['model_state_dict'])
+        
         _, corrs, results_train = test(model, train_loader, device)
         torch.save(results_train.to_dict('list'), train_file)
         _, corrs, results_val = test(model, val_loader, device)

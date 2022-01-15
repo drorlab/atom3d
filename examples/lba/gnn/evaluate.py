@@ -7,7 +7,7 @@ import atom3d.util.metrics as met
 seqid = sys.argv[1]
 
 # Define the training run 
-name = f'logs/lba_test_{seqid}/lba'
+name = f'logs/lba_test_withH_{seqid}/lba'
 print(name)
 
 # Load training results

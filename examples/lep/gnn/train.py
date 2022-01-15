@@ -7,7 +7,6 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -77,7 +76,7 @@ def test(gcn_model, ff_model, loader, criterion, device):
         # total += active.num_graphs
         losses.append(loss.item())
         y_true.extend(labels.tolist())
-        y_pred.extend(torch.sigmoid(output).tolist())
+        y_pred.extend(output.tolist())
         if it % print_frequency == 0:
             print(f'iter {it}, loss {np.mean(losses)}')
 
@@ -105,7 +104,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     if args.precomputed:
         train_dataset = PTGDataset(os.path.join(args.data_dir, 'train'))
         val_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
-        test_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
+        test_dataset = PTGDataset(os.path.join(args.data_dir, 'test'))
         train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4, collate_fn=CollaterLEP())
         val_loader = DataLoader(val_dataset, args.batch_size, shuffle=False, num_workers=4, collate_fn=CollaterLEP())
         test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4, collate_fn=CollaterLEP())
@@ -141,7 +140,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
         train_loss = train_loop(epoch, gcn_model, ff_model, train_loader, criterion, optimizer, device)
         print('validating...')
         val_loss, auroc, auprc, _, _ = test(gcn_model, ff_model, val_loader, criterion, device)
-        if auroc > best_val_auroc:
+        if val_loss < best_val_loss:
             torch.save({
                 'epoch': epoch,
                 'gcn_state_dict': gcn_model.state_dict(),
@@ -149,7 +148,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': train_loss,
                 }, os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-            best_val_auroc = auroc
+            best_val_loss = val_loss
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
         print(f'\tTrain loss {train_loss}, Val loss {val_loss}, Val AUROC {auroc}, Val auprc {auprc}')

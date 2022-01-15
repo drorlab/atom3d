@@ -6,7 +6,6 @@ import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -99,7 +98,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
     if args.precomputed:
         train_dataset = PTGDataset(os.path.join(args.data_dir, 'train'))
         val_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
-        test_dataset = PTGDataset(os.path.join(args.data_dir, 'val'))
+        test_dataset = PTGDataset(os.path.join(args.data_dir, 'test'))
     else:
         train_dataset = LMDBDataset(os.path.join(args.data_dir, 'train'), transform=transform)
         val_dataset = LMDBDataset(os.path.join(args.data_dir, 'val'), transform=transform)
@@ -132,7 +131,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
         train_loss = train_loop(epoch, gcn_model, ff_model, train_loader, criterion, optimizer, device)
         print('validating...')
         val_loss, auroc, auprc, _, _ = test(gcn_model, ff_model, val_loader, criterion, device)
-        if auroc > best_val_auroc:
+        if val_loss < best_val_loss:
             torch.save({
                 'epoch': epoch,
                 'gcn_state_dict': gcn_model.state_dict(),
@@ -140,7 +139,7 @@ def train(args, device, log_dir, rep=None, test_mode=False):
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': train_loss,
                 }, os.path.join(log_dir, f'best_weights_rep{rep}.pt'))
-            best_val_auroc = auroc
+            best_val_loss = val_loss
         elapsed = (time.time() - start)
         print('Epoch: {:03d}, Time: {:.3f} s'.format(epoch, elapsed))
         print(f'\tTrain loss {train_loss}, Val loss {val_loss}, Val AUROC {auroc}, Val auprc {auprc}')

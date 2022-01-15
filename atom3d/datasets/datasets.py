@@ -285,7 +285,7 @@ class SDFDataset(Dataset):
     :type read_bonds: bool, optional
     """
 
-    def __init__(self, file_list, transform=None, read_bonds=False):
+    def __init__(self, file_list, transform=None, read_bonds=False, add_Hs=False):
         """constructor
 
         """
@@ -293,6 +293,7 @@ class SDFDataset(Dataset):
         self._num_examples = len(self._file_list)
         self._transform = transform
         self._read_bonds = read_bonds
+        self._add_Hs = add_Hs
 
     def __len__(self) -> int:
         return self._num_examples
@@ -302,8 +303,8 @@ class SDFDataset(Dataset):
             raise IndexError(index)
         # Read biopython structure
         file_path = self._file_list[index]
-        structure = fo.read_sdf(str(file_path), sanitize=False,
-                                add_hs=False, remove_hs=False)
+        structure = fo.read_sdf(str(file_path), sanitize=True,
+                                add_hs=self._add_Hs, remove_hs=False)
         # assemble the item (no bonds)
         item = {
             'atoms': fo.bp_to_df(structure),
@@ -402,7 +403,7 @@ def get_file_list(input_path, filetype):
     return sorted(file_list)
 
 
-def load_dataset(file_list, filetype, transform=None, include_bonds=False):
+def load_dataset(file_list, filetype, transform=None, include_bonds=False, add_Hs=False):
     """
     Load files in file_list into corresponding dataset object. All files should be of type filetype.
 
@@ -430,7 +431,7 @@ def load_dataset(file_list, filetype, transform=None, include_bonds=False):
     elif filetype == 'sdf':
         # TODO: Make read_bonds parameter part of transform.
         dataset = SDFDataset(file_list, transform=transform,
-                             read_bonds=include_bonds)
+                             read_bonds=include_bonds, add_Hs=add_Hs)
     elif filetype == 'xyz':
         dataset = XYZDataset(file_list, transform=transform)
     elif filetype == 'xyz-gdb':

@@ -14,9 +14,9 @@ class GNNTransformRSR(object):
         item = prot_graph_transform(item, ['atoms'], 'scores')
         graph = item['atoms']
         graph.y = torch.FloatTensor([graph.y['rms']])
-        split = item['id'].split("'") 
-        graph.target = split[1]
-        graph.decoy = split[3]
+        split = eval(item['id'])
+        graph.target = split[0]
+        graph.decoy = split[1]
         return graph
     
 

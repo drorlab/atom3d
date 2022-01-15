@@ -28,7 +28,8 @@ class Scores(object):
         decoy = util.get_decoy_name(file_path)
         key = (target, decoy)
         if key in self._scores.index:
-            score = self._scores.loc[key].head(1).astype(np.float64).squeeze().to_dict()
+            score = self._scores.loc[key].astype(np.float64).squeeze().to_dict()
+            score = {key.replace('-','_'): val for key,val in score.items()}
             return key, score
         return key, None
 
@@ -88,7 +89,7 @@ def make_lmdb_dataset(input_file_path, score_path, output_root):
 
     logger.info(f'Creating lmdb dataset into {lmdb_path:}...')
     dataset = da.load_dataset(file_list, filetype, transform=scores)
-    da.make_lmdb_dataset(dataset, lmdb_path)
+    da.make_lmdb_dataset(dataset, lmdb_path, filter_fn=lambda x: x['scores']['rmsd']==-1.0)
     return lmdb_path
 
 
