@@ -87,13 +87,6 @@ def test(gcn_model, ff_model, loader, criterion, device):
 
     return np.mean(losses), auroc, auprc, y_true, y_pred
 
-def plot_corr(y_true, y_pred, plot_dir):
-    plt.clf()
-    sns.scatterplot(y_true, y_pred)
-    plt.xlabel('Actual -log(K)')
-    plt.ylabel('Predicted -log(K)')
-    plt.savefig(plot_dir)
-
 def save_weights(model, weight_dir):
     torch.save(model.state_dict(), weight_dir)
 
