@@ -35,9 +35,11 @@ def get_scop_index():
     scop2_uniprot = pd.read_csv(
         PDB_CHAIN_SCOP2_UNIPROT_FILE, skiprows=2,
         names=['pdb_code', 'chain', 'sp-primary', 'sf-domid', 'fa-domid'],
+        error_bad_lines=False,
     )
     # Some superfamily entries are a bit messed up here, so we remove.
-    scop2_uniprot = scop2_uniprot[scop2_uniprot['sf-domid'].str.isnumeric()]
+    scop2_uniprot = scop2_uniprot[
+        scop2_uniprot['sf-domid'].astype(str).str.isnumeric()]
     scop2_uniprot['sf-domid'] = pd.to_numeric(scop2_uniprot['sf-domid'])
 
     # Load mapping of non-representatives to scop domains.
