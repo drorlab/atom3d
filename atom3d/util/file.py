@@ -18,7 +18,7 @@ def find_files(path, suffix, relative=None):
     :rtype: list[Path]
     """
     if not relative:
-        find_cmd = r"find {:} -regex '.*\.{:}' | sort".format(path, suffix)
+        find_cmd = r"find '{:}' -regex '.*\.{:}' | sort".format(path, suffix)
     else:
         find_cmd = r"cd {:}; find . -regex '.*\.{:}' | cut -d '/' -f 2- | sort" \
             .format(path, suffix)
@@ -26,7 +26,7 @@ def find_files(path, suffix, relative=None):
         find_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         cwd=os.getcwd(), shell=True)
     (stdout, stderr) = out.communicate()
-    name_list = stdout.decode().split()
+    name_list = stdout.decode().rstrip('\n').split('\n')
     name_list.sort()
     return [Path(x) for x in name_list]
 
