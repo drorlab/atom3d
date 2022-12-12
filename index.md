@@ -6,7 +6,7 @@ ATOM3D is a unified collection of datasets concerning the three-dimensional stru
 
 - **Documentation**: Documentation for our Python package, including loading, creating, and interacting with ATOM3D datasets, is available at [atom3d.readthedocs.io](https://atom3d.readthedocs.io/en/latest/getting_started.html).
 
-- **Paper**: Please see our [NeurIPS Datasets and Benchmarks paper](https://openreview.net/pdf?id=FkDZLpK1Ml2) for further details on the datasets and benchmarks.
+- **Paper**: Please see our [NeurIPS Datasets and Benchmarks paper](https://datasets-benchmarks-proceedings.neurips.cc/paper/2021/hash/c45147dee729311ef5b5c3003946c48f-Abstract-round1.html) for further details on the datasets and benchmarks.
 
 - **NeurIPS LMRL Workshop 2020**: Check out our [poster](./2020-12-11-neurips-lmrl-atom3d-poster.pdf) and [talk](https://slideslive.com/38942738/atom3d-tasks-on-molecules-in-three-dimensions) at the Learning Meaningful Representations of Life workshop at NeurIPS 2020.
 
