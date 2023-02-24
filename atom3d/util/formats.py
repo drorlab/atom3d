@@ -156,6 +156,8 @@ def read_any(f, name=None):
         return read_pdb(f, name)
     elif is_pdb_gz(f):
         return read_pdb_gz(f, name)
+    elif is_ent_gz(f):
+        return read_pdb_gz(f, name)
     elif is_mmcif(f):
         return read_mmcif(f, name)
     elif is_sdf(f):
@@ -172,6 +174,7 @@ def read_any(f, name=None):
 patterns = {
     'pdb': r'pdb[0-9]*$',
     'pdb.gz': r'pdb[0-9]*\.gz$',
+    'ent.gz': r'ent[0-9]*\.gz$',
     'mmcif': r'(mm)?cif$',
     'sdf': r'sdf[0-9]*$',
     'xyz': r'xyz[0-9]*$',
@@ -198,6 +201,10 @@ def is_pdb(f):
 def is_pdb_gz(f):
     """Check if file is in mmcif format."""
     return _regexes['pdb.gz'].search(str(f))
+
+def is_ent_gz(f):
+    """Check if file is in mmcif format."""
+    return _regexes['ent.gz'].search(str(f))
 
 
 def is_mmcif(f):

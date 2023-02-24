@@ -104,7 +104,7 @@ class LMDBDataset(Dataset):
         # Recover special data types (currently only pandas dataframes).
         if 'types' in item.keys():
             for x in item.keys():
-                if item['types'][x] == str(pd.DataFrame):
+                if (self._serialization_format=='json') and (item['types'][x] == str(pd.DataFrame)):
                     item[x] = pd.DataFrame(**item[x])
         else:
             logging.warning('Data types in item %i not defined. Will use basic types only.'%index)

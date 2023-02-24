@@ -101,6 +101,8 @@ def get_grid(df, center, config, rot_mat=np.eye(3, 3)):
 
     # Apply rotation matrix.
     at = np.dot(at, rot_mat)
+    if 'bias' in config:
+        at -= config.bias
     at = (np.around((at + true_radius) / config.resolution - 0.5)).astype(np.int16)
 
     # Prune out atoms outside of grid as well as non-existent atoms.
