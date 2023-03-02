@@ -409,7 +409,7 @@ def load_dataset(file_list, filetype, transform=None, include_bonds=False, add_H
 
     :param file_list: List containing paths to files. Assumes one structure per file.
     :type file_list: list[Union[str, Path]]
-    :param filetype: Type of dataset. Allowable types are 'lmdb', 'pdb', 'silent', 'sdf', 'xyz', 'xyz-gdb'.
+    :param filetype: Type of dataset. Allowable types are 'lmdb', 'pdb', 'pdb.gz', 'cif', 'silent', 'sdf', 'xyz', 'xyz-gdb'.
     :type filetype: str
     :param transform: transformation function for data augmentation, defaults to None
     :type transform: function, optional
@@ -424,7 +424,7 @@ def load_dataset(file_list, filetype, transform=None, include_bonds=False, add_H
 
     if filetype == 'lmdb':
         dataset = LMDBDataset(file_list, transform=transform)
-    elif (filetype == 'pdb') or (filetype == 'pdb.gz'):
+    elif filetype in ['pdb', 'pdb.gz', 'ent.gz', 'cif']:
         dataset = PDBDataset(file_list, transform=transform)
     elif filetype == 'silent':
         dataset = SilentDataset(file_list, transform=transform)
